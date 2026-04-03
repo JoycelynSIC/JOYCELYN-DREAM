@@ -66,7 +66,7 @@ export default function FormRegistrasi() {
 
               <div className="grid grid-cols-2 gap-5">
                 <InputField label="NIM" name="nim" type="text" placeholder="10 Digit" value={formData.nim} onChange={handleChange} error={errors.nim} />
-                <InputField label="Email Institusi" name="email" type="email" placeholder="mhs.ac.id" value={formData.email} onChange={handleChange} error={errors.email} />
+                <InputField label="Email Institusi" name="email" type="email" placeholder="Masukkan Email" value={formData.email} onChange={handleChange} error={errors.email} />
               </div>
 
               <div className="grid grid-cols-2 gap-5">
