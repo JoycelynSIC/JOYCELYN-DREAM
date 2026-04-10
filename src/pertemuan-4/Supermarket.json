@@ -1,0 +1,482 @@
+[
+  {
+    "id": 1,
+    "name": "Susu Ultra Milk Full Cream",
+    "category": "Minuman",
+    "price": 18500,
+    "stock": 120,
+    "rating": 4.8,
+    "image": "susu.png",
+    "supplier": {
+      "name": "PT Ultra Jaya",
+      "city": "Bandung",
+      "contact": "021-5550001"
+    },
+    "nutrition": {
+      "calories": 150,
+      "protein": "8g",
+      "fat": "8g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": true,
+      "lastRestock": "2025-04-01"
+    }
+  },
+  {
+    "id": 2,
+    "name": "Indomie Goreng Spesial",
+    "category": "Makanan Instan",
+    "price": 3500,
+    "stock": 500,
+    "rating": 4.9,
+    "image": "indomie.png",
+    "supplier": {
+      "name": "PT Indofood",
+      "city": "Jakarta",
+      "contact": "021-5550002"
+    },
+    "nutrition": {
+      "calories": 330,
+      "protein": "7g",
+      "fat": "12g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": true,
+      "lastRestock": "2025-04-05"
+    }
+  },
+  {
+    "id": 3,
+    "name": "Minyak Goreng Bimoli 2L",
+    "category": "Dapur",
+    "price": 38000,
+    "stock": 80,
+    "rating": 4.5,
+    "image": "minyak.png",
+    "supplier": {
+      "name": "PT Salim Ivomas",
+      "city": "Medan",
+      "contact": "061-5550003"
+    },
+    "nutrition": {
+      "calories": 900,
+      "protein": "0g",
+      "fat": "100g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": false,
+      "lastRestock": "2025-03-28"
+    }
+  },
+  {
+    "id": 4,
+    "name": "Pocari Sweat 500ml",
+    "category": "Minuman",
+    "price": 9000,
+    "stock": 200,
+    "rating": 4.7,
+    "image": "pocarisweat.png",
+    "supplier": {
+      "name": "PT Amerta Indah Otsuka",
+      "city": "Jakarta",
+      "contact": "021-5550004"
+    },
+    "nutrition": {
+      "calories": 120,
+      "protein": "0g",
+      "fat": "0g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": true,
+      "lastRestock": "2025-04-03"
+    }
+  },
+  {
+    "id": 5,
+    "name": "Sabun Lifebuoy Total 10",
+    "category": "Kebersihan",
+    "price": 7500,
+    "stock": 150,
+    "rating": 4.6,
+    "image": "lifeboy.png",
+    "supplier": {
+      "name": "PT Unilever Indonesia",
+      "city": "Surabaya",
+      "contact": "031-5550005"
+    },
+    "nutrition": {
+      "calories": 0,
+      "protein": "0g",
+      "fat": "0g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": true,
+      "lastRestock": "2025-03-30"
+    }
+  },
+  {
+    "id": 6,
+    "name": "Teh Pucuk Harum 350ml",
+    "category": "Minuman",
+    "price": 5500,
+    "stock": 300,
+    "rating": 4.6,
+    "image": "tekpucuk.png",
+    "supplier": {
+      "name": "PT Mayora Indah",
+      "city": "Tangerang",
+      "contact": "021-5550006"
+    },
+    "nutrition": {
+      "calories": 60,
+      "protein": "0g",
+      "fat": "0g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": true,
+      "lastRestock": "2025-04-06"
+    }
+  },
+  {
+    "id": 7,
+    "name": "Beras Premium 5kg",
+    "category": "Sembako",
+    "price": 72000,
+    "stock": 60,
+    "rating": 4.8,
+    "image": "beras.png",
+    "supplier": {
+      "name": "UD Bumi Pertiwi",
+      "city": "Karawang",
+      "contact": "0267-5550007"
+    },
+    "nutrition": {
+      "calories": 360,
+      "protein": "7g",
+      "fat": "0.5g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": false,
+      "lastRestock": "2025-04-02"
+    }
+  },
+  {
+    "id": 8,
+    "name": "Shampo Pantene 170ml",
+    "category": "Perawatan",
+    "price": 22000,
+    "stock": 90,
+    "rating": 4.4,
+    "image": "pantene.png",
+    "supplier": {
+      "name": "PT Procter & Gamble",
+      "city": "Jakarta",
+      "contact": "021-5550008"
+    },
+    "nutrition": {
+      "calories": 0,
+      "protein": "0g",
+      "fat": "0g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": true,
+      "lastRestock": "2025-03-25"
+    }
+  },
+  {
+    "id": 9,
+    "name": "Gula Pasir Gulaku 1kg",
+    "category": "Sembako",
+    "price": 16000,
+    "stock": 200,
+    "rating": 4.5,
+    "image": "gula.png",
+    "supplier": {
+      "name": "PT Sugar Group Companies",
+      "city": "Lampung",
+      "contact": "0721-5550009"
+    },
+    "nutrition": {
+      "calories": 387,
+      "protein": "0g",
+      "fat": "0g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": true,
+      "lastRestock": "2025-04-04"
+    }
+  },
+  {
+    "id": 10,
+    "name": "Oreo Original 137g",
+    "category": "Snack",
+    "price": 14500,
+    "stock": 175,
+    "rating": 4.7,
+    "image": "oreo.png",
+    "supplier": {
+      "name": "PT Nabisco Foods",
+      "city": "Jakarta",
+      "contact": "021-5550010"
+    },
+    "nutrition": {
+      "calories": 480,
+      "protein": "5g",
+      "fat": "20g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": true,
+      "lastRestock": "2025-04-05"
+    }
+  },
+  {
+    "id": 11,
+    "name": "Yakult 5 Pack",
+    "category": "Minuman",
+    "price": 16000,
+    "stock": 130,
+    "rating": 4.9,
+    "image": "yakult.png",
+    "supplier": {
+      "name": "PT Yakult Indonesia",
+      "city": "Sukabumi",
+      "contact": "0266-5550011"
+    },
+    "nutrition": {
+      "calories": 50,
+      "protein": "1g",
+      "fat": "0g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": false,
+      "lastRestock": "2025-04-07"
+    }
+  },
+  {
+    "id": 12,
+    "name": "Odol Pepsodent 190g",
+    "category": "Kebersihan",
+    "price": 12000,
+    "stock": 110,
+    "rating": 4.5,
+    "image": "odol.png",
+    "supplier": {
+      "name": "PT Unilever Indonesia",
+      "city": "Surabaya",
+      "contact": "031-5550012"
+    },
+    "nutrition": {
+      "calories": 0,
+      "protein": "0g",
+      "fat": "0g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": true,
+      "lastRestock": "2025-03-31"
+    }
+  },
+  {
+    "id": 13,
+    "name": "Kopi Kapal Api 165g",
+    "category": "Minuman",
+    "price": 19000,
+    "stock": 95,
+    "rating": 4.8,
+    "image": "kopi.png",
+    "supplier": {
+      "name": "PT Santos Jaya Abadi",
+      "city": "Surabaya",
+      "contact": "031-5550013"
+    },
+    "nutrition": {
+      "calories": 10,
+      "protein": "0g",
+      "fat": "0g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": true,
+      "lastRestock": "2025-04-01"
+    }
+  },
+  {
+    "id": 14,
+    "name": "Tepung Segitiga Biru 1kg",
+    "category": "Dapur",
+    "price": 13500,
+    "stock": 140,
+    "rating": 4.6,
+    "image": "tepung.png",
+    "supplier": {
+      "name": "PT Bogasari",
+      "city": "Jakarta",
+      "contact": "021-5550014"
+    },
+    "nutrition": {
+      "calories": 340,
+      "protein": "10g",
+      "fat": "1g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": false,
+      "lastRestock": "2025-03-27"
+    }
+  },
+  {
+    "id": 15,
+    "name": "Tisu Paseo Soft Pack 250s",
+    "category": "Kebersihan",
+    "price": 24000,
+    "stock": 85,
+    "rating": 4.4,
+    "image": "tisu.png",
+    "supplier": {
+      "name": "PT Softex Indonesia",
+      "city": "Tangerang",
+      "contact": "021-5550015"
+    },
+    "nutrition": {
+      "calories": 0,
+      "protein": "0g",
+      "fat": "0g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": true,
+      "lastRestock": "2025-04-02"
+    }
+  },
+  {
+    "id": 16,
+    "name": "Chitato Sapi Panggang 68g",
+    "category": "Snack",
+    "price": 12000,
+    "stock": 220,
+    "rating": 4.7,
+    "image": "chitato.png",
+    "supplier": {
+      "name": "PT Indofood CBP",
+      "city": "Jakarta",
+      "contact": "021-5550016"
+    },
+    "nutrition": {
+      "calories": 340,
+      "protein": "3g",
+      "fat": "18g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": true,
+      "lastRestock": "2025-04-06"
+    }
+  },
+  {
+    "id": 17,
+    "name": "Detergen Rinso 900g",
+    "category": "Kebersihan",
+    "price": 28000,
+    "stock": 70,
+    "rating": 4.5,
+    "image": "detergent.png",
+    "supplier": {
+      "name": "PT Unilever Indonesia",
+      "city": "Surabaya",
+      "contact": "031-5550017"
+    },
+    "nutrition": {
+      "calories": 0,
+      "protein": "0g",
+      "fat": "0g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": false,
+      "lastRestock": "2025-03-29"
+    }
+  },
+  {
+    "id": 18,
+    "name": "Telur Ayam Kampung 10 Butir",
+    "category": "Sembako",
+    "price": 32000,
+    "stock": 55,
+    "rating": 4.8,
+    "image": "telur.png",
+    "supplier": {
+      "name": "CV Peternakan Makmur",
+      "city": "Blitar",
+      "contact": "0342-5550018"
+    },
+    "nutrition": {
+      "calories": 155,
+      "protein": "13g",
+      "fat": "11g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": false,
+      "lastRestock": "2025-04-08"
+    }
+  },
+  {
+    "id": 19,
+    "name": "Aqua Galon 19L",
+    "category": "Minuman",
+    "price": 22000,
+    "stock": 40,
+    "rating": 4.9,
+    "image": "aqua.png",
+    "supplier": {
+      "name": "PT Danone Aqua",
+      "city": "Bogor",
+      "contact": "0251-5550019"
+    },
+    "nutrition": {
+      "calories": 0,
+      "protein": "0g",
+      "fat": "0g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": false,
+      "lastRestock": "2025-04-07"
+    }
+  },
+  {
+    "id": 20,
+    "name": "Kecap Manis Bango 135ml",
+    "category": "Dapur",
+    "price": 11000,
+    "stock": 160,
+    "rating": 4.7,
+    "image": "kecap.png",
+    "supplier": {
+      "name": "PT Unilever Indonesia",
+      "city": "Surabaya",
+      "contact": "031-5550020"
+    },
+    "nutrition": {
+      "calories": 80,
+      "protein": "2g",
+      "fat": "0g"
+    },
+    "availability": {
+      "inStore": true,
+      "online": true,
+      "lastRestock": "2025-04-03"
+    }
+  }
+]
