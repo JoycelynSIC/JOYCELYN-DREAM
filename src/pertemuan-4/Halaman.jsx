@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import productsData from "./Supermarket.json";
 
-// --- INI KUNCINYA: Pakai ../ karena assets ada di luar folder pertemuan-4 ---
 const images = import.meta.glob("../assets/Supermarket/*.png", { eager: true });
 const imageMap = Object.fromEntries(
   Object.entries(images).map(([path, module]) => [path.split("/").pop(), module.default])
@@ -33,15 +32,12 @@ export default function Halaman() {
     return matchSearch && matchTag && matchStock;
   });
 
-  // Fungsi ambil gambar
   const getImagePath = (fileName) => {
     return imageMap[fileName] || "https://via.placeholder.com/150";
   };
 
   return (
     <div className="w-full min-h-screen bg-[#A5D6A7] text-slate-800 font-sans pb-10">
-      
-      {/* HEADER */}
       <header className="sticky top-0 z-50 w-full bg-white/70 backdrop-blur-md border-b border-[#C8E6C9] shadow-sm">
         <div className="w-full max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -68,8 +64,6 @@ export default function Halaman() {
       </header>
 
       <main className="w-full max-w-7xl mx-auto px-4 py-6">
-        
-        {/* FILTERS */}
         <div className="w-full bg-white p-4 rounded-[1.5rem] shadow-md border border-white mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="relative">
@@ -143,7 +137,7 @@ export default function Halaman() {
                         <p className={`text-[8px] md:text-[9px] font-black ${p.stock < 100 ? 'text-orange-500' : 'text-slate-400'}`}>STOK: {p.stock}</p>
                     </div>
                     <button className="w-full bg-[#4CAF50] text-white py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase active:scale-95 transition-all">
-                      Tambah
+                      + Tambah
                     </button>
                   </div>
                 </div>
