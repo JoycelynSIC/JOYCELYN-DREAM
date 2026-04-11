@@ -96,8 +96,7 @@ export default function Halaman() {
                   name="selectedStock" 
                   value={formData.selectedStock} 
                   onChange={handleInputChange}
-                  className="w-full appearance-none pl-3 pr-8 py-3 rounded-xl border-2 border-[#F1F8E9] bg-[#F1F8E9]/50 text-[10px] md:text-sm font-bold text-[#2E7D32] outline-none"
-                >
+                  className="w-full appearance-none pl-3 pr-8 py-3 rounded-xl border-2 border-[#F1F8E9] bg-[#F1F8E9]/50 text-[10px] md:text-sm font-bold text-[#2E7D32] outline-none">
                   <option value="Semua">Stok</option>
                   <option value="Tersedia">Tersedia</option>
                   <option value="Stok Terbatas">Stok Terbatas</option>
