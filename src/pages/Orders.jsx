@@ -183,8 +183,18 @@ export default function Orders() {
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 bg-secondary rounded-lg flex items-center justify-center shrink-0">
-                            <FaBoxOpen className="text-on-primary text-[10px]" />
+                          <div className="w-9 h-9 bg-secondary rounded-xl overflow-hidden shrink-0">
+                            {o.gambar ? (
+                              <img
+                                src={new URL(`../assets/gambarproduk/${o.gambar}`, import.meta.url).href}
+                                alt={o.produk}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <FaBoxOpen className="text-on-primary text-[10px]" />
+                              </div>
+                            )}
                           </div>
                           <div>
                             <p className="text-xs font-semibold text-gray-700 leading-tight">{o.produk}</p>
@@ -264,8 +274,18 @@ export default function Orders() {
               <div className="space-y-2">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Detail Produk</p>
                 <div className="flex items-center gap-3 p-3 border border-secondary rounded-2xl">
-                  <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center shrink-0">
-                    <FaBoxOpen className="text-on-primary text-sm" />
+                  <div className="w-14 h-14 bg-secondary rounded-xl overflow-hidden shrink-0">
+                    {selected.gambar ? (
+                      <img
+                        src={new URL(`../assets/gambarproduk/${selected.gambar}`, import.meta.url).href}
+                        alt={selected.produk}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <FaBoxOpen className="text-on-primary text-sm" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-gray-700">{selected.produk}</p>

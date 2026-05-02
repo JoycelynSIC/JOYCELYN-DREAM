@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import inventoryData from '../data/inventory.json';
 import scheduleData from '../data/schedule.json';
 import customerData from '../data/customer.json';
+import ordersData from '../data/orders.json';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell
 } from 'recharts';
@@ -11,6 +12,87 @@ import {
   FaBell, FaBoxOpen, FaUsers, FaExclamationTriangle, FaStar,
   FaTrophy, FaShoppingBag, FaCheckCircle, FaTruck, FaSpinner, FaTimesCircle
 } from 'react-icons/fa';
+
+/* ── Import semua gambar produk (Vite butuh import statis) ── */
+import imgKalungRosegold      from '../assets/gambarproduk/kalungrosegold.png';
+import imgKalungChoker        from '../assets/gambarproduk/kalungchoker.png';
+import imgKalungBintang       from '../assets/gambarproduk/kalungbintang.png';
+import imgKalungPearl         from '../assets/gambarproduk/kalungpearl.png';
+import imgGelangCrystal       from '../assets/gambarproduk/gelangcrystal.png';
+import imgGelangPerak         from '../assets/gambarproduk/gelangperak.png';
+import imgGelangBead          from '../assets/gambarproduk/gelangbead.png';
+import imgGelangTali          from '../assets/gambarproduk/gelangtali.png';
+import imgCincinCouple        from '../assets/gambarproduk/cincincouple.png';
+import imgCincinGold          from '../assets/gambarproduk/cincingold.png';
+import imgCincinResin         from '../assets/gambarproduk/cincinresin.png';
+import imgAntingHoop          from '../assets/gambarproduk/antinghoop.png';
+import imgAntingTassel        from '../assets/gambarproduk/antingtassel.png';
+import imgAntingPearl         from '../assets/gambarproduk/antingpearl.png';
+import imgAntingBintang       from '../assets/gambarproduk/antingbintang.png';
+import imgNailFlower          from '../assets/gambarproduk/pressonnailflower.png';
+import imgNailGlitter         from '../assets/gambarproduk/pressonnailglitter.png';
+import imgNailFrench          from '../assets/gambarproduk/pressonnailfrenchtip.png';
+import imgNailOmbre           from '../assets/gambarproduk/pressonnailombre.png';
+import imgTumblrPastel        from '../assets/gambarproduk/tmblrpastel.png';
+import imgTumblrFlower        from '../assets/gambarproduk/tumblrflower.png';
+import imgTumblrGlass         from '../assets/gambarproduk/tumblrglass.png';
+import imgClawClip            from '../assets/gambarproduk/clawclip.png';
+import imgJepitButterfly      from '../assets/gambarproduk/jepitrambutbutterfly.png';
+import imgBandoPearl          from '../assets/gambarproduk/bandopearl.png';
+import imgScrunchie           from '../assets/gambarproduk/scrunchie.png';
+import imgTasMini             from '../assets/gambarproduk/tasminiselempang.png';
+import imgTasRajut            from '../assets/gambarproduk/tasrajut.png';
+import imgTasKoin             from '../assets/gambarproduk/taskoin.png';
+import imgKacamata            from '../assets/gambarproduk/framekacamata.png';
+import imgMasker              from '../assets/gambarproduk/maskerlucu.png';
+import imgStiker              from '../assets/gambarproduk/stiker.png';
+import imgGanci               from '../assets/gambarproduk/gancisanrio.png';
+import imgIkatPinggang        from '../assets/gambarproduk/ikapinggang.png';
+
+/* ── Lookup: nama file → imported URL ── */
+export const produkGambar = {
+  'kalungrosegold.png':       imgKalungRosegold,
+  'kalungchoker.png':         imgKalungChoker,
+  'kalungbintang.png':        imgKalungBintang,
+  'kalungpearl.png':          imgKalungPearl,
+  'gelangcrystal.png':        imgGelangCrystal,
+  'gelangperak.png':          imgGelangPerak,
+  'gelangbead.png':           imgGelangBead,
+  'gelangtali.png':           imgGelangTali,
+  'cincincouple.png':         imgCincinCouple,
+  'cincingold.png':           imgCincinGold,
+  'cincinresin.png':          imgCincinResin,
+  'antinghoop.png':           imgAntingHoop,
+  'antingtassel.png':         imgAntingTassel,
+  'antingpearl.png':          imgAntingPearl,
+  'antingbintang.png':        imgAntingBintang,
+  'pressonnailflower.png':    imgNailFlower,
+  'pressonnailglitter.png':   imgNailGlitter,
+  'pressonnailfrenchtip.png': imgNailFrench,
+  'pressonnailombre.png':     imgNailOmbre,
+  'tmblrpastel.png':          imgTumblrPastel,
+  'tumblrflower.png':         imgTumblrFlower,
+  'tumblrglass.png':          imgTumblrGlass,
+  'clawclip.png':             imgClawClip,
+  'jepitrambutbutterfly.png': imgJepitButterfly,
+  'bandopearl.png':           imgBandoPearl,
+  'scrunchie.png':            imgScrunchie,
+  'tasminiselempang.png':     imgTasMini,
+  'tasrajut.png':             imgTasRajut,
+  'taskoin.png':              imgTasKoin,
+  'framekacamata.png':        imgKacamata,
+  'maskerlucu.png':           imgMasker,
+  'stiker.png':               imgStiker,
+  'gancisanrio.png':          imgGanci,
+  'ikapinggang.png':          imgIkatPinggang,
+};
+
+/* ── Helper: ambil URL gambar dari path JSON ── */
+const getImg = (path) => {
+  if (!path) return null;
+  const filename = path.split('/').pop();
+  return produkGambar[filename] ?? null;
+};
 
 const chartDataMap = {
   Harian: [
@@ -61,14 +143,7 @@ export default function Dashboard() {
   const outOfStock  = inventoryData.filter(i => i.stock === 0).length;
   const totalPoin   = customerData.reduce((a, c) => a + c.poin, 0);
   const topCustomer = [...customerData].sort((a, b) => b.poin - a.poin)[0];
-
-  const recentOrders = [
-    { id: '#ORD-091', customer: 'Dewi Lestari',  produk: 'Kalung Titanium Rosegold', total: 'Rp 170.000', status: 'Selesai', poin: 170 },
-    { id: '#ORD-090', customer: 'Amelia Putri',  produk: 'Anting Hoop Minimalist',   total: 'Rp 70.000',  status: 'Proses',  poin: 70  },
-    { id: '#ORD-089', customer: 'Siti Sarah',    produk: 'Gelang Crystal Aesthetic', total: 'Rp 90.000',  status: 'Selesai', poin: 90  },
-    { id: '#ORD-088', customer: 'Nadia Rahma',   produk: 'Cincin Adjustable Gold',   total: 'Rp 75.000',  status: 'Dikirim', poin: 75  },
-    { id: '#ORD-087', customer: 'Hendra Wijaya', produk: 'Kalung Choker Hitam',      total: 'Rp 55.000',  status: 'Selesai', poin: 55  },
-  ];
+  const recentOrders = ordersData.slice(0, 5);
 
   return (
     <div className="space-y-5 animate-in fade-in duration-500">
@@ -238,15 +313,18 @@ export default function Dashboard() {
               const StatusIcon = sc.icon;
               return (
                 <div key={order.id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-soft transition-colors">
-                  <div className="w-9 h-9 bg-secondary rounded-2xl flex items-center justify-center shrink-0">
-                    <FaShoppingBag className="text-on-primary text-xs" />
+                  <div className="w-9 h-9 bg-secondary rounded-2xl overflow-hidden shrink-0">
+                    {getImg(order.gambar)
+                      ? <img src={getImg(order.gambar)} alt={order.produk} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center"><FaShoppingBag className="text-on-primary text-xs" /></div>
+                    }
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-gray-700 truncate">{order.customer}</p>
                     <p className="text-[10px] text-gray-400 truncate">{order.produk}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-xs font-bold text-gray-700">{order.total}</p>
+                    <p className="text-xs font-bold text-gray-700">Rp {order.total.toLocaleString('id')}</p>
                     <p className="text-[10px] text-accent font-semibold flex items-center justify-end gap-0.5">
                       <FaStar className="text-yellow-400 text-[8px]" />+{order.poin} poin
                     </p>
@@ -297,7 +375,12 @@ export default function Dashboard() {
               {inventoryData.filter(i => i.stock <= 8).slice(0, 3).map(item => (
                 <div key={item.id} className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <FaBoxOpen className="text-gray-300 text-xs shrink-0" />
+                  <div className="w-8 h-8 bg-secondary rounded-xl overflow-hidden shrink-0">
+                    {getImg(item.gambar)
+                      ? <img src={getImg(item.gambar)} alt={item.name} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center"><FaBoxOpen className="text-on-primary text-[10px]" /></div>
+                    }
+                  </div>
                     <p className="text-xs font-semibold text-gray-600 truncate">{item.name}</p>
                   </div>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${

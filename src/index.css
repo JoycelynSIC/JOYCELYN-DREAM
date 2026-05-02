@@ -1,36 +1,17 @@
 @import "tailwindcss";
 
-/* ── Custom Font ── */
-@font-face {
-  font-family: 'Poppins';
-  src: url('/fonts/Poppins-Regular.ttf');
-}
-@font-face {
-  font-family: 'PoppinsBold';
-  src: url('/fonts/Poppins-Bold.ttf');
-}
-
 /* ── Custom Theme Na_store.id ── */
 @theme {
-  /* Font */
-  --font-poppins: "Poppins", sans-serif;
-  --font-poppins-bold: "PoppinsBold", sans-serif;
-
   /* Palet warna utama Na_store.id */
-  --color-primary:     #FFB9B9;   /* pink utama  */
-  --color-primary-hover: #FFACC7; /* pink hover  */
-  --color-secondary:   #FFDDD2;   /* peach       */
-  --color-soft:        #FFF5F5;   /* blush white */
-  --color-accent:      #FF8DC7;   /* hot pink    */
-  --color-on-primary:  #9d2a5e;   /* teks di atas pink */
+  --color-primary:       #FFB9B9;   /* pink utama  */
+  --color-primary-hover: #FFACC7;   /* pink hover  */
+  --color-secondary:     #FFDDD2;   /* peach       */
+  --color-soft:          #FFF5F5;   /* blush white */
+  --color-accent:        #FF8DC7;   /* hot pink    */
+  --color-on-primary:    #9d2a5e;   /* teks di atas pink */
 
   /* Warna status */
-  --color-sukses:  #22c55e;   /* hijau sukses  */
-  --color-bahaya:  #FF8DC7;   /* pink bahaya   */
-  --color-warning: #f59e0b;   /* kuning warning */
-}
-
-/* ── Default body font ── */
-body {
-  @apply font-poppins;
+  --color-sukses:  #22c55e;
+  --color-bahaya:  #FF8DC7;
+  --color-warning: #f59e0b;
 }

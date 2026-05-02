@@ -1,8 +1,9 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import logoNastore from "../assets/gambarproduk/logonastore.png";
 import {
   FaThLarge, FaChartBar, FaCalendarAlt,
   FaBox, FaUsers, FaSignOutAlt, FaShoppingBag,
-  FaExclamationTriangle, FaLock, FaBan
+  FaExclamationTriangle, FaLock, FaBan, FaStar
 } from "react-icons/fa";
 
 export default function Sidebar() {
@@ -25,10 +26,12 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-white m-3 rounded-3xl flex flex-col border border-secondary shadow-sm min-h-[calc(100vh-1.5rem)]">
       {/* Logo */}
-      <div className="px-8 pt-8 pb-6 flex items-center gap-3 border-b border-secondary">
-        <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shrink-0">
-          <span className="text-base font-black italic text-on-primary">Na</span>
-        </div>
+      <div className="px-6 pt-6 pb-5 flex items-center gap-3 border-b border-secondary">
+        <img
+          src={logoNastore}
+          alt="Na_store.id"
+          className="w-9 h-9 rounded-xl object-cover shrink-0"
+        />
         <div>
           <p className="text-sm font-black text-gray-700 leading-tight">Na_store.id</p>
           <p className="text-[10px] text-gray-400 uppercase tracking-widest">Admin</p>
@@ -44,6 +47,7 @@ export default function Sidebar() {
         <NavLink to="/schedule" className={activeLink}><FaCalendarAlt className="text-xs shrink-0" /> Jadwal</NavLink>
         <NavLink to="/inventory" className={activeLink}><FaBox className="text-xs shrink-0" /> Persediaan</NavLink>
         <NavLink to="/customers" className={activeLink}><FaUsers className="text-xs shrink-0" /> Pelanggan</NavLink>
+        <NavLink to="/reviews"   className={activeLink}><FaStar  className="text-xs shrink-0" /> Ulasan</NavLink>
 
         {/* ── Error Pages (Pertemuan 6) ── */}
         <div className="mx-3 my-2 border-t border-[#FFDDD2]" />
