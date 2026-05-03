@@ -1,14 +1,120 @@
-[
-  { "id": 1,  "pelanggan": "Dewi Lestari",   "produk": "Kalung Titanium Rosegold",     "gambar": "/src/assets/gambarproduk/kalungrosegold.png",       "bintang": 5, "komentar": "Bagus banget! Warnanya cantik dan nggak bikin alergi. Udah beli 3x 💕",          "tanggal": "28 Apr 2025", "dibalas": true  },
-  { "id": 2,  "pelanggan": "Amelia Putri",   "produk": "Anting Hoop Minimalist",       "gambar": "/src/assets/gambarproduk/antinghoop.png",           "bintang": 5, "komentar": "Ringan banget di telinga, desainnya simple tapi elegan. Recommended!",           "tanggal": "27 Apr 2025", "dibalas": false },
-  { "id": 3,  "pelanggan": "Siti Sarah",     "produk": "Nail Art Palsu Motif Bunga",   "gambar": "/src/assets/gambarproduk/pressonnailflower.png",    "bintang": 4, "komentar": "Lucu banget motifnya, tapi agak susah pasangnya. Overall oke sih!",              "tanggal": "26 Apr 2025", "dibalas": true  },
-  { "id": 4,  "pelanggan": "Nadia Rahma",    "produk": "Tumblr Aesthetic Pastel",      "gambar": "/src/assets/gambarproduk/tmblrpastel.png",          "bintang": 5, "komentar": "Warnanya persis kayak di foto, kualitas bagus. Packing juga rapi 🌸",            "tanggal": "25 Apr 2025", "dibalas": true  },
-  { "id": 5,  "pelanggan": "Rizky Pratama",  "produk": "Gelang Bead Warna-warni",      "gambar": "/src/assets/gambarproduk/gelangbead.png",           "bintang": 4, "komentar": "Warnanya cerah dan lucu. Cocok buat hadiah. Pengiriman cepat!",                  "tanggal": "24 Apr 2025", "dibalas": false },
-  { "id": 6,  "pelanggan": "Hendra Wijaya",  "produk": "Cincin Adjustable Gold",       "gambar": "/src/assets/gambarproduk/cincingold.png",           "bintang": 3, "komentar": "Desainnya bagus tapi ukurannya agak besar. Mungkin bisa disediakan size S.",    "tanggal": "23 Apr 2025", "dibalas": true  },
-  { "id": 7,  "pelanggan": "Dewi Lestari",   "produk": "Jepit Rambut Claw Clip Besar", "gambar": "/src/assets/gambarproduk/clawclip.png",             "bintang": 5, "komentar": "Kuat banget, rambut tebal aku bisa kecengkram semua. Warnanya juga cantik!",    "tanggal": "22 Apr 2025", "dibalas": false },
-  { "id": 8,  "pelanggan": "Nadia Rahma",    "produk": "Scrunchie Satin Pastel",       "gambar": "/src/assets/gambarproduk/scrunchie.png",            "bintang": 5, "komentar": "Lembut banget di rambut, nggak bikin rambut patah. Beli 5 sekaligus hehe 😍",  "tanggal": "21 Apr 2025", "dibalas": true  },
-  { "id": 9,  "pelanggan": "Budi Santoso",   "produk": "Tas Selempang Mini Aesthetic", "gambar": "/src/assets/gambarproduk/tasminiselempang.png",     "bintang": 4, "komentar": "Muat banyak ternyata meski kecil. Bahan bagus, jahitan rapi.",                  "tanggal": "20 Apr 2025", "dibalas": false },
-  { "id": 10, "pelanggan": "Amelia Putri",   "produk": "Stiker Aesthetic Pack",        "gambar": "/src/assets/gambarproduk/stiker.png",               "bintang": 5, "komentar": "Stikernya lucu-lucu banget! Banyak pilihan motif. Harga murah kualitas oke 🌟", "tanggal": "19 Apr 2025", "dibalas": true  },
-  { "id": 11, "pelanggan": "Siti Sarah",     "produk": "Bando Mutiara Aesthetic",      "gambar": "/src/assets/gambarproduk/bandopearl.png",           "bintang": 4, "komentar": "Cantik banget dipake, mutiara-nya nggak gampang lepas. Suka!",                  "tanggal": "18 Apr 2025", "dibalas": false },
-  { "id": 12, "pelanggan": "Hendra Wijaya",  "produk": "Gantungan Kunci Sanrio",       "gambar": "/src/assets/gambarproduk/gancisanrio.png",          "bintang": 2, "komentar": "Gambarnya agak pudar setelah seminggu. Kualitas kurang sesuai ekspektasi.",     "tanggal": "17 Apr 2025", "dibalas": true  }
-]
+[{
+  "id": 1,
+  "pelanggan": "Dewi Lestari",
+  "produk": "Kalung Titanium Rosegold",
+  "gambar": "/src/assets/gambarproduk/kalungrosegold.png",
+  "bintang": 5,
+  "komentar": "Bagus banget! Warnanya cantik dan nggak bikin alergi. Udah beli 3x 💕",
+  "tanggal": "28 Apr 2025",
+  "dibalas": true
+},
+{
+  "id": 2,
+  "pelanggan": "Amelia Putri",
+  "produk": "Anting Hoop Minimalist",
+  "gambar": "/src/assets/gambarproduk/antinghoop.png",
+  "bintang": 5,
+  "komentar": "Ringan banget di telinga, desainnya simple tapi elegan. Recommended!",
+  "tanggal": "27 Apr 2025",
+  "dibalas": false
+},
+{
+  "id": 3,
+  "pelanggan": "Siti Sarah",
+  "produk": "Nail Art Palsu Motif Bunga",
+  "gambar": "/src/assets/gambarproduk/pressonnailflower.png",
+  "bintang": 4,
+  "komentar": "Lucu banget motifnya, tapi agak susah pasangnya. Overall oke sih!",
+  "tanggal": "26 Apr 2025",
+  "dibalas": true
+},
+{
+  "id": 4,
+  "pelanggan": "Nadia Rahma",
+  "produk": "Tumblr Aesthetic Pastel",
+  "gambar": "/src/assets/gambarproduk/tmblrpastel.png",
+  "bintang": 5,
+  "komentar": "Warnanya persis kayak di foto, kualitas bagus. Packing juga rapi 🌸",
+  "tanggal": "25 Apr 2025",
+  "dibalas": true
+},
+{
+  "id": 5,
+  "pelanggan": "Rizky Pratama",
+  "produk": "Gelang Bead Warna-warni",
+  "gambar": "/src/assets/gambarproduk/gelangbead.png",
+  "bintang": 4,
+  "komentar": "Warnanya cerah dan lucu. Cocok buat hadiah. Pengiriman cepat!",
+  "tanggal": "24 Apr 2025",
+  "dibalas": false
+},
+{
+  "id": 6,
+  "pelanggan": "Hendra Wijaya",
+  "produk": "Cincin Adjustable Gold",
+  "gambar": "/src/assets/gambarproduk/cincingold.png",
+  "bintang": 3,
+  "komentar": "Desainnya bagus tapi ukurannya agak besar. Mungkin bisa disediakan size S.",
+  "tanggal": "23 Apr 2025",
+  "dibalas": true
+},
+{
+  "id": 7,
+  "pelanggan": "Dewi Lestari",
+  "produk": "Jepit Rambut Claw Clip Besar",
+  "gambar": "/src/assets/gambarproduk/clawclip.png",
+  "bintang": 5,
+  "komentar": "Kuat banget, rambut tebal aku bisa kecengkram semua. Warnanya juga cantik!",
+  "tanggal": "22 Apr 2025",
+  "dibalas": false
+},
+{
+  "id": 8,
+  "pelanggan": "Nadia Rahma",
+  "produk": "Scrunchie Satin Pastel",
+  "gambar": "/src/assets/gambarproduk/scrunchie.png",
+  "bintang": 5,
+  "komentar": "Lembut banget di rambut, nggak bikin rambut patah. Beli 5 sekaligus hehe 😍",
+  "tanggal": "21 Apr 2025",
+  "dibalas": true
+},
+{
+  "id": 9,
+  "pelanggan": "Budi Santoso",
+  "produk": "Tas Selempang Mini Aesthetic",
+  "gambar": "/src/assets/gambarproduk/tasminiselempang.png",
+  "bintang": 4,
+  "komentar": "Muat banyak ternyata meski kecil. Bahan bagus, jahitan rapi.",
+  "tanggal": "20 Apr 2025",
+  "dibalas": false
+},
+{
+  "id": 10,
+  "pelanggan": "Amelia Putri",
+  "produk": "Stiker Aesthetic Pack",
+  "gambar": "/src/assets/gambarproduk/stiker.png",
+  "bintang": 5,
+  "komentar": "Stikernya lucu-lucu banget! Banyak pilihan motif. Harga murah kualitas oke 🌟",
+  "tanggal": "19 Apr 2025",
+  "dibalas": true
+},
+{
+  "id": 11,
+  "pelanggan": "Siti Sarah",
+  "produk": "Bando Mutiara Aesthetic",
+  "gambar": "/src/assets/gambarproduk/bandopearl.png",
+  "bintang": 4,
+  "komentar": "Cantik banget dipake, mutiara-nya nggak gampang lepas. Suka!",
+  "tanggal": "18 Apr 2025",
+  "dibalas": false
+},
+{
+  "id": 12,
+  "pelanggan": "Hendra Wijaya",
+  "produk": "Gantungan Kunci Sanrio",
+  "gambar": "/src/assets/gambarproduk/gancisanrio.png",
+  "bintang": 2,
+  "komentar": "Gambarnya agak pudar setelah seminggu. Kualitas kurang sesuai ekspektasi.",
+  "tanggal": "17 Apr 2025",
+  "dibalas": true
+}]

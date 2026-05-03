@@ -1,7 +1,35 @@
-[
-  { "id": 1, "task": "Restok Kalung Titanium",       "time": "09:00 - 10:00", "color": "bg-[#C0E1D2]",  "kategori": "Restok"   },
-  { "id": 2, "task": "QC Cincin Couple Silver",      "time": "10:30 - 12:00", "color": "bg-[#E5EEE4]",  "kategori": "QC"       },
-  { "id": 3, "task": "Packing Pesanan Reseller",     "time": "13:00 - 14:30", "color": "bg-[#C0E1D2]",  "kategori": "Packing"  },
-  { "id": 4, "task": "Update Foto Produk Baru",      "time": "15:00 - 16:00", "color": "bg-[#F6F4E8]",  "kategori": "Konten"   },
-  { "id": 5, "task": "Balas Chat Pelanggan",         "time": "16:30 - 17:30", "color": "bg-[#DC9B9B]",  "kategori": "CS"       }
-]
+[{
+  "id": 1,
+  "task": "Restok Kalung Titanium",
+  "time": "09:00 - 10:00",
+  "color": "bg-[#C0E1D2]",
+  "kategori": "Restok"
+},
+{
+  "id": 2,
+  "task": "QC Cincin Couple Silver",
+  "time": "10:30 - 12:00",
+  "color": "bg-[#E5EEE4]",
+  "kategori": "QC"
+},
+{
+  "id": 3,
+  "task": "Packing Pesanan Reseller",
+  "time": "13:00 - 14:30",
+  "color": "bg-[#C0E1D2]",
+  "kategori": "Packing"
+},
+{
+  "id": 4,
+  "task": "Update Foto Produk Baru",
+  "time": "15:00 - 16:00",
+  "color": "bg-[#F6F4E8]",
+  "kategori": "Konten"
+},
+{
+  "id": 5,
+  "task": "Balas Chat Pelanggan",
+  "time": "16:30 - 17:30",
+  "color": "bg-[#DC9B9B]",
+  "kategori": "CS"
+}]

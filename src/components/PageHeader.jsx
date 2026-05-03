@@ -1,13 +1,5 @@
 import { FaChevronRight, FaHome } from 'react-icons/fa';
 
-/**
- * PageHeader — Reusable component (Pertemuan 3 & 6)
- *
- * Props:
- *   title      : string  — judul halaman
- *   breadcrumb : string | string[] — breadcrumb navigasi
- *   children   : ReactNode — tombol aksi atau konten tambahan di kanan
- */
 export default function PageHeader({ title, breadcrumb, children }) {
   // Normalkan breadcrumb: bisa string tunggal atau array
   const crumbs = Array.isArray(breadcrumb)
