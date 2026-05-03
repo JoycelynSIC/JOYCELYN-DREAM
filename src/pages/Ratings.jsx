@@ -1,17 +1,10 @@
 import { useState } from 'react';
 import ratingsData from '../data/ratings.json';
 import PageHeader from '../components/PageHeader';
-import { produkGambar } from './Dashboard';
 import {
   FaStar, FaRegStar, FaReply, FaSearch, FaFilter,
   FaCheckCircle, FaExclamationCircle
 } from 'react-icons/fa';
-
-const getImg = (path) => {
-  if (!path) return null;
-  const filename = path.split('/').pop();
-  return produkGambar[filename] ?? null;
-};
 
 /* ── Komponen bintang ── */
 function StarRow({ count, max = 5 }) {
@@ -170,7 +163,7 @@ export default function Ratings() {
 
                   {/* Gambar produk */}
                   <div className="w-12 h-12 rounded-2xl overflow-hidden bg-secondary shrink-0">
-                    <img src={getImg(r.gambar)} alt={r.produk} className="w-full h-full object-cover" />
+                    <img src={r.gambar} alt={r.produk} className="w-full h-full object-cover" />
                   </div>
 
                   {/* Konten */}
@@ -211,7 +204,7 @@ export default function Ratings() {
             {/* Gambar + info produk */}
             <div className="text-center pb-4 border-b border-soft">
               <div className="w-20 h-20 rounded-3xl overflow-hidden bg-secondary mx-auto mb-3">
-                <img src={getImg(selected.gambar)} alt={selected.produk} className="w-full h-full object-cover" />
+                <img src={selected.gambar} alt={selected.produk} className="w-full h-full object-cover" />
               </div>
               <p className="text-xs font-bold text-gray-500">{selected.produk}</p>
             </div>

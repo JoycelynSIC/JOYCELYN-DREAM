@@ -170,7 +170,7 @@ export default function Reviews() {
 
                   {/* Gambar produk */}
                   <img
-                    src={`/src/assets/gambarproduk/${r.gambar}`}
+                    src={r.gambar}
                     alt={r.produk}
                     className="w-12 h-12 rounded-2xl object-cover shrink-0 bg-soft"
                     onError={e => { e.target.src = ''; e.target.className = 'w-12 h-12 rounded-2xl bg-secondary shrink-0 flex items-center justify-center'; }}
@@ -213,7 +213,7 @@ export default function Reviews() {
               {/* Produk */}
               <div className="text-center pb-4 border-b border-soft">
                 <img
-                  src={`/src/assets/gambarproduk/${selected.gambar}`}
+                  src={selected.gambar}
                   alt={selected.produk}
                   className="w-20 h-20 rounded-2xl object-cover mx-auto mb-3 bg-soft"
                   onError={e => { e.target.style.display='none'; }}

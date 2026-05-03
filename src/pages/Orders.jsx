@@ -186,7 +186,7 @@ export default function Orders() {
                           <div className="w-9 h-9 bg-secondary rounded-xl overflow-hidden shrink-0">
                             {o.gambar ? (
                               <img
-                                src={new URL(`../assets/gambarproduk/${o.gambar}`, import.meta.url).href}
+                                src={o.gambar}
                                 alt={o.produk}
                                 className="w-full h-full object-cover"
                               />
@@ -277,7 +277,7 @@ export default function Orders() {
                   <div className="w-14 h-14 bg-secondary rounded-xl overflow-hidden shrink-0">
                     {selected.gambar ? (
                       <img
-                        src={new URL(`../assets/gambarproduk/${selected.gambar}`, import.meta.url).href}
+                        src={selected.gambar}
                         alt={selected.produk}
                         className="w-full h-full object-cover"
                       />

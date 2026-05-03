@@ -1,14 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaExclamationTriangle, FaLock, FaBan } from 'react-icons/fa';
 
-/**
- * ErrorPage — Reusable error component (Pertemuan 6)
- *
- * Props:
- *   kode        : number  — kode error (400, 401, 403, 404, dst)
- *   deskripsi   : string  — pesan penjelasan error
- *   gambar      : ReactNode — icon/ilustrasi error (opsional)
- */
 export default function ErrorPage({ kode, deskripsi, gambar }) {
   const navigate = useNavigate();
 

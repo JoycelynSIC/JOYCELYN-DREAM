@@ -1,17 +1,11 @@
 import { useState } from 'react';
 import inventoryData from '../data/inventory.json';
 import PageHeader from '../components/PageHeader';
-import { produkGambar } from './Dashboard';
 import {
   FaSearch, FaPlus, FaBoxOpen, FaTag, FaLayerGroup,
   FaCheckCircle, FaExclamationCircle, FaTimesCircle, FaChartLine,
   FaTimes
 } from 'react-icons/fa';
-const getImg = (path) => {
-  if (!path) return null;
-  const filename = path.split('/').pop();
-  return produkGambar[filename] ?? null;
-};
 
 const statusConfig = {
   'Aman':         { style: 'bg-primary text-on-primary',    icon: FaCheckCircle       },
@@ -329,8 +323,8 @@ export default function Inventory() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-secondary rounded-xl overflow-hidden shrink-0">
-                        {getImg(item.gambar)
-                          ? <img src={getImg(item.gambar)} alt={item.name} className="w-full h-full object-cover" />
+                        {item.gambar
+                          ? <img src={item.gambar} alt={item.name} className="w-full h-full object-cover" />
                           : <div className="w-full h-full flex items-center justify-center"><FaBoxOpen className="text-on-primary text-xs" /></div>
                         }
                       </div>
