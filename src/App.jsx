@@ -14,7 +14,6 @@ const Customers = lazy(() => import("./pages/Customers"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Schedule  = lazy(() => import("./pages/Schedule"));
 const Orders    = lazy(() => import("./pages/Orders"));
-const Ratings   = lazy(() => import("./pages/Ratings"));
 const Reviews   = lazy(() => import("./pages/Reviews"));
 const ErrorPage = lazy(() => import("./pages/ErrorPage"));
 
@@ -44,7 +43,7 @@ export default function App() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/schedule"  element={<Schedule />}  />
           <Route path="/reviews"   element={<Reviews />}   />
-          <Route path="/rating"   element={<Ratings />}   />
+          
           {/* ── Halaman Error (Pertemuan 6) ── */}
           <Route path="/error/400" element={
             <ErrorPage
