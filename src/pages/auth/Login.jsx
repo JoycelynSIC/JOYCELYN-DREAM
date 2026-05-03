@@ -61,9 +61,9 @@ export default function Login() {
   };
 
   return (
-    <div>
-      <h2 className="text-xl font-black text-gray-700 tracking-tight">Selamat Datang</h2>
-      <p className="text-gray-400 text-xs mt-1 mb-6">Masukkan kredensial admin Na_store.id</p>
+    <div className="animate-fadeup">
+      <h2 className="text-2xl font-black text-gray-700 tracking-tight mb-1">Masuk</h2>
+      <p className="text-gray-400 text-xs mb-6">Masukkan kredensial admin Na_store.id</p>
 
       {/* --- BOX ERROR (CUSTOM UI) --- */}
       {error && (

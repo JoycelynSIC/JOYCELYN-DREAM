@@ -32,9 +32,9 @@ export default function Register() {
   }
 
   return (
-    <div>
-      <h2 className="text-xl font-black text-gray-700 tracking-tight">Buat Akun</h2>
-      <p className="text-gray-400 text-xs mt-1 mb-6">Daftarkan akun admin baru</p>
+    <div className="animate-fadeup">
+      <h2 className="text-2xl font-black text-gray-700 tracking-tight mb-1">Buat Akun</h2>
+      <p className="text-gray-400 text-xs mb-6">Daftarkan akun admin baru</p>
 
       <form onSubmit={handleRegister} className="space-y-4">
         {/* Nama */}

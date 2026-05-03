@@ -33,7 +33,7 @@ export default function Forgot() {
   }
 
   return (
-    <div>
+    <div className="animate-fadeup">
       {/* Icon */}
       <div className="w-12 h-12 bg-accent/20 rounded-2xl flex items-center justify-center mb-4">
         <FaLock className="text-accent text-lg" />
@@ -59,7 +59,7 @@ export default function Forgot() {
         </div>
 
         <button type="submit"
-          className="w-full bg-accent text-white py-3 rounded-xl font-bold text-sm hover:bg-[#ff6db3] transition-all active:scale-95 flex items-center justify-center gap-2">
+          className="w-full bg-primary text-on-primary py-3 rounded-xl font-bold text-sm hover:bg-primary-hover transition-all active:scale-95 flex items-center justify-center gap-2">
           <FaPaperPlane className="text-xs" /> Kirim Link Reset
         </button>
       </form>
