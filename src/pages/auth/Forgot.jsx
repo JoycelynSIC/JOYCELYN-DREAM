@@ -1,75 +1,84 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  FaEnvelope, FaLock, FaPaperPlane, FaCheckCircle, FaArrowLeft
-} from 'react-icons/fa';
+import { FaPaperPlane, FaCheckCircle, FaArrowLeft } from 'react-icons/fa';
+import logoNastore from "../../assets/gambarproduk/logonastore.png";
 
 export default function Forgot() {
   const [email, setEmail] = useState('');
-  const [sent, setSent]   = useState(false);
+  const [sent, setSent] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (email) setSent(true);
   };
 
-  if (sent) {
-    return (
-      <div className="text-center py-4">
-        <div className="w-14 h-14 bg-primary rounded-3xl flex items-center justify-center mx-auto mb-4">
-          <FaCheckCircle className="text-on-primary text-2xl" />
-        </div>
-        <h2 className="text-lg font-black text-gray-700 tracking-tight">Email Terkirim!</h2>
-        <p className="text-gray-400 text-xs mt-2 mb-6 leading-relaxed">
-          Cek inbox kamu. Link reset password sudah dikirim ke{' '}
-          <span className="font-semibold text-gray-600">{email}</span>
-        </p>
-        <Link to="/login"
-          className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:text-on-primary transition-colors">
-          <FaArrowLeft className="text-[10px]" /> Kembali ke halaman masuk
-        </Link>
-      </div>
-    );
-  }
-
   return (
-    <div className="animate-fadeup">
-      {/* Icon */}
-      <div className="w-12 h-12 bg-accent/20 rounded-2xl flex items-center justify-center mb-4">
-        <FaLock className="text-accent text-lg" />
-      </div>
+    /* Container Utama: Membuat semua konten berada di tengah (Center) */
+    <div className="min-h-screen w-full flex items-center justify-center bg-white p-6 font-poppins">
+      
+      <div className="w-full max-w-[400px] flex flex-col items-center animate-fadeup">
+        
+        {/* LOGO */}
+        <img src={logoNastore} alt="Logo" className="w-20 mb-4 object-contain" />
 
-      <h2 className="text-xl font-black text-gray-700 tracking-tight">Lupa Password?</h2>
-      <p className="text-gray-400 text-xs mt-1 mb-6 leading-relaxed">
-        Masukkan email kamu dan kami akan kirimkan link untuk reset password.
-      </p>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1">
-          <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-1">
-            <FaEnvelope className="text-secondary" /> Email
-          </label>
-          <div className="relative">
-            <FaEnvelope className="absolute left-3.5 top-3.5 text-gray-300 text-xs" />
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full bg-soft rounded-xl pl-9 pr-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-accent/50 transition-all placeholder:text-gray-300 text-gray-600"
-              placeholder="admin@nastore.com"
-            />
+        {/* LOGIC TAMPILAN: JIKA SUDAH TERKIRIM VS FORM INPUT */}
+        {sent ? (
+          /* --- TAMPILAN SUKSES --- */
+          <div className="flex flex-col items-center text-center w-full animate-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6">
+              <FaCheckCircle className="text-green-500 text-4xl" />
+            </div>
+            <h2 className="text-[#1A1D1F] text-2xl font-bold">Email Terkirim!</h2>
+            <p className="text-gray-400 text-sm mt-3 mb-10 leading-relaxed">
+              Cek inbox kamu. Link reset password sudah dikirim ke: <br />
+              <span className="font-bold text-[#9E4BDC]">{email}</span>
+            </p>
+            <Link to="/login" className="w-full bg-[#9E4BDC] text-white py-4 rounded-2xl font-bold text-sm hover:bg-[#8e3ec7] transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2">
+              <FaArrowLeft className="text-[10px]" /> Kembali ke Login
+            </Link>
           </div>
-        </div>
+        ) : (
+          /* --- TAMPILAN FORM --- */
+          <>
+            <h2 className="text-[#9E4BDC] text-[28px] font-bold mb-2 text-center">Forgot Password</h2>
+            <p className="text-gray-400 text-[13px] mb-10 text-center leading-relaxed">
+              Masukkan email kamu untuk menerima <br /> link pemulihan kata sandi.
+            </p>
 
-        <button type="submit"
-          className="w-full bg-primary text-on-primary py-3 rounded-xl font-bold text-sm hover:bg-primary-hover transition-all active:scale-95 flex items-center justify-center gap-2">
-          <FaPaperPlane className="text-xs" /> Kirim Link Reset
-        </button>
-      </form>
+            <form onSubmit={handleSubmit} className="w-full space-y-5" noValidate>
+              {/* Email Input - BG Abu-abu #F0F2F5 */}
+              <div className="space-y-1">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  required
+                  className="w-full px-6 py-4 bg-[#F0F2F5] border-none rounded-2xl text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#9E4BDC]/30 transition-all text-sm shadow-sm"
+                />
+              </div>
 
-      <p className="mt-6 text-center text-xs text-gray-400">
-        Ingat password kamu?{' '}
-        <Link to="/login" className="font-bold text-primary hover:text-on-primary transition-colors">
-          Masuk
-        </Link>
-      </p>
+              {/* Tombol Kirim */}
+              <button
+                type="submit"
+                className="w-full bg-[#9E4BDC] hover:bg-[#8e3ec7] text-white py-4 rounded-2xl font-bold text-sm transition-all shadow-lg shadow-purple-500/20 active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
+              >
+                <FaPaperPlane className="text-[10px]" /> Send Recovery Link
+              </button>
+
+              {/* Link Kembali */}
+              <div className="pt-6 text-center">
+                <p className="text-[13px] text-gray-400">
+                  Remember your password?{' '}
+                  <Link to="/login" className="font-bold text-[#9E4BDC] hover:underline transition-colors">
+                    Login
+                  </Link>
+                </p>
+              </div>
+            </form>
+          </>
+        )}
+      </div>
     </div>
   );
 }

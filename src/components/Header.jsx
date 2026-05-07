@@ -1,49 +1,40 @@
-import { FaBell } from 'react-icons/fa';
+import { FaBell, FaSearch } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';
-import logoNastore from '../assets/gambarproduk/logonastore.png';
-
-const pageTitles = {
-  '/':           'Dashboard',
-  '/analytics':  'Analytics',
-  '/schedule':   'Jadwal',
-  '/inventory':  'Persediaan',
-  '/customers':  'Pelanggan',
-  '/orders':     'Pesanan',
-  '/reviews':    'Ulasan',
-  '/error/400':  'Error 400',
-  '/error/401':  'Error 401',
-  '/error/403':  'Error 403',
-};
 
 export default function Header() {
   const { pathname } = useLocation();
-  const title = pageTitles[pathname] ?? 'Na_store.id';
-
-  // Ambil nama dari localStorage jika sudah login via API
-  const storedName = localStorage.getItem('name');
-  const storedUsername = localStorage.getItem('username');
-  const displayName = storedName || 'Joycelyn Dhealiva';
-  const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const displayName = "Asril ibrahim"; // Sesuai mockup
+  const email = "asril@rocketmail.com"; // Sesuai mockup
 
   return (
-    <header className="px-6 py-4 flex justify-between items-center bg-soft border-b border-secondary">
-      <h1 className="text-lg font-black text-gray-700 tracking-tight">{title}</h1>
+    <header className="px-10 py-5 flex justify-between items-center bg-white">
+      <div className="flex items-center gap-10">
+        <h1 className="text-[22px] font-bold text-[#22285E]">Dashboard</h1>
+        
+        <div className="relative hidden lg:block">
+          <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A6ABC8] text-sm" />
+          <input 
+            type="text" 
+            placeholder="Search"
+            className="pl-10 pr-4 py-2 bg-white border border-[#E0E4EC] rounded-full text-sm w-[350px] focus:outline-none"
+          />
+        </div>
+      </div>
 
-      <div className="flex items-center gap-3">
-        <button className="relative w-9 h-9 bg-white border border-secondary rounded-2xl flex items-center justify-center hover:border-primary transition-colors">
-          <FaBell className="text-gray-400 text-sm" />
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent rounded-full text-[9px] font-black text-white flex items-center justify-center">5</span>
+      <div className="flex items-center gap-6">
+        <button className="relative p-2 text-[#22285E]">
+          <FaBell className="text-xl" />
+          <span className="absolute top-1.5 right-2 w-2 h-2 bg-[#9E4BDC] rounded-full border-2 border-white"></span>
         </button>
 
-        <div className="flex items-center gap-2.5 bg-white border border-secondary rounded-2xl px-3 py-2 hover:border-primary transition-colors cursor-pointer">
-          <img
-            src={logoNastore}
-            alt="Na_store.id"
-            className="w-7 h-7 rounded-xl object-cover shrink-0"
-          />
-          <div>
-            <p className="text-xs font-bold text-gray-700 leading-tight">{displayName}</p>
-            <p className="text-[10px] text-gray-400">{storedUsername || 'Admin'}</p>
+        <div className="flex items-center gap-3">
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-bold text-[#22285E] leading-tight">{displayName}</p>
+            <p className="text-[10px] text-[#7B7E9E]">{email}</p>
+          </div>
+          {/* Avatar menggunakan initial AI sesuai image_eea039.png */}
+          <div className="w-10 h-10 rounded-full bg-[#9E4BDC] flex items-center justify-center text-white text-xs font-bold border-2 border-[#F4F7FE]">
+            AI
           </div>
         </div>
       </div>

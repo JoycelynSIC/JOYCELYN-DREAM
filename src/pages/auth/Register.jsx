@@ -1,96 +1,146 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import {
-  FaUser, FaEnvelope, FaLock, FaUserPlus, FaCheckCircle
-} from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaSpinner, FaCheckCircle } from 'react-icons/fa';
+// Pastikan path logo sudah benar sesuai struktur folder src/assets/gambarproduk/
+import logoNastore from "../../assets/gambarproduk/logonastore.png"; 
 
 export default function Register() {
-  const [name, setName]         = useState('');
-  const [email, setEmail]       = useState('');
-  const [password, setPassword] = useState('');
-  const [done, setDone]         = useState(false);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [dataForm, setDataForm] = useState({
+    firstName: '',
+    lastName: '',
+    password: '',
+    confirmPassword: '',
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setDataForm({ ...dataForm, [name]: value });
+  };
 
   const handleRegister = (e) => {
     e.preventDefault();
-    if (name && email && password.length >= 6) setDone(true);
+    setLoading(true);
+    
+    // Simulasi proses pendaftaran
+    setTimeout(() => {
+      setLoading(false);
+      setDone(true);
+    }, 1500);
   };
 
-  if (done) {
-    return (
-      <div className="text-center py-4">
-        <div className="w-14 h-14 bg-primary rounded-3xl flex items-center justify-center mx-auto mb-4">
-          <FaCheckCircle className="text-on-primary text-2xl" />
-        </div>
-        <h2 className="text-lg font-black text-gray-700">Akun Dibuat!</h2>
-        <p className="text-gray-400 text-xs mt-2 mb-6">Selamat datang, <span className="font-bold text-gray-600">{name}</span>!</p>
-        <Link to="/login"
-          className="inline-flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-primary-hover transition-all">
-          Masuk Sekarang
-        </Link>
-      </div>
-    );
-  }
-
   return (
-    <div className="animate-fadeup">
-      <h2 className="text-2xl font-black text-gray-700 tracking-tight mb-1">Buat Akun</h2>
-      <p className="text-gray-400 text-xs mb-6">Daftarkan akun admin baru</p>
-
-      <form onSubmit={handleRegister} className="space-y-4">
-        {/* Nama */}
-        <div className="space-y-1">
-          <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-1">
-            <FaUser className="text-secondary" /> Nama Lengkap
-          </label>
-          <div className="relative">
-            <FaUser className="absolute left-3.5 top-3.5 text-gray-300 text-xs" />
-            <input type="text" value={name} onChange={e => setName(e.target.value)}
-              className="w-full bg-soft rounded-xl pl-9 pr-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-primary transition-all placeholder:text-gray-300 text-gray-600"
-              placeholder="John Doe"
-            />
+    /* 1. Container Utama: Menjamin posisi di tengah layar (Vertikal & Horizontal) */
+    <div className="min-h-screen w-full flex items-center justify-center bg-white p-6 font-poppins">
+      
+      <div className="w-full max-w-[400px] flex flex-col items-center animate-fadeup">
+        
+        {/* UI Sukses Registrasi */}
+        {done ? (
+          <div className="flex flex-col items-center text-center w-full animate-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6">
+              <FaCheckCircle className="text-green-500 text-4xl" />
+            </div>
+            <h2 className="text-[#1A1D1F] text-2xl font-bold">Akun Berhasil Dibuat!</h2>
+            <p className="text-gray-400 text-sm mt-2 mb-10 leading-relaxed">
+              Silahkan masuk untuk mulai mengelola <br/> toko Na_store.id kamu.
+            </p>
+            <Link to="/login" className="w-full bg-[#9E4BDC] text-white py-4 rounded-2xl font-bold text-sm hover:bg-[#8e3ec7] transition-all shadow-lg shadow-purple-500/20 text-center">
+              Masuk Sekarang
+            </Link>
           </div>
-        </div>
+        ) : (
+          /* UI Form Registrasi */
+          <>
+            {/* Logo */}
+            <img src={logoNastore} alt="Logo" className="w-20 mb-4 object-contain" />
+            
+            {/* Judul Sign Up */}
+            <h2 className="text-[#9E4BDC] text-[28px] font-bold mb-10">Sign Up</h2>
 
-        {/* Email */}
-        <div className="space-y-1">
-          <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-1">
-            <FaEnvelope className="text-secondary" /> Email
-          </label>
-          <div className="relative">
-            <FaEnvelope className="absolute left-3.5 top-3.5 text-gray-300 text-xs" />
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full bg-soft rounded-xl pl-9 pr-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-primary transition-all placeholder:text-gray-300 text-gray-600"
-              placeholder="admin@nastore.com"
-            />
-          </div>
-        </div>
+            <form onSubmit={handleRegister} className="w-full space-y-4" noValidate>
+              {/* First Name - BG Abu-abu #F0F2F5 */}
+              <input
+                type="text"
+                name="firstName"
+                placeholder="First name"
+                value={dataForm.firstName}
+                onChange={handleChange}
+                className="w-full px-6 py-4 bg-[#F0F2F5] border-none rounded-2xl text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#9E4BDC]/30 transition-all text-sm shadow-sm"
+              />
 
-        {/* Password */}
-        <div className="space-y-1">
-          <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-1">
-            <FaLock className="text-secondary" /> Password
-          </label>
-          <div className="relative">
-            <FaLock className="absolute left-3.5 top-3.5 text-gray-300 text-xs" />
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              className="w-full bg-soft rounded-xl pl-9 pr-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-primary transition-all placeholder:text-gray-300 text-gray-600"
-              placeholder="Min. 6 karakter"
-            />
-          </div>
-        </div>
+              {/* Last Name */}
+              <input
+                type="text"
+                name="lastName"
+                placeholder="Last Name"
+                value={dataForm.lastName}
+                onChange={handleChange}
+                className="w-full px-6 py-4 bg-[#F0F2F5] border-none rounded-2xl text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#9E4BDC]/30 transition-all text-sm shadow-sm"
+              />
 
-        <button type="submit"
-          className="w-full bg-primary text-on-primary py-3 rounded-xl font-bold text-sm hover:bg-primary-hover transition-all active:scale-95 flex items-center justify-center gap-2">
-          <FaUserPlus className="text-xs" /> Daftar Sekarang
-        </button>
-      </form>
+              {/* Password */}
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                value={dataForm.password}
+                onChange={handleChange}
+                className="w-full px-6 py-4 bg-[#F0F2F5] border-none rounded-2xl text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#9E4BDC]/30 transition-all text-sm shadow-sm"
+              />
 
-      <p className="mt-6 text-center text-xs text-gray-400">
-        Sudah punya akun?{' '}
-        <Link to="/login" className="font-bold text-primary hover:text-on-primary transition-colors">
-          Masuk
-        </Link>
-      </p>
+              {/* Confirm Password */}
+              <input
+                type="password"
+                name="confirmPassword"
+                placeholder="Confirm Password"
+                value={dataForm.confirmPassword}
+                onChange={handleChange}
+                className="w-full px-6 py-4 bg-[#F0F2F5] border-none rounded-2xl text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#9E4BDC]/30 transition-all text-sm shadow-sm"
+              />
+
+              {/* Keep Logged In Checkbox */}
+              <div className="flex items-center text-[12px] px-1 font-medium text-gray-400">
+                <label className="flex items-center cursor-pointer group">
+                  <input type="checkbox" className="mr-2 accent-[#9E4BDC] w-4 h-4 rounded border-none bg-[#F0F2F5]" />
+                  Keep me logged in
+                </label>
+              </div>
+
+              {/* Button Sign Up */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#9E4BDC] hover:bg-[#8e3ec7] text-white py-4 rounded-2xl font-bold text-sm transition-all shadow-lg shadow-purple-500/20 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 mt-2"
+              >
+                {loading ? <FaSpinner className="animate-spin" /> : "Sign Up"}
+              </button>
+
+              {/* Social Register */}
+              <div className="flex justify-center gap-6 pt-6">
+                <button type="button" className="flex items-center gap-2 text-[11px] text-gray-400 hover:text-gray-600 transition-colors font-medium">
+                  <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" className="w-5 h-5" alt="FB" />
+                  Sign up with facebook
+                </button>
+                <button type="button" className="flex items-center gap-2 text-[11px] text-gray-400 hover:text-gray-600 transition-colors font-medium">
+                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
+                  Sign up with Google
+                </button>
+              </div>
+
+              {/* Footer Link */}
+              <p className="text-center text-[12px] text-gray-400 pt-6">
+                Already have an account?{' '}
+                <Link to="/login" className="font-bold text-[#9E4BDC] hover:underline transition-colors">
+                  Login
+                </Link>
+              </p>
+            </form>
+          </>
+        )}
+      </div>
     </div>
   );
 }

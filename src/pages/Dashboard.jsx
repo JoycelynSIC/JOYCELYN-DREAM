@@ -1,18 +1,16 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import PageHeader from '../components/PageHeader';
-import inventoryData from '../data/inventory.json';
-import scheduleData from '../data/schedule.json';
-import customerData from '../data/customer.json';
-import ordersData from '../data/orders.json';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
+  ResponsiveContainer, Cell 
 } from 'recharts';
-import {
-  FaBell, FaBoxOpen, FaUsers, FaExclamationTriangle, FaStar,
-  FaTrophy, FaShoppingBag, FaCheckCircle, FaTruck, FaSpinner, FaTimesCircle
+import { 
+  FaBell, FaUsers, FaStar, FaExclamationTriangle, 
+  FaTrophy, FaBoxOpen, FaShoppingBag, FaCheckCircle, 
+  FaSpinner, FaTruck, FaTimesCircle 
 } from 'react-icons/fa';
 
+// ── 1. DATA TOOLS ──
 const chartDataMap = {
   Harian: [
     { hari: 'Sen', nilai: 20, omzet: 1400000 }, { hari: 'Sel', nilai: 35, omzet: 2450000 },
@@ -25,116 +23,121 @@ const chartDataMap = {
     { hari: 'Mg 3', nilai: 63, omzet: 4410000 }, { hari: 'Mg 4', nilai: 88, omzet: 6160000 },
   ],
   Bulanan: [
-    { hari: 'Jan', nilai: 70,  omzet: 4900000  }, { hari: 'Feb', nilai: 52,  omzet: 3640000  },
-    { hari: 'Mar', nilai: 91,  omzet: 6370000  }, { hari: 'Apr', nilai: 44,  omzet: 3080000  },
-    { hari: 'Mei', nilai: 97,  omzet: 6790000  }, { hari: 'Jun', nilai: 63,  omzet: 4410000  },
-    { hari: 'Jul', nilai: 85,  omzet: 5950000  }, { hari: 'Agu', nilai: 74,  omzet: 5180000  },
-    { hari: 'Sep', nilai: 60,  omzet: 4200000  }, { hari: 'Okt', nilai: 88,  omzet: 6160000  },
-    { hari: 'Nov', nilai: 95,  omzet: 6650000  }, { hari: 'Des', nilai: 102, omzet: 7140000  },
+    { hari: 'Jan', nilai: 70, omzet: 4900000 }, { hari: 'Feb', nilai: 52, omzet: 3640000 },
+    { hari: 'Mar', nilai: 91, omzet: 6370000 }, { hari: 'Apr', nilai: 44, omzet: 3080000 },
+    { hari: 'Mei', nilai: 97, omzet: 6790000 }, { hari: 'Jun', nilai: 63, omzet: 4410000 },
+    { hari: 'Jul', nilai: 85, omzet: 5950000 }, { hari: 'Agu', nilai: 74, omzet: 5180000 },
+    { hari: 'Sep', nilai: 60, omzet: 4200000 }, { hari: 'Okt', nilai: 88, omzet: 6160000 },
+    { hari: 'Nov', nilai: 95, omzet: 6650000 }, { hari: 'Des', nilai: 102, omzet: 7140000 },
   ],
 };
 
 const statusConfig = {
-  'Selesai': { style: 'bg-primary text-on-primary', icon: FaCheckCircle },
-  'Proses':  { style: 'bg-soft text-gray-500',      icon: FaSpinner     },
-  'Dikirim': { style: 'bg-secondary text-gray-600', icon: FaTruck       },
-  'Batal':   { style: 'bg-accent/20 text-on-primary', icon: FaTimesCircle },
+  'Selesai': { style: 'bg-status-success/10 text-status-success border-status-success/20', icon: FaCheckCircle },
+  'Proses':  { style: 'bg-surface-neutral text-text-light border-surface-border', icon: FaSpinner },
+  'Dikirim': { style: 'bg-secondary/20 text-text-dark border-secondary/30', icon: FaTruck },
+  'Batal':   { style: 'bg-status-warning/10 text-status-warning border-status-warning/20', icon: FaTimesCircle },
 };
 
+// ── 2. CUSTOM COMPONENTS ──
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload?.length) {
     const omzet = payload[0]?.payload?.omzet;
     return (
-      <div className="bg-gray-800 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl border border-gray-700">
-        <p className="text-gray-400 text-[10px] uppercase tracking-widest mb-1">{label}</p>
-        <p className="text-white text-sm">{payload[0].value} transaksi</p>
-        {omzet && <p className="text-primary text-[11px] mt-0.5">Rp {omzet.toLocaleString('id')}</p>}
+      <div className="bg-surface-white px-4 py-3 rounded-xl shadow-xl border border-surface-border font-poppins">
+        <p className="text-text-light text-[10px] uppercase font-bold tracking-widest mb-1">{label}</p>
+        <p className="text-text-dark text-sm font-bold">{payload[0].value} Transaksi</p>
+        {omzet && <p className="text-primary text-[11px] mt-1 font-semibold">Rp {omzet.toLocaleString('id')}</p>}
       </div>
     );
   }
   return null;
 };
 
+// ── 3. MAIN DASHBOARD ──
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('Bulanan');
 
-  const lowStock    = inventoryData.filter(i => i.stock > 0 && i.stock <= 8).length;
-  const outOfStock  = inventoryData.filter(i => i.stock === 0).length;
-  const totalPoin   = customerData.reduce((a, c) => a + c.poin, 0);
-  const topCustomer = [...customerData].sort((a, b) => b.poin - a.poin)[0];
-  const recentOrders = ordersData.slice(0, 5);
+  // Dummy Data (Ganti dengan data asli dari database/API)
+  const lowStock = 5;
+  const outOfStock = 2;
+  const totalPoin = 1250000;
+  const topCustomer = { name: "Andi Wijaya", poin: 8500, transaksi: 42, type: "Platinum Member" };
+  const recentOrders = [
+    { id: 1, customer: "Budi Santoso", produk: "Paket Hemat A", total: 150000, poin: 15, status: "Selesai" },
+    { id: 2, customer: "Siska Putri", produk: "Layanan Premium", total: 450000, poin: 45, status: "Proses" },
+    { id: 3, customer: "Rian Aldi", produk: "Member Bulanan", total: 200000, poin: 20, status: "Dikirim" },
+  ];
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-500">
-
-      <PageHeader title="Dashboard" breadcrumb={['Dashboard']} />
-
-      {/* ── Stat Cards ── */}
+    <div className="space-y-6 animate-in fade-in duration-500 font-poppins">
+      
+      {/* ── ROW 1: STAT CARDS ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Notifikasi */}
-        <div className="bg-white border border-secondary rounded-3xl p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-11 h-11 bg-secondary rounded-2xl flex items-center justify-center shrink-0">
-            <FaBell className="text-on-primary text-base" />
+        <div className="bg-surface-white border border-surface-border rounded-3xl p-5 flex items-center gap-4 hover:shadow-lg transition-all">
+          <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center shrink-0">
+            <FaBell className="text-surface-white text-lg" />
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Notifikasi</p>
-            <p className="text-2xl font-black text-gray-700">5</p>
-            <p className="text-[10px] text-gray-400">Belum dibaca</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Notifikasi</p>
+            <p className="text-2xl font-bold text-text-dark leading-tight">5</p>
+            <p className="text-[10px] text-text-light">Belum dibaca</p>
           </div>
         </div>
 
         {/* Stok Kritis */}
-        <div className="bg-accent/10 border border-accent/20 rounded-3xl p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-11 h-11 bg-accent/20 rounded-2xl flex items-center justify-center shrink-0">
-            <FaExclamationTriangle className="text-accent text-base" />
+        <div className="bg-status-warning/5 border border-status-warning/10 rounded-3xl p-5 flex items-center gap-4 hover:shadow-lg transition-all">
+          <div className="w-12 h-12 bg-status-warning rounded-2xl flex items-center justify-center shrink-0">
+            <FaExclamationTriangle className="text-surface-white text-lg" />
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-on-primary">Stok Kritis</p>
-            <p className="text-2xl font-black text-on-primary">{lowStock + outOfStock}</p>
-            <p className="text-[10px] text-on-primary/70">{outOfStock} habis · {lowStock} menipis</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-status-warning">Stok Kritis</p>
+            <p className="text-2xl font-bold text-text-dark leading-tight">{lowStock + outOfStock}</p>
+            <p className="text-[10px] text-text-light">{outOfStock} Habis · {lowStock} Menipis</p>
           </div>
         </div>
 
         {/* Pelanggan */}
-        <div className="bg-primary border border-primary rounded-3xl p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-11 h-11 bg-white/40 rounded-2xl flex items-center justify-center shrink-0">
-            <FaUsers className="text-on-primary text-base" />
+        <div className="bg-primary rounded-3xl p-5 flex items-center gap-4 shadow-lg shadow-primary/20 group cursor-pointer transition-all">
+          <div className="w-12 h-12 bg-surface-white/20 rounded-2xl flex items-center justify-center shrink-0 border border-surface-white/30 group-hover:scale-110 transition-transform">
+            <FaUsers className="text-surface-white text-lg" />
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-on-primary/70">Pelanggan</p>
-            <p className="text-2xl font-black text-on-primary">{customerData.length}</p>
-            <p className="text-[10px] text-on-primary/70">Total terdaftar</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-surface-white/70">Pelanggan</p>
+            <p className="text-2xl font-bold text-surface-white leading-tight">1.2k</p>
+            <p className="text-[10px] text-surface-white/60">Total terdaftar</p>
           </div>
         </div>
 
         {/* Total Poin */}
-        <div className="bg-white border border-secondary rounded-3xl p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-11 h-11 bg-soft rounded-2xl flex items-center justify-center shrink-0">
-            <FaStar className="text-yellow-400 text-base" />
+        <div className="bg-surface-white border border-surface-border rounded-3xl p-5 flex items-center gap-4 hover:shadow-lg transition-all group">
+          <div className="w-12 h-12 bg-surface-style rounded-2xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform">
+            <FaStar className="text-[#FFB800] text-lg" />
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Total Poin</p>
-            <p className="text-2xl font-black text-gray-700">{totalPoin.toLocaleString('id')}</p>
-            <p className="text-[10px] text-gray-400">Poin beredar</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Total Poin</p>
+            <p className="text-2xl font-bold text-text-dark leading-tight">{totalPoin.toLocaleString('id')}</p>
+            <p className="text-[10px] text-text-light">Poin beredar</p>
           </div>
         </div>
       </div>
 
-      {/* ── Row 2: Grafik + Jadwal ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
+      {/* ── ROW 2: CHART & SIDEBAR ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
         {/* Grafik Penjualan */}
-        <div className="lg:col-span-2 bg-white border border-secondary rounded-3xl p-6">
-          <div className="flex justify-between items-center mb-4">
+        <div className="lg:col-span-2 bg-surface-white border border-surface-border rounded-[32px] p-6 shadow-sm">
+          <div className="flex justify-between items-center mb-8">
             <div>
-              <h3 className="text-base font-black text-gray-700">Grafik Penjualan</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Jumlah transaksi Na_store.id</p>
+              <h3 className="text-title-m font-bold text-text-dark">Grafik Penjualan</h3>
+              <p className="text-body-xs text-text-light">Transaksi harian Na_store.id</p>
             </div>
-            <div className="flex gap-1 bg-soft p-1 rounded-xl">
+            <div className="flex gap-1 bg-surface-neutral p-1 rounded-xl">
               {['Harian', 'Mingguan', 'Bulanan'].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
-                    activeTab === tab ? 'bg-primary text-on-primary shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                  className={`px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                    activeTab === tab ? 'bg-primary text-surface-white shadow-md' : 'text-text-disable'
                   }`}>
                   {tab}
                 </button>
@@ -142,179 +145,95 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Summary */}
-          <div className="flex gap-6 mb-5 pb-4 border-b border-soft">
-            {[
-              { label: 'Total Transaksi', val: chartDataMap[activeTab].reduce((a, d) => a + d.nilai, 0), color: 'text-gray-700' },
-              { label: 'Est. Omzet', val: `Rp ${(chartDataMap[activeTab].reduce((a, d) => a + d.omzet, 0) / 1000000).toFixed(1)} Jt`, color: 'text-gray-700' },
-              { label: 'Tertinggi', val: `${Math.max(...chartDataMap[activeTab].map(d => d.nilai))} trx`, color: 'text-on-primary' },
-            ].map((s, i) => (
-              <div key={i}>
-                <p className="text-[10px] text-gray-400 font-medium">{s.label}</p>
-                <p className={`text-lg font-black ${s.color}`}>{s.val}</p>
-              </div>
-            ))}
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartDataMap[activeTab]} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={1} />
+                    <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.4} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-surface-neutral)" vertical={false} />
+                <XAxis dataKey="hari" tick={{fontSize: 11, fill: 'var(--color-text-disable)'}} axisLine={false} tickLine={false} dy={10} />
+                <YAxis tick={{fontSize: 10, fill: 'var(--color-text-disable)'}} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} cursor={{fill: 'var(--color-surface-style)'}} />
+                <Bar dataKey="nilai" fill="url(#barGrad)" radius={[8, 8, 2, 2]} barSize={activeTab === 'Bulanan' ? 20 : 35} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-
-          <ResponsiveContainer width="100%" height={210}>
-            <BarChart data={chartDataMap[activeTab]}
-              barSize={activeTab === 'Bulanan' ? 22 : activeTab === 'Mingguan' ? 48 : 32}
-              margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
-              <defs>
-                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#FF8DC7" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#FFB9B9" stopOpacity={0.7} />
-                </linearGradient>
-                <linearGradient id="barGradientTop" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#ff5fa8" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#FF8DC7" stopOpacity={0.8} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#FFF0F3" vertical={false} />
-              <XAxis dataKey="hari" tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 700 }} axisLine={false} tickLine={false} dy={6} />
-              <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={30} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: '#FFF5F5', radius: [6, 6, 0, 0] }} />
-              <Bar dataKey="nilai" radius={[8, 8, 3, 3]}>
-                {chartDataMap[activeTab].map((entry, i) => {
-                  const max = Math.max(...chartDataMap[activeTab].map(d => d.nilai));
-                  return <Cell key={i} fill={entry.nilai === max ? 'url(#barGradientTop)' : 'url(#barGradient)'} />;
-                })}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
         </div>
 
-        {/* Jadwal Hari Ini */}
-        <div className="bg-white border border-secondary rounded-3xl p-6 flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h3 className="text-base font-black text-gray-700">Jadwal Hari Ini</h3>
-              <p className="text-xs text-gray-400 mt-0.5">{scheduleData.length} kegiatan</p>
+        {/* Sidebar Kanan: Top Pelanggan */}
+        <div className="space-y-4">
+          <div className="bg-primary rounded-[32px] p-6 shadow-lg shadow-primary/20 relative overflow-hidden group">
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-surface-white/10 rounded-full" />
+            <div className="flex items-center gap-2 mb-4 relative z-10">
+              <FaTrophy className="text-[#FFB800] text-sm" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-white/70">Top Pelanggan</p>
             </div>
-            <Link to="/schedule" className="text-[11px] font-bold text-accent hover:text-on-primary transition-colors">
-              Lihat Semua →
-            </Link>
-          </div>
-          <div className="space-y-2 flex-1">
-            {scheduleData.map(item => (
-              <div key={item.id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-soft transition-colors">
-                <div className={`w-1.5 h-8 rounded-full shrink-0 ${item.color}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-gray-700 truncate">{item.task}</p>
-                  <p className="text-[10px] text-gray-400">{item.time}</p>
-                </div>
-                <span className="text-[10px] bg-soft text-gray-400 px-2 py-1 rounded-lg font-medium shrink-0">
-                  {item.kategori}
-                </span>
+            <div className="flex items-center gap-4 mb-5 relative z-10">
+              <div className="w-12 h-12 bg-surface-white/20 rounded-2xl flex items-center justify-center text-lg font-bold text-surface-white border border-surface-white/30 group-hover:scale-110 transition-transform">
+                {topCustomer.name.charAt(0)}
               </div>
-            ))}
+              <div>
+                <p className="text-body-m font-bold text-surface-white leading-none">{topCustomer.name}</p>
+                <p className="text-[11px] text-surface-white/60 mt-1">{topCustomer.type}</p>
+              </div>
+            </div>
+            <div className="flex justify-between items-end text-surface-white relative z-10">
+              <span className="text-sm font-bold flex items-center gap-1.5"><FaStar className="text-[#FFB800]" /> {topCustomer.poin.toLocaleString('id')}</span>
+              <span className="text-[10px] bg-surface-white/20 px-2 py-1 rounded-lg">{topCustomer.transaksi}x Order</span>
+            </div>
           </div>
+
+          <Link to="/inventory" className="flex items-center justify-between p-6 bg-surface-white border border-surface-border rounded-[32px] hover:border-status-warning transition-all group">
+            <div>
+              <p className="text-text-dark font-bold text-sm">Kelola Stok</p>
+              <p className="text-text-light text-[10px]">Cek barang menipis</p>
+            </div>
+            <div className="w-10 h-10 bg-status-warning/10 rounded-xl flex items-center justify-center text-status-warning group-hover:bg-status-warning group-hover:text-surface-white transition-all">
+              <FaBoxOpen />
+            </div>
+          </Link>
         </div>
       </div>
 
-      {/* ── Row 3: Pesanan Terbaru + Sidebar kanan ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        {/* Pesanan Terbaru */}
-        <div className="lg:col-span-2 bg-white border border-secondary rounded-3xl p-6">
-          <div className="flex justify-between items-center mb-5">
-            <div>
-              <h3 className="text-base font-black text-gray-700">Pesanan Terbaru</h3>
-              <p className="text-xs text-gray-400 mt-0.5">5 transaksi terakhir</p>
-            </div>
-            <Link to="/orders" className="text-[11px] font-bold text-accent hover:text-on-primary transition-colors">
-              Lihat Semua →
-            </Link>
-          </div>
-          <div className="space-y-1">
+      {/* ── ROW 3: PESANAN TERBARU ── */}
+      <div className="bg-surface-white border border-surface-border rounded-[32px] p-6 shadow-sm overflow-hidden">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-title-m font-bold text-text-dark">Pesanan Terbaru</h3>
+          <Link to="/orders" className="text-primary text-[11px] font-bold">Lihat Semua →</Link>
+        </div>
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="min-w-[600px] space-y-2">
             {recentOrders.map(order => {
               const sc = statusConfig[order.status];
               const StatusIcon = sc.icon;
               return (
-                <div key={order.id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-soft transition-colors">
-                  <div className="w-9 h-9 bg-secondary rounded-2xl overflow-hidden shrink-0">
-                    {order.gambar
-                      ? <img src={order.gambar} alt={order.produk} className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex items-center justify-center"><FaShoppingBag className="text-on-primary text-xs" /></div>
-                    }
+                <div key={order.id} className="grid grid-cols-5 items-center gap-4 p-4 rounded-2xl hover:bg-surface-style/50 transition-all border border-transparent hover:border-surface-border">
+                  <div className="col-span-2 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-surface-neutral rounded-xl flex items-center justify-center text-text-disable border border-surface-border">
+                      <FaShoppingBag size={14} />
+                    </div>
+                    <div>
+                      <p className="text-body-s font-bold text-text-dark">{order.customer}</p>
+                      <p className="text-[10px] text-text-light">{order.produk}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-gray-700 truncate">{order.customer}</p>
-                    <p className="text-[10px] text-gray-400 truncate">{order.produk}</p>
+                  <div className="text-body-s font-bold text-text-dark">Rp {order.total.toLocaleString('id')}</div>
+                  <div className="flex items-center gap-1 text-status-success font-bold text-[10px]">
+                    <FaStar size={8} /> +{order.poin} pts
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs font-bold text-gray-700">Rp {order.total.toLocaleString('id')}</p>
-                    <p className="text-[10px] text-accent font-semibold flex items-center justify-end gap-0.5">
-                      <FaStar className="text-yellow-400 text-[8px]" />+{order.poin} poin
-                    </p>
+                  <div className="flex justify-end">
+                    <span className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-wider border ${sc.style}`}>
+                      <StatusIcon size={10} /> {order.status}
+                    </span>
                   </div>
-                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0 flex items-center gap-1 ${sc.style}`}>
-                    <StatusIcon className="text-[9px]" />{order.status}
-                  </span>
                 </div>
               );
             })}
           </div>
-        </div>
-
-        {/* Kanan: Top Pelanggan + Stok Kritis */}
-        <div className="space-y-4">
-
-          {/* Top Pelanggan */}
-          <div className="bg-primary rounded-3xl p-6">
-            <div className="flex items-center gap-2 mb-3">
-              <FaTrophy className="text-yellow-400 text-sm" />
-              <p className="text-[10px] font-bold uppercase tracking-widest text-on-primary/70">Top Pelanggan</p>
-            </div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-white/50 rounded-2xl flex items-center justify-center text-sm font-black text-on-primary">
-                {topCustomer.name.charAt(0)}
-              </div>
-              <div>
-                <p className="text-sm font-black text-on-primary">{topCustomer.name}</p>
-                <p className="text-[10px] text-on-primary/70">{topCustomer.type}</p>
-              </div>
-            </div>
-            <div className="flex justify-between text-[11px] font-bold text-on-primary">
-              <span className="flex items-center gap-1"><FaStar className="text-yellow-400 text-[10px]" />{topCustomer.poin.toLocaleString('id')} poin</span>
-              <span>{topCustomer.transaksi}x transaksi</span>
-            </div>
-            <div className="mt-2 h-1.5 bg-white/30 rounded-full overflow-hidden">
-              <div className="h-full bg-white rounded-full" style={{ width: '80%' }} />
-            </div>
-          </div>
-
-          {/* Stok Kritis */}
-          <div className="bg-white border border-secondary rounded-3xl p-6">
-            <div className="flex items-center gap-2 mb-3">
-              <FaExclamationTriangle className="text-accent text-sm" />
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Stok Kritis</p>
-            </div>
-            <div className="space-y-2.5">
-              {inventoryData.filter(i => i.stock <= 8).slice(0, 3).map(item => (
-                <div key={item.id} className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-8 h-8 bg-secondary rounded-xl overflow-hidden shrink-0">
-                    {item.gambar
-                      ? <img src={item.gambar} alt={item.name} className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex items-center justify-center"><FaBoxOpen className="text-on-primary text-[10px]" /></div>
-                    }
-                  </div>
-                    <p className="text-xs font-semibold text-gray-600 truncate">{item.name}</p>
-                  </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                    item.stock === 0 ? 'bg-accent/20 text-on-primary' : 'bg-soft text-gray-500'
-                  }`}>
-                    {item.stock === 0 ? 'Habis' : `${item.stock} pcs`}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <Link to="/inventory" className="flex items-center justify-center gap-1 mt-4 text-[11px] font-bold text-accent hover:text-on-primary transition-colors">
-              <FaBoxOpen className="text-[10px]" /> Kelola Stok
-            </Link>
-          </div>
-
         </div>
       </div>
 
