@@ -5,25 +5,18 @@ import Header from "../components/Header";
 export default function AdminLayout() {
   return (
     <div className="flex h-screen bg-surface-neutral overflow-hidden font-poppins">
-      
-      {/* FIX: Tambahkan flex-none agar Sidebar TIDAK PENYET */}
       <div className="flex-none">
         <Sidebar />
       </div>
 
-      {/* Area Konten Utama */}
-      {/* min-w-0 penting supaya konten di dalam (tabel/grafik) tidak mendorong sidebar */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        
         <Header />
-
-        <main className="flex-1 overflow-y-auto p-8 scrollbar-hide">
+        <main className="flex-1 overflow-y-auto p-7 scrollbar-hide">
           <div className="max-w-[1600px] mx-auto">
             <Outlet />
           </div>
         </main>
       </div>
-      
     </div>
   );
 }

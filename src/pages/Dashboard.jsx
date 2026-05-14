@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, Cell 
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer
 } from 'recharts';
-import { 
-  FaBell, FaUsers, FaStar, FaExclamationTriangle, 
-  FaTrophy, FaBoxOpen, FaShoppingBag, FaCheckCircle, 
-  FaSpinner, FaTruck, FaTimesCircle 
+import {
+  FaBell, FaUsers, FaStar, FaExclamationTriangle,
+  FaTrophy, FaBoxOpen, FaShoppingBag, FaCheckCircle,
+  FaSpinner, FaTruck, FaTimesCircle
 } from 'react-icons/fa';
+import PageHeader from '../components/PageHeader';
 
-// ── 1. DATA TOOLS ──
+// ── DATA ──
 const chartDataMap = {
   Harian: [
     { hari: 'Sen', nilai: 20, omzet: 1400000 }, { hari: 'Sel', nilai: 35, omzet: 2450000 },
@@ -33,19 +34,19 @@ const chartDataMap = {
 };
 
 const statusConfig = {
-  'Selesai': { style: 'bg-status-success/10 text-status-success border-status-success/20', icon: FaCheckCircle },
-  'Proses':  { style: 'bg-surface-neutral text-text-light border-surface-border', icon: FaSpinner },
-  'Dikirim': { style: 'bg-secondary/20 text-text-dark border-secondary/30', icon: FaTruck },
-  'Batal':   { style: 'bg-status-warning/10 text-status-warning border-status-warning/20', icon: FaTimesCircle },
+  'Selesai': { style: 'bg-status-success/10 text-status-success border border-status-success/20', icon: FaCheckCircle },
+  'Proses':  { style: 'bg-surface-neutral text-text-light border border-surface-border',          icon: FaSpinner    },
+  'Dikirim': { style: 'bg-secondary/20 text-text-dark border border-secondary/30',                icon: FaTruck      },
+  'Batal':   { style: 'bg-status-warning/10 text-status-warning border border-status-warning/20', icon: FaTimesCircle },
 };
 
-// ── 2. CUSTOM COMPONENTS ──
+// ── CUSTOM TOOLTIP ──
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload?.length) {
     const omzet = payload[0]?.payload?.omzet;
     return (
-      <div className="bg-surface-white px-4 py-3 rounded-xl shadow-xl border border-surface-border font-poppins">
-        <p className="text-text-light text-[10px] uppercase font-bold tracking-widest mb-1">{label}</p>
+      <div className="bg-surface-white px-4 py-3 rounded-xl shadow-lg border border-surface-border font-poppins">
+        <p className="text-text-disable text-[10px] uppercase font-bold tracking-widest mb-1">{label}</p>
         <p className="text-text-dark text-sm font-bold">{payload[0].value} Transaksi</p>
         {omzet && <p className="text-primary text-[11px] mt-1 font-semibold">Rp {omzet.toLocaleString('id')}</p>}
       </div>
@@ -54,90 +55,94 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-// ── 3. MAIN DASHBOARD ──
+// ── MAIN ──
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('Bulanan');
 
-  // Dummy Data (Ganti dengan data asli dari database/API)
   const lowStock = 5;
   const outOfStock = 2;
   const totalPoin = 1250000;
   const topCustomer = { name: "Andi Wijaya", poin: 8500, transaksi: 42, type: "Platinum Member" };
   const recentOrders = [
-    { id: 1, customer: "Budi Santoso", produk: "Paket Hemat A", total: 150000, poin: 15, status: "Selesai" },
-    { id: 2, customer: "Siska Putri", produk: "Layanan Premium", total: 450000, poin: 45, status: "Proses" },
-    { id: 3, customer: "Rian Aldi", produk: "Member Bulanan", total: 200000, poin: 20, status: "Dikirim" },
+    { id: 1, customer: "Budi Santoso",  produk: "Paket Hemat A",    total: 150000, poin: 15, status: "Selesai" },
+    { id: 2, customer: "Siska Putri",   produk: "Layanan Premium",  total: 450000, poin: 45, status: "Proses"  },
+    { id: 3, customer: "Rian Aldi",     produk: "Member Bulanan",   total: 200000, poin: 20, status: "Dikirim" },
   ];
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 font-poppins">
-      
+
+      <PageHeader title="Dashboard" breadcrumb={['Dashboard']} />
+
       {/* ── ROW 1: STAT CARDS ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
         {/* Notifikasi */}
-        <div className="bg-surface-white border border-surface-border rounded-3xl p-5 flex items-center gap-4 hover:shadow-lg transition-all">
-          <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center shrink-0">
-            <FaBell className="text-surface-white text-lg" />
+        <div className="bg-surface-white border border-surface-border rounded-2xl p-5 flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-11 h-11 bg-secondary/20 rounded-xl flex items-center justify-center shrink-0">
+            <FaBell className="text-status-success text-base" />
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Notifikasi</p>
-            <p className="text-2xl font-bold text-text-dark leading-tight">5</p>
+            <p className="text-2xl font-black text-text-dark leading-tight">5</p>
             <p className="text-[10px] text-text-light">Belum dibaca</p>
           </div>
         </div>
 
         {/* Stok Kritis */}
-        <div className="bg-status-warning/5 border border-status-warning/10 rounded-3xl p-5 flex items-center gap-4 hover:shadow-lg transition-all">
-          <div className="w-12 h-12 bg-status-warning rounded-2xl flex items-center justify-center shrink-0">
-            <FaExclamationTriangle className="text-surface-white text-lg" />
+        <div className="bg-status-warning/5 border border-status-warning/20 rounded-2xl p-5 flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-11 h-11 bg-status-warning/15 rounded-xl flex items-center justify-center shrink-0">
+            <FaExclamationTriangle className="text-status-warning text-base" />
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-status-warning">Stok Kritis</p>
-            <p className="text-2xl font-bold text-text-dark leading-tight">{lowStock + outOfStock}</p>
+            <p className="text-2xl font-black text-text-dark leading-tight">{lowStock + outOfStock}</p>
             <p className="text-[10px] text-text-light">{outOfStock} Habis · {lowStock} Menipis</p>
           </div>
         </div>
 
         {/* Pelanggan */}
-        <div className="bg-primary rounded-3xl p-5 flex items-center gap-4 shadow-lg shadow-primary/20 group cursor-pointer transition-all">
-          <div className="w-12 h-12 bg-surface-white/20 rounded-2xl flex items-center justify-center shrink-0 border border-surface-white/30 group-hover:scale-110 transition-transform">
-            <FaUsers className="text-surface-white text-lg" />
+        <div className="bg-primary rounded-2xl p-5 flex items-center gap-4 shadow-md shadow-primary/20">
+          <div className="w-11 h-11 bg-surface-white/20 rounded-xl flex items-center justify-center shrink-0 border border-surface-white/30">
+            <FaUsers className="text-surface-white text-base" />
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-surface-white/70">Pelanggan</p>
-            <p className="text-2xl font-bold text-surface-white leading-tight">1.2k</p>
+            <p className="text-2xl font-black text-surface-white leading-tight">1.2k</p>
             <p className="text-[10px] text-surface-white/60">Total terdaftar</p>
           </div>
         </div>
 
         {/* Total Poin */}
-        <div className="bg-surface-white border border-surface-border rounded-3xl p-5 flex items-center gap-4 hover:shadow-lg transition-all group">
-          <div className="w-12 h-12 bg-surface-style rounded-2xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform">
-            <FaStar className="text-[#FFB800] text-lg" />
+        <div className="bg-surface-white border border-surface-border rounded-2xl p-5 flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-11 h-11 bg-surface-gray rounded-xl flex items-center justify-center shrink-0">
+            <FaStar className="text-yellow-400 text-base" />
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Total Poin</p>
-            <p className="text-2xl font-bold text-text-dark leading-tight">{totalPoin.toLocaleString('id')}</p>
+            <p className="text-2xl font-black text-text-dark leading-tight">{totalPoin.toLocaleString('id')}</p>
             <p className="text-[10px] text-text-light">Poin beredar</p>
           </div>
         </div>
       </div>
 
       {/* ── ROW 2: CHART & SIDEBAR ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
         {/* Grafik Penjualan */}
-        <div className="lg:col-span-2 bg-surface-white border border-surface-border rounded-[32px] p-6 shadow-sm">
-          <div className="flex justify-between items-center mb-8">
+        <div className="lg:col-span-2 bg-surface-white border border-surface-border rounded-2xl p-6">
+          <div className="flex justify-between items-center mb-6">
             <div>
-              <h3 className="text-title-m font-bold text-text-dark">Grafik Penjualan</h3>
-              <p className="text-body-xs text-text-light">Transaksi harian Na_store.id</p>
+              <h3 className="text-base font-bold text-text-dark">Grafik Penjualan</h3>
+              <p className="text-[11px] text-text-light mt-0.5">Transaksi harian Na_store.id</p>
             </div>
-            <div className="flex gap-1 bg-surface-neutral p-1 rounded-xl">
+            <div className="flex gap-1 bg-surface-neutral p-1 rounded-xl border border-surface-border">
               {['Harian', 'Mingguan', 'Bulanan'].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
-                    activeTab === tab ? 'bg-primary text-surface-white shadow-md' : 'text-text-disable'
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                    activeTab === tab
+                      ? 'bg-primary text-surface-white shadow-sm'
+                      : 'text-text-disable hover:text-text-light'
                   }`}>
                   {tab}
                 </button>
@@ -145,91 +150,102 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="h-[250px] w-full">
+          <div className="h-[240px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartDataMap[activeTab]} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={1} />
-                    <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.4} />
+                    <stop offset="0%" stopColor="#9E4BDC" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#9E4BDC" stopOpacity={0.3} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-surface-neutral)" vertical={false} />
-                <XAxis dataKey="hari" tick={{fontSize: 11, fill: 'var(--color-text-disable)'}} axisLine={false} tickLine={false} dy={10} />
-                <YAxis tick={{fontSize: 10, fill: 'var(--color-text-disable)'}} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} cursor={{fill: 'var(--color-surface-style)'}} />
-                <Bar dataKey="nilai" fill="url(#barGrad)" radius={[8, 8, 2, 2]} barSize={activeTab === 'Bulanan' ? 20 : 35} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#F4F4F5" vertical={false} />
+                <XAxis dataKey="hari" tick={{ fontSize: 11, fill: '#A1A1AA' }} axisLine={false} tickLine={false} dy={8} />
+                <YAxis tick={{ fontSize: 10, fill: '#A1A1AA' }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F4F4F5' }} />
+                <Bar dataKey="nilai" fill="url(#barGrad)" radius={[6, 6, 2, 2]} barSize={activeTab === 'Bulanan' ? 18 : 32} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Sidebar Kanan: Top Pelanggan */}
+        {/* Sidebar Kanan */}
         <div className="space-y-4">
-          <div className="bg-primary rounded-[32px] p-6 shadow-lg shadow-primary/20 relative overflow-hidden group">
-            <div className="absolute -right-4 -top-4 w-24 h-24 bg-surface-white/10 rounded-full" />
+          {/* Top Pelanggan */}
+          <div className="bg-primary rounded-2xl p-5 shadow-md shadow-primary/20 relative overflow-hidden">
+            <div className="absolute -right-6 -top-6 w-24 h-24 bg-surface-white/10 rounded-full" />
+            <div className="absolute -right-2 -bottom-4 w-16 h-16 bg-surface-white/5 rounded-full" />
             <div className="flex items-center gap-2 mb-4 relative z-10">
-              <FaTrophy className="text-[#FFB800] text-sm" />
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-white/70">Top Pelanggan</p>
+              <FaTrophy className="text-yellow-300 text-sm" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-surface-white/70">Top Pelanggan</p>
             </div>
-            <div className="flex items-center gap-4 mb-5 relative z-10">
-              <div className="w-12 h-12 bg-surface-white/20 rounded-2xl flex items-center justify-center text-lg font-bold text-surface-white border border-surface-white/30 group-hover:scale-110 transition-transform">
+            <div className="flex items-center gap-3 mb-4 relative z-10">
+              <div className="w-11 h-11 bg-surface-white/20 rounded-xl flex items-center justify-center text-base font-black text-surface-white border border-surface-white/30">
                 {topCustomer.name.charAt(0)}
               </div>
               <div>
-                <p className="text-body-m font-bold text-surface-white leading-none">{topCustomer.name}</p>
-                <p className="text-[11px] text-surface-white/60 mt-1">{topCustomer.type}</p>
+                <p className="text-sm font-bold text-surface-white leading-none">{topCustomer.name}</p>
+                <p className="text-[11px] text-surface-white/60 mt-0.5">{topCustomer.type}</p>
               </div>
             </div>
-            <div className="flex justify-between items-end text-surface-white relative z-10">
-              <span className="text-sm font-bold flex items-center gap-1.5"><FaStar className="text-[#FFB800]" /> {topCustomer.poin.toLocaleString('id')}</span>
-              <span className="text-[10px] bg-surface-white/20 px-2 py-1 rounded-lg">{topCustomer.transaksi}x Order</span>
+            <div className="flex justify-between items-center text-surface-white relative z-10">
+              <span className="text-sm font-bold flex items-center gap-1.5">
+                <FaStar className="text-yellow-300 text-xs" /> {topCustomer.poin.toLocaleString('id')} poin
+              </span>
+              <span className="text-[10px] bg-surface-white/20 px-2.5 py-1 rounded-lg font-medium">
+                {topCustomer.transaksi}x Order
+              </span>
             </div>
           </div>
 
-          <Link to="/inventory" className="flex items-center justify-between p-6 bg-surface-white border border-surface-border rounded-[32px] hover:border-status-warning transition-all group">
+          {/* Kelola Stok */}
+          <Link to="/inventory"
+            className="flex items-center justify-between p-5 bg-surface-white border border-surface-border rounded-2xl hover:border-status-warning/50 hover:shadow-sm transition-all group">
             <div>
-              <p className="text-text-dark font-bold text-sm">Kelola Stok</p>
-              <p className="text-text-light text-[10px]">Cek barang menipis</p>
+              <p className="text-sm font-bold text-text-dark">Kelola Stok</p>
+              <p className="text-[11px] text-text-light mt-0.5">Cek barang menipis</p>
             </div>
             <div className="w-10 h-10 bg-status-warning/10 rounded-xl flex items-center justify-center text-status-warning group-hover:bg-status-warning group-hover:text-surface-white transition-all">
-              <FaBoxOpen />
+              <FaBoxOpen className="text-sm" />
             </div>
           </Link>
         </div>
       </div>
 
       {/* ── ROW 3: PESANAN TERBARU ── */}
-      <div className="bg-surface-white border border-surface-border rounded-[32px] p-6 shadow-sm overflow-hidden">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-title-m font-bold text-text-dark">Pesanan Terbaru</h3>
-          <Link to="/orders" className="text-primary text-[11px] font-bold">Lihat Semua →</Link>
+      <div className="bg-surface-white border border-surface-border rounded-2xl p-6">
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="text-base font-bold text-text-dark">Pesanan Terbaru</h3>
+          <Link to="/orders" className="text-primary text-[11px] font-bold hover:underline">Lihat Semua →</Link>
         </div>
         <div className="overflow-x-auto scrollbar-hide">
-          <div className="min-w-[600px] space-y-2">
+          <div className="min-w-[560px] space-y-1">
+            {/* Header row */}
+            <div className="grid grid-cols-5 gap-4 px-4 pb-2 border-b border-surface-border">
+              {['Pelanggan', 'Produk', 'Total', 'Poin', 'Status'].map(h => (
+                <p key={h} className="text-[10px] font-bold uppercase tracking-widest text-text-disable">{h}</p>
+              ))}
+            </div>
             {recentOrders.map(order => {
               const sc = statusConfig[order.status];
               const StatusIcon = sc.icon;
               return (
-                <div key={order.id} className="grid grid-cols-5 items-center gap-4 p-4 rounded-2xl hover:bg-surface-style/50 transition-all border border-transparent hover:border-surface-border">
-                  <div className="col-span-2 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-surface-neutral rounded-xl flex items-center justify-center text-text-disable border border-surface-border">
-                      <FaShoppingBag size={14} />
+                <div key={order.id}
+                  className="grid grid-cols-5 items-center gap-4 px-4 py-3 rounded-xl hover:bg-surface-neutral transition-all">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary text-xs font-black shrink-0">
+                      {order.customer.charAt(0)}
                     </div>
-                    <div>
-                      <p className="text-body-s font-bold text-text-dark">{order.customer}</p>
-                      <p className="text-[10px] text-text-light">{order.produk}</p>
-                    </div>
+                    <p className="text-xs font-bold text-text-dark truncate">{order.customer}</p>
                   </div>
-                  <div className="text-body-s font-bold text-text-dark">Rp {order.total.toLocaleString('id')}</div>
-                  <div className="flex items-center gap-1 text-status-success font-bold text-[10px]">
-                    <FaStar size={8} /> +{order.poin} pts
-                  </div>
-                  <div className="flex justify-end">
-                    <span className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-wider border ${sc.style}`}>
-                      <StatusIcon size={10} /> {order.status}
-                    </span>
-                  </div>
+                  <p className="text-xs text-text-light truncate">{order.produk}</p>
+                  <p className="text-xs font-bold text-text-dark">Rp {order.total.toLocaleString('id')}</p>
+                  <p className="text-xs font-bold text-status-success flex items-center gap-1">
+                    <FaStar className="text-yellow-400 text-[9px]" />+{order.poin}
+                  </p>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold w-fit ${sc.style}`}>
+                    <StatusIcon className="text-[9px]" />{order.status}
+                  </span>
                 </div>
               );
             })}

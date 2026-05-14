@@ -1,7 +1,6 @@
 import { FaChevronRight, FaHome } from 'react-icons/fa';
 
 export default function PageHeader({ title, breadcrumb, children }) {
-  // Normalkan breadcrumb: bisa string tunggal atau array
   const crumbs = Array.isArray(breadcrumb)
     ? breadcrumb
     : breadcrumb
@@ -9,24 +8,23 @@ export default function PageHeader({ title, breadcrumb, children }) {
     : [];
 
   return (
-    <div className="flex items-center justify-between mb-5">
-      {/* Kiri: judul + breadcrumb */}
+    <div className="flex items-center justify-between mb-6">
+      {/* Left: title + breadcrumb */}
       <div>
-        <h2 className="text-xl font-black text-gray-700 tracking-tight">
+        <h2 className="text-xl font-black text-text-dark tracking-tight leading-tight">
           {title}
         </h2>
-
         {crumbs.length > 0 && (
-          <div className="flex items-center gap-1 mt-1">
-            <FaHome className="text-[#FFB9B9] text-[10px]" />
+          <div className="flex items-center gap-1 mt-1.5">
+            <FaHome className="text-primary text-[10px]" />
             {crumbs.map((crumb, index) => (
               <span key={index} className="flex items-center gap-1">
-                <FaChevronRight className="text-gray-300 text-[9px]" />
+                <FaChevronRight className="text-text-disable text-[9px]" />
                 <span
                   className={`text-[11px] font-medium ${
                     index === crumbs.length - 1
-                      ? 'text-[#9d2a5e] font-bold'
-                      : 'text-gray-400'
+                      ? 'text-primary font-bold'
+                      : 'text-text-disable'
                   }`}
                 >
                   {crumb}
@@ -37,7 +35,7 @@ export default function PageHeader({ title, breadcrumb, children }) {
         )}
       </div>
 
-      {/* Kanan: children (tombol aksi, dll) */}
+      {/* Right: action buttons */}
       {children && (
         <div className="flex items-center gap-2">{children}</div>
       )}

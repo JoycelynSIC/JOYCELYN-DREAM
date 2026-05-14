@@ -1,28 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand Colors */
-  --color-primary: #9E4BDC;       /* Primary (Purple) */
-  --color-secondary: #95D5B6;     /* Secondary (Green) */
-  --color-primary-shade: #1A204D; /* Background Sidebar (Text Dark/Linear) */
+  /* ── Brand Colors ── */
+  --color-primary: #9E4BDC;        /* Tombol CTA, Brand Identity, Ikon Aktif */
+  --color-secondary: #95D5B6;      /* Aksen pelengkap, elemen dekoratif ringan */
 
-  /* Text & Type Colors */
-  --color-text-dark: #22285E;     /* Heading / Dark Navy */
-  --color-text-light: #7B7E9E;    /* Body / Gray-Blue */
-  --color-text-disable: #A6ABC8;  /* Placeholder / Disabled */
+  /* ── Type Colors ── */
+  --color-text-dark: #22285E;      /* Judul (Headings), Teks utama tebal */
+  --color-text-light: #71717A;     /* Deskripsi, label input, teks sekunder */
+  --color-text-disable: #A1A1AA;   /* Placeholder input, teks tidak aktif */
 
-  /* Surface & Status */
-  --color-surface-white: #FFFFFF;
-  --color-surface-neutral: #F0F2F5;
-  --color-surface-style: #F4F7FE;
-  --color-surface-border: #E0E4EC;
-  --color-status-success: #00A9B5; /* Success (Cyan) */
-  --color-status-warning: #FF4D4F; /* Warning (Red) */
+  /* ── Surface & Background Colors ── */
+  --color-surface-white: #FFFFFF;  /* Background utama halaman atau card */
+  --color-surface-neutral: #F4F4F5; /* Background aplikasi (Layout), area di luar card */
+  --color-surface-gray: #F0F2F5;   /* Background Field Input */
+  --color-surface-border: #E4E4E7; /* Garis pembatas (Dividers) atau garis tepi input */
 
-  /* Font Family */
+  /* ── Alias lama (backward compat) ── */
+  --color-surface-style: #F4F4F5;
+  --color-primary-shade: #1A204D;
+
+  /* ── Status / Functional Colors ── */
+  --color-status-success: #00B5AD; /* Transaksi berhasil, stok tersedia */
+  --color-status-warning: #F24E1E; /* Error, stok menipis, hapus/logout */
+
+  /* ── Font Family ── */
   --font-poppins: "Poppins", sans-serif;
 
-  /* Font Sizes - Berdasarkan Text Styles Figma */
+  /* ── Font Sizes ── */
   --text-display-l: 32px;
   --text-heading-l: 26px;
   --text-title-l: 20px;
