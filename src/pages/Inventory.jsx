@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import inventoryData from '../data/inventory.json';
 import PageHeader from '../components/PageHeader';
 import {
@@ -328,7 +329,13 @@ export default function Inventory() {
                           : <div className="w-full h-full flex items-center justify-center"><FaBoxOpen className="text-on-primary text-xs" /></div>
                         }
                       </div>
-                      <p className="text-sm font-bold text-gray-700 group-hover:translate-x-0.5 transition-transform">{item.name}</p>
+                      {/* Link ke halaman detail — Dynamic Route /inventory/:id */}
+                      <Link
+                        to={`/inventory/${item.id}`}
+                        className="text-sm font-bold text-on-primary hover:text-accent transition-colors group-hover:translate-x-0.5 transition-transform"
+                      >
+                        {item.name}
+                      </Link>
                     </div>
                   </td>
                   <td className="px-6 py-4">
