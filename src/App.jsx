@@ -30,14 +30,14 @@ export default function App() {
 
         {/* ── Grup Auth ── */}
         <Route element={<AuthLayout />}>
-          <Route path="/login"    element={<Login />}    />
+          <Route path="/"    element={<Login />}    />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot"   element={<Forgot />}   />
         </Route>
 
         {/* ── Grup Admin ── */}
         <Route element={<AdminLayout />}>
-          <Route path="/"               element={<Dashboard />}       />
+          <Route path="/dashboard"               element={<Dashboard />}       />
           <Route path="/orders"         element={<Orders />}          />
           <Route path="/inventory"      element={<Inventory />}       />
           <Route path="/inventory/:id"  element={<InventoryDetail />} />
