@@ -1,46 +1,45 @@
 import { useState } from 'react';
 import reviewsData from '../data/reviews.json';
-import PageHeader from '../components/PageHeader';
+import PageHeader  from '../components/PageHeader';
+import StatCard    from '../components/StatCard';
+import Card        from '../components/Card';
+import Badge       from '../components/Badge';
+import Button      from '../components/Button';
+import Input       from '../components/Input';
+import Select      from '../components/Select';
+import ProgressBar from '../components/ProgressBar';
+import EmptyState  from '../components/EmptyState';
+import Tooltip     from '../components/Tooltip';
 import {
-  FaStar, FaRegStar, FaSearch, FaFilter,
-  FaCheckCircle, FaClock, FaEyeSlash, FaEye,
-  FaBoxOpen
+  FaStar, FaSearch, FaFilter,
+  FaCheckCircle, FaClock, FaEyeSlash, FaEye, FaInfoCircle,
 } from 'react-icons/fa';
 
-const statusConfig = {
-  'Ditampilkan':   { style: 'bg-status-success/10 text-status-success',    icon: FaEye      },
-  'Pending':       { style: 'bg-surface-neutral text-text-light',           icon: FaClock    },
-  'Disembunyikan': { style: 'bg-status-warning/10 text-status-warning',     icon: FaEyeSlash },
+/* Map status ulasan → Badge status */
+const reviewBadgeMap = {
+  'Ditampilkan':   'Selesai',
+  'Pending':       'Proses',
+  'Disembunyikan': 'Batal',
 };
 
 function StarRating({ rating, size = 'text-sm' }) {
   return (
     <div className="flex items-center gap-0.5">
       {[1,2,3,4,5].map(i => (
-        <FaStar key={i} className={`${size} ${i <= rating ? 'text-yellow-400' : 'text-text-disable'}`} />
+        <FaStar key={i} className={`${size} ${i <= rating ? 'text-yellow-400' : 'text-[#E4E4E7]'}`} />
       ))}
     </div>
   );
 }
 
 export default function Reviews() {
-  const [reviews, setReviews] = useState(reviewsData);
+  const [reviews,  setReviews]  = useState(reviewsData);
   const [selected, setSelected] = useState(null);
-
-  /** State — Best Practice (Pertemuan 4) **/
   const [dataForm, setDataForm] = useState({
-    search:       '',
-    filterRating: 'Semua',
-    filterStatus: 'Semua',
+    search: '', filterRating: 'Semua', filterStatus: 'Semua',
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setDataForm(prev => ({ ...prev, [name]: value }));
-  };
-
-  /** Logic Search & Filter **/
-  const _search = dataForm.search.toLowerCase();
+  const _search  = dataForm.search.toLowerCase();
   const filtered = reviews.filter(r => {
     const matchSearch = r.nama.toLowerCase().includes(_search)
       || r.produk.toLowerCase().includes(_search)
@@ -50,29 +49,21 @@ export default function Reviews() {
     return matchSearch && matchRating && matchStatus;
   });
 
-  /** Stats **/
-  const avgRating   = (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1);
+  const avgRating     = (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1);
   const totalBintang5 = reviews.filter(r => r.rating === 5).length;
   const totalPending  = reviews.filter(r => r.status === 'Pending').length;
 
-  /** Toggle status review **/
   const toggleStatus = (id) => {
     setReviews(prev => prev.map(r =>
-      r.id === id
-        ? { ...r, status: r.status === 'Ditampilkan' ? 'Disembunyikan' : 'Ditampilkan' }
-        : r
+      r.id === id ? { ...r, status: r.status === 'Ditampilkan' ? 'Disembunyikan' : 'Ditampilkan' } : r
     ));
-    if (selected?.id === id) {
-      setSelected(prev => ({
-        ...prev,
-        status: prev.status === 'Ditampilkan' ? 'Disembunyikan' : 'Ditampilkan'
-      }));
-    }
+    if (selected?.id === id)
+      setSelected(p => ({ ...p, status: p.status === 'Ditampilkan' ? 'Disembunyikan' : 'Ditampilkan' }));
   };
 
   const approveReview = (id) => {
     setReviews(prev => prev.map(r => r.id === id ? { ...r, status: 'Ditampilkan' } : r));
-    if (selected?.id === id) setSelected(prev => ({ ...prev, status: 'Ditampilkan' }));
+    if (selected?.id === id) setSelected(p => ({ ...p, status: 'Ditampilkan' }));
   };
 
   return (
@@ -80,193 +71,226 @@ export default function Reviews() {
 
       <PageHeader title="Ulasan Pelanggan" breadcrumb={['Dashboard', 'Ulasan']} />
 
-      {/* ── Stat Cards ── */}
+      {/* ── Stat Cards — pakai StatCard ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: 'Total Ulasan',     val: reviews.length,  sub: 'semua ulasan',            bg: 'bg-surface-white'       },
-          { label: 'Rating Rata-rata', val: avgRating,       sub: 'dari 5 bintang',          bg: 'bg-primary'             },
-          { label: 'Bintang 5',        val: totalBintang5,   sub: 'ulasan terbaik',          bg: 'bg-surface-neutral'     },
-          { label: 'Perlu Ditinjau',   val: totalPending,    sub: 'menunggu persetujuan',    bg: 'bg-status-warning/10'   },
-        ].map((s, i) => (
-          <div key={i} className={`${s.bg} border border-surface-border rounded-[24px] shadow-sm p-4`}>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-text-disable">{s.label}</p>
-            <div className="flex items-end gap-1 mt-1">
-              <p className="text-2xl font-black text-text-dark">{s.val}</p>
-              {i === 1 && <FaStar className="text-yellow-400 text-sm mb-1" />}
-            </div>
-            <p className="text-[10px] text-text-disable mt-0.5">{s.sub}</p>
-          </div>
-        ))}
+        <StatCard
+          label="Total Ulasan"
+          value={reviews.length}
+          desc="semua ulasan"
+          icon={<FaStar />}
+          iconBgColor="bg-[#F4F4F5]"
+          iconColor="text-[#9E4BDC]"
+        />
+        <StatCard
+          label="Rating Rata-rata"
+          value={avgRating}
+          desc="dari 5 bintang"
+          icon={<FaStar />}
+          variant="primary"
+        />
+        <StatCard
+          label="Bintang 5"
+          value={totalBintang5}
+          desc="ulasan terbaik"
+          icon={<FaStar />}
+          iconBgColor="bg-yellow-50"
+          iconColor="text-yellow-400"
+        />
+        <StatCard
+          label="Perlu Ditinjau"
+          value={totalPending}
+          desc="menunggu persetujuan"
+          icon={<FaClock />}
+          iconBgColor="bg-[#F24E1E]/10"
+          iconColor="text-[#F24E1E]"
+        />
       </div>
 
-      {/* ── Distribusi Rating ── */}
-      <div className="bg-surface-white border border-surface-border rounded-[32px] shadow-sm p-6">
-        <p className="text-sm font-black text-text-dark mb-4">Distribusi Rating</p>
-        <div className="space-y-2">
+      {/* ── Distribusi Rating — pakai Card + ProgressBar ── */}
+      <Card
+        title="Distribusi Rating"
+        action={
+          <Tooltip content="Persentase ulasan berdasarkan jumlah bintang" position="left">
+            <FaInfoCircle className="text-[#A1A1AA] text-sm cursor-help" />
+          </Tooltip>
+        }
+      >
+        <div className="space-y-3">
           {[5,4,3,2,1].map(star => {
             const count = reviews.filter(r => r.rating === star).length;
             const pct   = reviews.length ? Math.round((count / reviews.length) * 100) : 0;
             return (
               <div key={star} className="flex items-center gap-3">
                 <div className="flex items-center gap-1 w-16 shrink-0">
-                  <span className="text-xs font-bold text-text-light">{star}</span>
+                  <span className="text-xs font-bold text-[#71717A]">{star}</span>
                   <FaStar className="text-yellow-400 text-xs" />
                 </div>
-                <div className="flex-1 h-2.5 bg-surface-neutral rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all duration-700"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <span className="text-xs text-text-disable w-8 text-right">{count}</span>
+                <ProgressBar
+                  value={count}
+                  max={reviews.length}
+                  showValue={false}
+                  size="md"
+                  variant={star >= 4 ? 'primary' : star === 3 ? 'secondary' : 'warning'}
+                  animated={false}
+                  className="flex-1"
+                />
+                <span className="text-xs text-[#A1A1AA] w-8 text-right">{count}</span>
               </div>
             );
           })}
         </div>
-      </div>
+      </Card>
 
       {/* ── Main 2-col ── */}
       <div className={`grid gap-4 ${selected ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1'}`}>
 
-        {/* ── LEFT: Tabel ── */}
-        <div className={`bg-surface-white border border-surface-border rounded-[32px] shadow-sm overflow-hidden ${selected ? 'lg:col-span-2' : ''}`}>
+        {/* LEFT — pakai Card + Input + Select ── */}
+        <Card className={selected ? 'lg:col-span-2' : ''} padding={false}>
 
           {/* Toolbar */}
-          <div className="flex flex-col sm:flex-row gap-3 p-5 border-b border-surface-border">
-            <div className="relative flex-1">
-              <FaSearch className="absolute left-3.5 top-3 text-text-disable text-xs" />
-              <input type="text" name="search" placeholder="Cari nama, produk, komentar..."
-                onChange={handleChange}
-                className="w-full bg-surface-neutral rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:text-text-disable text-text-light"
-              />
-            </div>
+          <div className="flex flex-col sm:flex-row gap-3 p-5 border-b border-[#E4E4E7]">
+            <Input
+              placeholder="Cari nama, produk, komentar..."
+              icon={FaSearch}
+              value={dataForm.search}
+              onChange={(e) => setDataForm(p => ({ ...p, search: e.target.value }))}
+              className="flex-1 !gap-0"
+            />
             <div className="flex items-center gap-2 flex-wrap">
-              <FaFilter className="text-text-disable text-xs shrink-0" />
-              <select name="filterRating" onChange={handleChange}
-                className="bg-surface-neutral rounded-xl px-3 py-2 text-xs font-bold outline-none text-text-light focus:ring-2 focus:ring-primary/40">
-                <option value="Semua">Semua Rating</option>
-                {[5,4,3,2,1].map(r => <option key={r} value={r}>{r} Bintang</option>)}
-              </select>
-              <select name="filterStatus" onChange={handleChange}
-                className="bg-surface-neutral rounded-xl px-3 py-2 text-xs font-bold outline-none text-text-light focus:ring-2 focus:ring-primary/40">
-                <option value="Semua">Semua Status</option>
-                <option value="Ditampilkan">Ditampilkan</option>
-                <option value="Pending">Pending</option>
-                <option value="Disembunyikan">Disembunyikan</option>
-              </select>
+              <FaFilter className="text-[#A1A1AA] text-xs shrink-0" />
+              <Select
+                value={dataForm.filterRating}
+                onChange={(e) => setDataForm(p => ({ ...p, filterRating: e.target.value }))}
+                options={[
+                  { value: 'Semua', label: 'Semua Rating' },
+                  ...[5,4,3,2,1].map(r => ({ value: String(r), label: `${r} Bintang` })),
+                ]}
+                className="w-36"
+              />
+              <Select
+                value={dataForm.filterStatus}
+                onChange={(e) => setDataForm(p => ({ ...p, filterStatus: e.target.value }))}
+                options={[
+                  { value: 'Semua',         label: 'Semua Status'  },
+                  { value: 'Ditampilkan',   label: 'Ditampilkan'   },
+                  { value: 'Pending',       label: 'Pending'       },
+                  { value: 'Disembunyikan', label: 'Disembunyikan' },
+                ]}
+                className="w-40"
+              />
             </div>
           </div>
 
           {/* List ulasan */}
-          <div className="divide-y divide-surface-border">
+          <div className="divide-y divide-[#E4E4E7]">
             {filtered.map(r => {
-              const sc = statusConfig[r.status] ?? statusConfig['Pending'];
-              const StatusIcon = sc.icon;
               const isActive = selected?.id === r.id;
               return (
                 <div key={r.id}
                   onClick={() => setSelected(isActive ? null : r)}
-                  className={`flex items-start gap-4 p-5 cursor-pointer transition-colors ${isActive ? 'bg-primary/5' : 'hover:bg-surface-neutral/60'}`}>
-
-                  {/* Gambar produk */}
+                  className={`flex items-start gap-4 p-5 cursor-pointer transition-colors ${
+                    isActive ? 'bg-[#9E4BDC]/5' : 'hover:bg-[#F4F4F5]/60'
+                  }`}
+                >
                   <img
                     src={r.gambar}
                     alt={r.produk}
-                    className="w-12 h-12 rounded-[24px] object-cover shrink-0 bg-surface-neutral"
-                    onError={e => { e.target.src = ''; e.target.className = 'w-12 h-12 rounded-[24px] bg-secondary/20 shrink-0 flex items-center justify-center'; }}
+                    className="w-12 h-12 rounded-2xl object-cover shrink-0 bg-[#F4F4F5]"
+                    onError={e => { e.target.style.display = 'none'; }}
                   />
-
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <div>
-                        <p className="text-sm font-bold text-text-dark leading-tight">{r.nama}</p>
-                        <p className="text-[10px] text-text-disable">{r.produk}</p>
+                        <p className="text-sm font-bold text-[#22285E] leading-tight">{r.nama}</p>
+                        <p className="text-[10px] text-[#A1A1AA]">{r.produk}</p>
                       </div>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0 ${sc.style}`}>
-                        <StatusIcon className="text-[9px]" />{r.status}
-                      </span>
+                      {/* Badge — pakai komponen Badge */}
+                      <Badge status={reviewBadgeMap[r.status] ?? 'Proses'} />
                     </div>
                     <StarRating rating={r.rating} size="text-xs" />
-                    <p className="text-xs text-text-light mt-1.5 line-clamp-2">{r.komentar}</p>
-                    <p className="text-[10px] text-text-disable mt-1">{r.tanggal}</p>
+                    <p className="text-xs text-[#71717A] mt-1.5 line-clamp-2">{r.komentar}</p>
+                    <p className="text-[10px] text-[#A1A1AA] mt-1">{r.tanggal}</p>
                   </div>
                 </div>
               );
             })}
 
             {filtered.length === 0 && (
-              <div className="py-16 text-center">
-                <FaSearch className="text-3xl text-secondary mx-auto mb-2" />
-                <p className="text-sm font-bold text-text-disable">Ulasan tidak ditemukan</p>
-              </div>
+              <EmptyState
+                variant="star"
+                title="Ulasan tidak ditemukan"
+                desc="Coba ubah kata kunci atau filter rating & status ulasan."
+                size="md"
+              />
             )}
           </div>
-        </div>
+        </Card>
 
-        {/* ── RIGHT: Detail Panel ── */}
-        {selected && (() => {
-          const sc = statusConfig[selected.status] ?? statusConfig['Pending'];
-          const StatusIcon = sc.icon;
-          return (
-            <div className="bg-surface-white border border-surface-border rounded-[32px] shadow-sm p-6 space-y-5 sticky top-4 h-fit">
+        {/* RIGHT: Detail Panel — pakai Card + Button ── */}
+        {selected && (
+          <Card className="sticky top-4 h-fit">
 
-              {/* Produk */}
-              <div className="text-center pb-4 border-b border-surface-border">
-                <img
-                  src={selected.gambar}
-                  alt={selected.produk}
-                  className="w-20 h-20 rounded-[24px] object-cover mx-auto mb-3 bg-surface-neutral"
-                  onError={e => { e.target.style.display='none'; }}
-                />
-                <p className="text-sm font-black text-text-dark">{selected.produk}</p>
-                <StarRating rating={selected.rating} />
-                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1 mt-2 ${sc.style}`}>
-                  <StatusIcon className="text-[9px]" />{selected.status}
-                </span>
+            {/* Produk */}
+            <div className="text-center pb-4 border-b border-[#E4E4E7]">
+              <img
+                src={selected.gambar}
+                alt={selected.produk}
+                className="w-20 h-20 rounded-2xl object-cover mx-auto mb-3 bg-[#F4F4F5]"
+                onError={e => { e.target.style.display = 'none'; }}
+              />
+              <p className="text-sm font-black text-[#22285E]">{selected.produk}</p>
+              <StarRating rating={selected.rating} />
+              <div className="mt-2 flex justify-center">
+                <Badge status={reviewBadgeMap[selected.status] ?? 'Proses'} />
               </div>
-
-              {/* Reviewer */}
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Reviewer</p>
-                <div className="flex items-center gap-3 p-3 bg-surface-neutral rounded-[24px]">
-                  <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center text-sm font-black text-surface-white shrink-0">
-                    {selected.nama.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-text-dark">{selected.nama}</p>
-                    <p className="text-[10px] text-text-disable">{selected.tanggal}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Komentar */}
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Komentar</p>
-                <div className="bg-surface-neutral rounded-[24px] p-4">
-                  <p className="text-sm text-text-light leading-relaxed">"{selected.komentar}"</p>
-                </div>
-              </div>
-
-              {/* Aksi */}
-              <div className="space-y-2 pt-1">
-                {selected.status === 'Pending' && (
-                  <button onClick={() => approveReview(selected.id)}
-                    className="w-full py-2.5 rounded-[24px] text-xs font-bold bg-primary text-surface-white hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center gap-2">
-                    <FaCheckCircle className="text-xs" /> Setujui & Tampilkan
-                  </button>
-                )}
-                <button onClick={() => toggleStatus(selected.id)}
-                  className="w-full py-2.5 rounded-[24px] text-xs font-bold border border-surface-border text-text-disable hover:bg-surface-neutral transition-all flex items-center justify-center gap-2">
-                  {selected.status === 'Ditampilkan'
-                    ? <><FaEyeSlash className="text-xs" /> Sembunyikan Ulasan</>
-                    : <><FaEye className="text-xs" /> Tampilkan Ulasan</>
-                  }
-                </button>
-              </div>
-
             </div>
-          );
-        })()}
+
+            {/* Reviewer */}
+            <div className="space-y-1 mt-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">Reviewer</p>
+              <div className="flex items-center gap-3 p-3 bg-[#F4F4F5] rounded-xl">
+                <div className="w-9 h-9 bg-[#9E4BDC] rounded-xl flex items-center justify-center text-sm font-black text-white shrink-0">
+                  {selected.nama.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#22285E]">{selected.nama}</p>
+                  <p className="text-[10px] text-[#A1A1AA]">{selected.tanggal}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Komentar */}
+            <div className="space-y-1 mt-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">Komentar</p>
+              <div className="bg-[#F4F4F5] rounded-xl p-4">
+                <p className="text-sm text-[#71717A] leading-relaxed">"{selected.komentar}"</p>
+              </div>
+            </div>
+
+            {/* Aksi — pakai Button ── */}
+            <div className="space-y-2 pt-4">
+              {selected.status === 'Pending' && (
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  icon={<FaCheckCircle className="text-xs" />}
+                  onClick={() => approveReview(selected.id)}
+                >
+                  Setujui & Tampilkan
+                </Button>
+              )}
+              <Button
+                variant={selected.status === 'Ditampilkan' ? 'warning' : 'outline'}
+                className="w-full"
+                icon={selected.status === 'Ditampilkan' ? <FaEyeSlash className="text-xs" /> : <FaEye className="text-xs" />}
+                onClick={() => toggleStatus(selected.id)}
+              >
+                {selected.status === 'Ditampilkan' ? 'Sembunyikan Ulasan' : 'Tampilkan Ulasan'}
+              </Button>
+            </div>
+
+          </Card>
+        )}
       </div>
 
     </div>

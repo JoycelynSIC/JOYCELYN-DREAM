@@ -1,258 +1,350 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+/**
+ * Dashboard — Na_store.id CRM
+ * Toko Aksesoris: Gelang · Kalung · Anting · Cincin · Nail Art · dll
+ */
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer
-} from 'recharts';
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
+} from "recharts";
 import {
-  FaBell, FaUsers, FaStar, FaExclamationTriangle,
-  FaTrophy, FaBoxOpen, FaSearch // Tambahkan FaSearch untuk input
-} from 'react-icons/fa';
+  FaBell, FaUsers, FaShoppingBag, FaPlusCircle,
+  FaStar, FaGem, FaBoxOpen, FaExclamationTriangle,
+} from "react-icons/fa";
 
-// Import Komponen Modular
-import PageHeader from '../components/PageHeader';
-import Button from '../components/Button';
-import StatCard from '../components/StatCard';
-import Badge from '../components/Badge';
-import Input from '../components/Input'; // Import Komponen Input Baru
+import PageHeader   from "../components/PageHeader";
+import StatCard     from "../components/StatCard";
+import BannerPromo  from "../components/BannerPromo";
+import TabFilter    from "../components/TabFilter";
+import DonutChart   from "../components/DonutChart";
+import ActivityItem from "../components/ActivityItem";
+import Badge        from "../components/Badge";
+import Card         from "../components/Card";
+import AvatarGroup  from "../components/AvatarGroup";
 
-// ── DATA CHART ──
+/* ─── Data grafik transaksi harian Na_store.id ─── */
 const chartDataMap = {
   Harian: [
-    { hari: 'Sen', nilai: 20, omzet: 1400000 }, { hari: 'Sel', nilai: 35, omzet: 2450000 },
-    { hari: 'Rab', nilai: 28, omzet: 1960000 }, { hari: 'Kam', nilai: 45, omzet: 3150000 },
-    { hari: 'Jum', nilai: 38, omzet: 2660000 }, { hari: 'Sab', nilai: 52, omzet: 3640000 },
-    { hari: 'Min', nilai: 44, omzet: 3080000 },
+    { hari: "Sen", nilai: 18 }, { hari: "Sel", nilai: 32 },
+    { hari: "Rab", nilai: 25 }, { hari: "Kam", nilai: 41 },
+    { hari: "Jum", nilai: 36 }, { hari: "Sab", nilai: 58 },
+    { hari: "Min", nilai: 47 },
   ],
   Mingguan: [
-    { hari: 'Mg 1', nilai: 55, omzet: 3850000 }, { hari: 'Mg 2', nilai: 72, omzet: 5040000 },
-    { hari: 'Mg 3', nilai: 63, omzet: 4410000 }, { hari: 'Mg 4', nilai: 88, omzet: 6160000 },
+    { hari: "Mg 1", nilai: 62 }, { hari: "Mg 2", nilai: 78 },
+    { hari: "Mg 3", nilai: 55 }, { hari: "Mg 4", nilai: 91 },
   ],
   Bulanan: [
-    { hari: 'Jan', nilai: 70, omzet: 4900000 }, { hari: 'Feb', nilai: 52, omzet: 3640000 },
-    { hari: 'Mar', nilai: 91, omzet: 6370000 }, { hari: 'Apr', nilai: 44, omzet: 3080000 },
-    { hari: 'Mei', nilai: 97, omzet: 6790000 }, { hari: 'Jun', nilai: 63, omzet: 4410000 },
-    { hari: 'Jul', nilai: 85, omzet: 5950000 }, { hari: 'Agu', nilai: 74, omzet: 5180000 },
-    { hari: 'Sep', nilai: 60, omzet: 4200000 }, { hari: 'Okt', nilai: 88, omzet: 6160000 },
-    { hari: 'Nov', nilai: 95, omzet: 6650000 }, { hari: 'Des', nilai: 102, omzet: 7140000 },
+    { hari: "Jan", nilai: 70 }, { hari: "Feb", nilai: 52 },
+    { hari: "Mar", nilai: 91 }, { hari: "Apr", nilai: 44 },
+    { hari: "Mei", nilai: 97 }, { hari: "Jun", nilai: 63 },
+    { hari: "Jul", nilai: 85 },
   ],
 };
 
-// ── CUSTOM TOOLTIP ──
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload?.length) {
-    const omzet = payload[0]?.payload?.omzet;
-    return (
-      <div className="bg-white px-4 py-3 rounded-xl shadow-lg border border-[#E4E4E7] font-poppins">
-        <p className="text-[#A1A1AA] text-[10px] uppercase font-bold tracking-widest mb-1">{label}</p>
-        <p className="text-[#22285E] text-sm font-bold">{payload[0].value} Transaksi</p>
-        {omzet && <p className="text-[#9E4BDC] text-[11px] mt-1 font-semibold">Rp {omzet.toLocaleString('id')}</p>}
-      </div>
-    );
-  }
-  return null;
-};
+/* ─── Tooltip ─── */
+function CustomTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white px-4 py-3 rounded-xl shadow-lg border border-[#E4E4E7] text-xs font-poppins">
+      <p className="text-[#A1A1AA] uppercase font-bold tracking-widest mb-1">{label}</p>
+      <p className="text-[#22285E] font-bold">{payload[0].value} Transaksi</p>
+    </div>
+  );
+}
+
+/* ─── Jadwal harian toko — dari schedule.json ─── */
+const jadwal = [
+  { jam: "09:00", title: "Restock Gelang & Kalung",    time: "09:00 – 10:00", color: "purple" },
+  { jam: "10:30", title: "QC Cincin Couple Silver",     time: "10:30 – 12:00", color: "teal"   },
+  { jam: "13:00", title: "Packing Pesanan Reseller",    time: "13:00 – 14:30", color: "dark"   },
+  { jam: "15:00", title: "Update Foto Produk Baru",     time: "15:00 – 16:00", color: "green"  },
+  { jam: "16:30", title: "Balas Chat & WA Pelanggan",   time: "16:30 – 17:30", color: "purple" },
+];
+
+/* ─── Pelanggan terbaru — dari customer.json ─── */
+const pelangganBaru = [
+  { id: 1,  nama: "Dewi Lestari",  status: "Platinum", poin: 5800, belanja: 5800000 },
+  { id: 2,  nama: "Mega Wulandari",status: "Platinum", poin: 6100, belanja: 6100000 },
+  { id: 3,  nama: "Amelia Putri",  status: "Gold",     poin: 2100, belanja: 2100000 },
+  { id: 4,  nama: "Siti Sarah",    status: "Gold",     poin: 1200, belanja: 1200000 },
+  { id: 5,  nama: "Hendra Wijaya", status: "Silver",   poin:  980, belanja:  980000 },
+];
+
+/* ─── Pesanan terbaru — dari orders.json ─── */
+const pesananTerbaru = [
+  { id: "#ORD-100", customer: "Dewi Lestari",  produk: "Nail Art Palsu Motif Bunga",   total: 60000,  poin: 60,  status: "Selesai" },
+  { id: "#ORD-099", customer: "Nadia Rahma",   produk: "Tumblr Aesthetic Pastel",       total: 55000,  poin: 55,  status: "Proses"  },
+  { id: "#ORD-098", customer: "Amelia Putri",  produk: "Jepit Rambut Claw Clip Besar",  total: 60000,  poin: 60,  status: "Dikirim" },
+  { id: "#ORD-097", customer: "Siti Sarah",    produk: "Kalung Titanium Rosegold",      total: 85000,  poin: 85,  status: "Selesai" },
+];
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState('Bulanan');
-  const [searchQuery, setSearchQuery] = useState(''); // State untuk input pencarian
-
-  // Mock Data
-  const lowStock = 5;
-  const outOfStock = 2;
-  const totalPoin = 1250000;
-  const topCustomer = { name: "Andi Wijaya", poin: 8500, transaksi: 42, type: "Platinum Member" };
-  
-  const recentOrders = [
-    { id: 1, customer: "Budi Santoso",  produk: "Paket Hemat A",    total: 150000, poin: 15, status: "Selesai" },
-    { id: 2, customer: "Siska Putri",   produk: "Layanan Premium",  total: 450000, poin: 45, status: "Proses"  },
-    { id: 3, customer: "Rian Aldi",     produk: "Member Bulanan",   total: 200000, poin: 20, status: "Dikirim" },
-  ];
+  const [activeTab, setActiveTab] = useState("Bulanan");
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 font-poppins">
+    <div className="space-y-6 font-poppins animate-in fade-in duration-500">
 
-      <PageHeader title="Dashboard" breadcrumb={['Dashboard']} />
+      {/* ── Page Header ── */}
+      <PageHeader title="Dashboard" breadcrumb={["Dashboard"]}>
+        <Link
+          to="/customers"
+          className="flex items-center gap-2 bg-[#9E4BDC] text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[#B16FE3] transition-all active:scale-95 shadow-md shadow-[#9E4BDC]/20"
+        >
+          <FaPlusCircle className="text-sm" />
+          Tambah Pelanggan
+        </Link>
+      </PageHeader>
 
-      {/* ── ROW 1: STAT CARDS ── */}
+      {/* ══ ROW 1 — Stat Cards ══ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          label="Notifikasi" 
-          value="5" 
-          desc="Belum dibaca" 
-          icon={<FaBell />} 
-          iconBgColor="bg-[#95D5B6]/20" 
-          iconColor="text-[#00B5AD]" 
+        <StatCard
+          label="Notifikasi"
+          value="6"
+          desc="Belum dibaca"
+          icon={<FaBell />}
+          iconBgColor="bg-[#9E4BDC]/10"
+          iconColor="text-[#9E4BDC]"
         />
-        <StatCard 
-          label="Stok Kritis" 
-          value={lowStock + outOfStock} 
-          desc={`${outOfStock} Habis · ${lowStock} Menipis`} 
-          icon={<FaExclamationTriangle />} 
-          iconBgColor="bg-[#F24E1E]/15" 
-          iconColor="text-[#F24E1E]" 
-        />
-        <StatCard 
+        <StatCard
           variant="primary"
-          label="Pelanggan" 
-          value="1.2k" 
-          desc="Total terdaftar" 
-          icon={<FaUsers />} 
+          label="Pesanan Masuk"
+          value="4"
+          desc="Update terakhir"
+          icon={<FaShoppingBag />}
         />
-        <StatCard 
-          label="Total Poin" 
-          value={totalPoin.toLocaleString('id')} 
-          desc="Poin beredar" 
-          icon={<FaStar />} 
-          iconBgColor="bg-[#F0F2F5]" 
-          iconColor="text-yellow-400" 
+        <StatCard
+          variant="dark"
+          label="Pelanggan Aktif"
+          value="30"
+          desc="Terdaftar di sistem"
+          icon={<FaUsers />}
+        />
+        <StatCard
+          variant="green"
+          label="Tambah Produk"
+          value="Aksesoris"
+          desc="Klik untuk tambah"
+          icon={<FaPlusCircle />}
+          onClick={() => (window.location.href = "/inventory")}
         />
       </div>
 
-      {/* ── ROW 2: CHART & SIDEBAR ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {/* ══ ROW 2 — Banner + Grafik ══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
 
-        {/* Grafik Penjualan */}
-        <div className="lg:col-span-2 bg-white border border-[#E4E4E7] rounded-2xl p-6">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h3 className="text-base font-bold text-[#22285E]">Grafik Penjualan</h3>
-              <p className="text-[11px] text-[#71717A] mt-0.5">Transaksi harian Na_store.id</p>
-            </div>
-            
-            {/* Filter Button */}
-            <div className="flex gap-1 bg-[#F4F4F5] p-1 rounded-xl border border-[#E4E4E7]">
-              {['Harian', 'Mingguan', 'Bulanan'].map(tab => (
-                <Button 
-                  key={tab} 
-                  onClick={() => setActiveTab(tab)}
-                  isActive={activeTab === tab}
-                >
-                  {tab}
-                </Button>
-              ))}
-            </div>
-          </div>
+        {/* Banner Promo */}
+        <div className="lg:col-span-2">
+          <BannerPromo
+            title="Kelola toko aksesorismu dalam satu sentuhan"
+            subtitle="Pantau pesanan, stok gelang, kalung, anting & lebih — kapan saja di Na_store.id."
+            ctaLabel="Lihat Laporan"
+            onCta={() => (window.location.href = "/analytics")}
+          />
+        </div>
 
-          <div className="h-[240px] w-full">
+        {/* Grafik Transaksi */}
+        <Card
+          className="lg:col-span-3"
+          title="Statistik Transaksi"
+          subtitle="Volume penjualan aksesoris Na_store.id"
+          action={
+            <TabFilter
+              tabs={["Harian", "Mingguan", "Bulanan"]}
+              active={activeTab}
+              onChange={setActiveTab}
+            />
+          }
+        >
+          <div className="h-[160px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartDataMap[activeTab]} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+              <AreaChart data={chartDataMap[activeTab]} margin={{ top: 0, right: 0, left: -28, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#9E4BDC" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#9E4BDC" stopOpacity={0.3} />
+                  <linearGradient id="gradPurple" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   stopColor="#9E4BDC" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#9E4BDC" stopOpacity={0}   />
+                  </linearGradient>
+                  <linearGradient id="gradDark" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   stopColor="#22285E" stopOpacity={0.15} />
+                    <stop offset="100%" stopColor="#22285E" stopOpacity={0}    />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F4F4F5" vertical={false} />
-                <XAxis dataKey="hari" tick={{ fontSize: 11, fill: '#A1A1AA' }} axisLine={false} tickLine={false} dy={8} />
-                <YAxis tick={{ fontSize: 10, fill: '#A1A1AA' }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F4F4F5' }} />
-                <Bar dataKey="nilai" fill="url(#barGrad)" radius={[6, 6, 2, 2]} barSize={activeTab === 'Bulanan' ? 18 : 32} />
-              </BarChart>
+                <XAxis dataKey="hari" tick={{ fontSize: 10, fill: "#A1A1AA" }} axisLine={false} tickLine={false} dy={6} />
+                <YAxis tick={{ fontSize: 10, fill: "#A1A1AA" }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="nilai" stroke="#9E4BDC" strokeWidth={2.5} fill="url(#gradPurple)" dot={false} activeDot={{ r: 5, fill: "#9E4BDC" }} />
+                <Area type="monotone" dataKey="nilai" stroke="#22285E" strokeWidth={1.5} fill="url(#gradDark)"   dot={false} strokeDasharray="4 3" />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
-
-        {/* Sidebar Kanan */}
-        <div className="space-y-4">
-          {/* Top Pelanggan */}
-          <div className="bg-[#9E4BDC] rounded-2xl p-5 shadow-md shadow-[#9E4BDC]/20 relative overflow-hidden">
-            <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full" />
-            <div className="absolute -right-2 -bottom-4 w-16 h-16 bg-white/5 rounded-full" />
-            <div className="flex items-center gap-2 mb-4 relative z-10">
-              <FaTrophy className="text-yellow-300 text-sm" />
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Top Pelanggan</p>
-            </div>
-            <div className="flex items-center gap-3 mb-4 relative z-10">
-              <div className="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center text-base font-black text-white border border-white/30">
-                {topCustomer.name.charAt(0)}
-              </div>
-              <div>
-                <p className="text-sm font-bold text-white leading-none">{topCustomer.name}</p>
-                <p className="text-[11px] text-white/60 mt-0.5">{topCustomer.type}</p>
-              </div>
-            </div>
-            <div className="flex justify-between items-center text-white relative z-10">
-              <span className="text-sm font-bold flex items-center gap-1.5">
-                <FaStar className="text-yellow-300 text-xs" /> {topCustomer.poin.toLocaleString('id')} poin
-              </span>
-              <span className="text-[10px] bg-white/20 px-2.5 py-1 rounded-lg font-medium">
-                {topCustomer.transaksi}x Order
-              </span>
-            </div>
-          </div>
-
-          {/* Kelola Stok */}
-          <Link to="/inventory"
-            className="flex items-center justify-between p-5 bg-white border border-[#E4E4E7] rounded-2xl hover:border-[#F24E1E]/50 hover:shadow-sm transition-all group">
-            <div>
-              <p className="text-sm font-bold text-[#22285E]">Kelola Stok</p>
-              <p className="text-[11px] text-[#71717A] mt-0.5">Cek barang menipis</p>
-            </div>
-            <div className="w-10 h-10 bg-[#F24E1E]/10 rounded-xl flex items-center justify-center text-[#F24E1E] group-hover:bg-[#F24E1E] group-hover:text-white transition-all">
-              <FaBoxOpen className="text-sm" />
-            </div>
-          </Link>
-        </div>
-      </div>
-
-      {/* ── ROW 3: PESANAN TERBARU ── */}
-      <div className="bg-white border border-[#E4E4E7] rounded-2xl p-6">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
-          <div>
-            <h3 className="text-base font-bold text-[#22285E]">Pesanan Terbaru</h3>
-            <p className="text-[11px] text-[#71717A] mt-0.5">Monitoring transaksi masuk</p>
-          </div>
-          
-          {/* IMPLEMENTASI INPUT UNTUK PENCARIAN */}
-          <div className="w-full md:w-72">
-            <Input 
-              placeholder="Cari nama pelanggan..."
-              icon={FaSearch}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="!gap-0" // Menghilangkan gap atas karena tidak pakai label
-            />
-          </div>
-
-          <Link to="/orders" className="text-[#9E4BDC] text-[11px] font-bold hover:underline hidden md:block">Lihat Semua →</Link>
-        </div>
-        
-        <div className="overflow-x-auto scrollbar-hide">
-          <div className="min-w-[560px] space-y-1">
-            {/* Header row */}
-            <div className="grid grid-cols-5 gap-4 px-4 pb-2 border-b border-[#E4E4E7]">
-              {['Pelanggan', 'Produk', 'Total', 'Poin', 'Status'].map(h => (
-                <p key={h} className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">{h}</p>
-              ))}
-            </div>
-
-            {recentOrders.map(order => (
-              <div key={order.id}
-                className="grid grid-cols-5 items-center gap-4 px-4 py-3 rounded-xl hover:bg-[#F4F4F5] transition-all">
-                
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 bg-[#9E4BDC]/10 rounded-lg flex items-center justify-center text-[#9E4BDC] text-xs font-black shrink-0">
-                    {order.customer.charAt(0)}
-                  </div>
-                  <p className="text-xs font-bold text-[#22285E] truncate">{order.customer}</p>
-                </div>
-                
-                <p className="text-xs text-[#71717A] truncate">{order.produk}</p>
-                <p className="text-xs font-bold text-[#22285E]">Rp {order.total.toLocaleString('id')}</p>
-                
-                <p className="text-xs font-bold text-[#00B5AD] flex items-center gap-1">
-                  <FaStar className="text-yellow-400 text-[9px]" />+{order.poin}
-                </p>
-
-                {/* IMPLEMENTASI BADGE */}
-                <Badge status={order.status} />
+          <div className="flex items-center gap-4 mt-3">
+            {[
+              { label: "Transaksi Baru",  color: "#9E4BDC" },
+              { label: "Repeat Order",    color: "#22285E" },
+            ].map((l) => (
+              <div key={l.label} className="flex items-center gap-1.5">
+                <span className="w-3 h-1.5 rounded-full inline-block" style={{ backgroundColor: l.color }} />
+                <span className="text-[10px] text-[#A1A1AA] font-medium">{l.label}</span>
               </div>
             ))}
           </div>
-        </div>
-        <Link to="/orders" className="text-[#9E4BDC] text-[11px] font-bold hover:underline block mt-4 md:hidden text-center">Lihat Semua →</Link>
+        </Card>
       </div>
+
+      {/* ══ ROW 3 — Jadwal + Donut ══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+
+        {/* Jadwal Harian */}
+        <Card
+          className="lg:col-span-3"
+          title="Jadwal Harian"
+          subtitle="Aktivitas operasional Na_store.id hari ini"
+        >
+          <div className="space-y-2 mt-1">
+            {jadwal.map((item, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <span className="text-[10px] text-[#A1A1AA] font-bold w-10 shrink-0 text-right">
+                  {item.jam}
+                </span>
+                <ActivityItem title={item.title} time={item.time} color={item.color} className="flex-1" />
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Donut Charts */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Kategori produk terlaris — dari inventory.json */}
+          <DonutChart
+            title="Kategori Terlaris"
+            subtitle="Berdasarkan unit terjual"
+            center="Nail Art"
+            segments={[
+              { label: "Nail Art",   value: 35, color: "#9E4BDC" },
+              { label: "Aksesoris Rambut", value: 28, color: "#95D5B6" },
+              { label: "Anting",     value: 18, color: "#F24E1E" },
+              { label: "Gelang",     value: 12, color: "#22285E" },
+              { label: "Lainnya",    value:  7, color: "#E4E4E7" },
+            ]}
+          />
+          {/* Metode pembayaran — dari orders.json */}
+          <DonutChart
+            title="Metode Pembayaran"
+            subtitle="Preferensi pelanggan Na_store.id"
+            center="GoPay"
+            segments={[
+              { label: "GoPay",        value: 32, color: "#9E4BDC" },
+              { label: "Transfer BCA", value: 28, color: "#95D5B6" },
+              { label: "COD",          value: 22, color: "#22285E" },
+              { label: "OVO",          value: 10, color: "#F24E1E" },
+              { label: "Lainnya",      value:  8, color: "#E4E4E7" },
+            ]}
+          />
+        </div>
+      </div>
+
+      {/* ══ ROW 4 — Pesanan Terbaru ══ */}
+      <Card
+        title="Pesanan Terbaru"
+        subtitle="Transaksi aksesoris masuk hari ini"
+        action={
+          <Link to="/orders" className="text-[#9E4BDC] text-[11px] font-bold hover:underline">
+            Lihat Semua →
+          </Link>
+        }
+      >
+        <div className="grid grid-cols-5 gap-4 px-4 pb-3 border-b border-[#E4E4E7]">
+          {["ID Pesanan", "Pelanggan", "Produk", "Total + Poin", "Status"].map((h) => (
+            <p key={h} className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">{h}</p>
+          ))}
+        </div>
+        <div className="mt-1 space-y-0.5">
+          {pesananTerbaru.map((o) => (
+            <div key={o.id} className="grid grid-cols-5 items-center gap-4 px-4 py-3 rounded-xl hover:bg-[#F4F4F5] transition-all">
+              <span className="text-xs font-black text-[#9E4BDC] bg-[#9E4BDC]/10 px-2 py-1 rounded-lg w-fit">{o.id}</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 bg-[#9E4BDC]/10 rounded-lg flex items-center justify-center text-[#9E4BDC] text-xs font-black shrink-0">
+                  {o.customer.charAt(0)}
+                </div>
+                <p className="text-xs font-bold text-[#22285E] truncate">{o.customer}</p>
+              </div>
+              <p className="text-xs text-[#71717A] truncate">{o.produk}</p>
+              <div>
+                <p className="text-xs font-bold text-[#22285E]">Rp {o.total.toLocaleString("id")}</p>
+                <p className="text-[10px] text-[#00B5AD] font-semibold flex items-center gap-0.5">
+                  <FaStar className="text-yellow-400 text-[8px]" />+{o.poin} poin
+                </p>
+              </div>
+              <Badge status={o.status} />
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* ══ ROW 5 — Top Pelanggan ══ */}
+      <Card
+        title="Top Pelanggan Setia"
+        subtitle="Pelanggan dengan poin & belanja tertinggi di Na_store.id"
+        action={
+          <Link to="/customers" className="text-[#9E4BDC] text-[11px] font-bold hover:underline">
+            Lihat Semua →
+          </Link>
+        }
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {pelangganBaru.map((p, i) => (
+            <div key={p.id} className="bg-[#F4F4F5] rounded-2xl p-4 flex flex-col items-center text-center gap-2 hover:bg-[#9E4BDC]/5 transition-all">
+              {/* Rank badge */}
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black text-white ${
+                i === 0 ? "bg-[#9E4BDC]" : i === 1 ? "bg-[#22285E]" : "bg-[#95D5B6]"
+              }`}>
+                {p.nama.charAt(0)}
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[#22285E] leading-tight">{p.nama}</p>
+                <Badge status={p.status} />
+              </div>
+              <div className="w-full pt-2 border-t border-[#E4E4E7] space-y-1">
+                <p className="text-[10px] text-[#A1A1AA]">
+                  <FaStar className="text-yellow-400 inline mr-0.5 text-[9px]" />
+                  <span className="font-bold text-[#22285E]">{p.poin.toLocaleString("id")}</span> poin
+                </p>
+                <p className="text-[10px] text-[#A1A1AA]">
+                  Rp <span className="font-bold text-[#22285E]">
+                    {p.belanja >= 1000000
+                      ? (p.belanja / 1000000).toFixed(1) + " jt"
+                      : p.belanja.toLocaleString("id")}
+                  </span>
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* AvatarGroup — semua pelanggan setia */}
+        <div className="mt-5 pt-4 border-t border-[#E4E4E7] flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-[#22285E]">Semua Pelanggan Aktif</p>
+            <p className="text-[10px] text-[#A1A1AA] mt-0.5">Hover avatar untuk lihat nama</p>
+          </div>
+          <AvatarGroup
+            users={[
+              { name: "Dewi Lestari",   color: "bg-[#9E4BDC] text-white"    },
+              { name: "Mega Wulandari", color: "bg-[#22285E] text-white"    },
+              { name: "Amelia Putri",   color: "bg-[#95D5B6] text-[#22285E]" },
+              { name: "Siti Sarah",     color: "bg-yellow-400 text-white"   },
+              { name: "Hendra Wijaya",  color: "bg-[#F24E1E] text-white"    },
+              { name: "Nadia Rahma",    color: "bg-[#00B5AD] text-white"    },
+              { name: "Rina Susanti",   color: "bg-[#9E4BDC] text-white"    },
+            ]}
+            max={5}
+            size="md"
+            label="30 pelanggan terdaftar"
+          />
+        </div>
+      </Card>
 
     </div>
   );

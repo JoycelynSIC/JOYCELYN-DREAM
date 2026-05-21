@@ -94,10 +94,10 @@ export default function Login() {
           <div className="flex items-center justify-between text-[12px] px-1 font-medium">
             <label className="flex items-center text-gray-400 cursor-pointer">
               <input type="checkbox" className="mr-2 accent-[#9E4BDC] w-4 h-4" />
-              Keep me logged in
+              Tetap masuk
             </label>
             <Link to="/forgot" className="text-[#9E4BDC] font-bold hover:underline">
-              Forget Password!
+              Lupa Password?
             </Link>
           </div>
 
@@ -106,24 +106,24 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-[#9E4BDC] hover:bg-[#8e3ec7] text-white py-4 rounded-2xl font-bold text-sm shadow-lg shadow-purple-500/20 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 mt-4"
           >
-            {loading ? <FaSpinner className="animate-spin" /> : "Login"}
+            {loading ? <FaSpinner className="animate-spin" /> : "Masuk"}
           </button>
 
           <div className="flex justify-center gap-6 pt-6">
             <button type="button" className="flex items-center gap-2 text-[11px] text-gray-400 font-medium">
               <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" className="w-5 h-5" alt="FB" />
-              Login with facebook
+              Masuk dengan Facebook
             </button>
             <button type="button" className="flex items-center gap-2 text-[11px] text-gray-400 font-medium">
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
-              Login with Google
+              Masuk dengan Google
             </button>
           </div>
 
           <p className="text-center text-[12px] text-gray-400 pt-6">
-            Don't have an account?{' '}
+            Belum punya akun?{' '}
             <Link to="/register" className="font-bold text-[#9E4BDC] hover:underline">
-              Create now
+              Daftar sekarang
             </Link>
           </p>
         </form>

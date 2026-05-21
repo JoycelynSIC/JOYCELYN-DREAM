@@ -1,15 +1,29 @@
-import React from 'react';
-
-const Input = ({ 
-  label, 
-  type = "text", 
-  placeholder, 
-  value, 
-  onChange, 
-  icon: Icon, 
+/**
+ * KOMPONEN 4 — Input
+ * Field teks serbaguna dengan label, ikon, dan pesan error.
+ *
+ * Props:
+ *  label       : string
+ *  type        : string  — default "text"
+ *  placeholder : string
+ *  value       : string
+ *  onChange    : fn
+ *  icon        : ReactIcon component (bukan instance)
+ *  error       : string  — pesan error
+ *  disabled    : boolean
+ *  className   : string
+ */
+export default function Input({
+  label,
+  type = "text",
+  placeholder,
+  value,
+  onChange,
+  icon: Icon,
   error,
-  className = "" 
-}) => {
+  disabled = false,
+  className = "",
+}) {
   return (
     <div className={`flex flex-col gap-1.5 w-full ${className}`}>
       {label && (
@@ -17,31 +31,33 @@ const Input = ({
           {label}
         </label>
       )}
-      
+
       <div className="relative group">
         {Icon && (
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A1A1AA] group-focus-within:text-[#9E4BDC] transition-colors">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A1A1AA] group-focus-within:text-[#9E4BDC] transition-colors pointer-events-none">
             <Icon size={14} />
           </div>
         )}
-        
+
         <input
           type={type}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
+          disabled={disabled}
           className={`
-            w-full bg-[#F4F4F5] border-2 border-transparent rounded-xl py-3 
-            ${Icon ? 'pl-11' : 'px-4'} pr-4
+            w-full bg-[#F4F4F5] border-2 border-transparent rounded-xl py-3
+            ${Icon ? "pl-11" : "px-4"} pr-4
             text-sm font-medium text-[#22285E] outline-none
             placeholder:text-[#A1A1AA]
-            focus:border-[#9E4BDC]/20 focus:bg-white focus:ring-4 focus:ring-[#9E4BDC]/5
+            focus:border-[#9E4BDC]/30 focus:bg-white focus:ring-4 focus:ring-[#9E4BDC]/5
+            disabled:opacity-50 disabled:cursor-not-allowed
             transition-all duration-200
-            ${error ? 'border-red-500/50 bg-red-50' : ''}
+            ${error ? "border-red-400/50 bg-red-50" : ""}
           `}
         />
       </div>
-      
+
       {error && (
         <span className="text-[10px] text-red-500 font-bold ml-1 uppercase tracking-tight">
           {error}
@@ -49,6 +65,4 @@ const Input = ({
       )}
     </div>
   );
-};
-
-export default Input;
+}

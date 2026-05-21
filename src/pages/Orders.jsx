@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import ordersData from '../data/orders.json';
 import PageHeader from '../components/PageHeader';
+import Badge     from '../components/Badge';
+import StatCard  from '../components/StatCard';
+import Card      from '../components/Card';
+import Button    from '../components/Button';
+import Input     from '../components/Input';
+import Select    from '../components/Select';
 import {
   FaShoppingBag, FaSearch, FaFilter, FaCheckCircle, FaTruck,
   FaSpinner, FaTimesCircle, FaStar, FaBoxOpen, FaEye, FaTimes,
@@ -86,55 +92,43 @@ export default function Orders() {
         </button>
       </PageHeader>
 
-      {/* ── Stat Cards ── */}
+      {/* ── Stat Cards — pakai StatCard ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: 'Total Pesanan', val: orders.length,  icon: FaShoppingBag, bg: 'bg-surface-white',  iconBg: 'bg-surface-gray',     iconColor: 'text-primary'        },
-          { label: 'Selesai',       val: totalSelesai,   icon: FaCheckCircle, bg: 'bg-status-success/5 border-status-success/20', iconBg: 'bg-status-success/10', iconColor: 'text-status-success' },
-          { label: 'Dikirim',       val: totalDikirim,   icon: FaTruck,       bg: 'bg-secondary/10',   iconBg: 'bg-surface-white',    iconColor: 'text-status-success' },
-          { label: 'Diproses',      val: totalProses,    icon: FaSpinner,     bg: 'bg-surface-neutral', iconBg: 'bg-surface-white',   iconColor: 'text-text-disable'   },
-        ].map((s, i) => {
-          const Icon = s.icon;
-          return (
-            <div key={i} className={`${s.bg} border border-surface-border rounded-2xl p-4 flex items-center gap-3`}>
-              <div className={`w-9 h-9 ${s.iconBg} rounded-xl flex items-center justify-center shrink-0`}>
-                <Icon className={`${s.iconColor} text-sm`} />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-text-disable">{s.label}</p>
-                <p className="text-xl font-black text-text-dark">{s.val}</p>
-              </div>
-            </div>
-          );
-        })}
+        <StatCard label="Total Pesanan" value={orders.length}  desc="semua pesanan"   icon={<FaShoppingBag />} iconBgColor="bg-[#F4F4F5]"          iconColor="text-[#9E4BDC]"  />
+        <StatCard label="Selesai"       value={totalSelesai}   desc="transaksi lunas" icon={<FaCheckCircle />} iconBgColor="bg-[#00B5AD]/10"        iconColor="text-[#00B5AD]"  />
+        <StatCard label="Dikirim"       value={totalDikirim}   desc="dalam pengiriman" icon={<FaTruck />}      variant="primary" />
+        <StatCard label="Diproses"      value={totalProses}    desc="menunggu proses" icon={<FaSpinner />}     iconBgColor="bg-[#F4F4F5]"          iconColor="text-[#A1A1AA]"  />
       </div>
 
       {/* ── Main 2-col ── */}
       <div className={`grid gap-4 ${selected ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1'}`}>
 
-        {/* LEFT: Tabel */}
-        <div className={`bg-surface-white border border-surface-border rounded-2xl overflow-hidden ${selected ? 'lg:col-span-2' : ''}`}>
-
+        {/* LEFT: Tabel — pakai Card */}
+        <Card
+          className={selected ? 'lg:col-span-2' : ''}
+          padding={false}
+          title=""
+        >
           {/* Toolbar */}
-          <div className="flex flex-col sm:flex-row gap-3 p-5 border-b border-surface-border">
-            <div className="relative flex-1">
-              <FaSearch className="absolute left-3.5 top-3 text-text-disable text-xs" />
-              <input type="text" name="search" placeholder="Cari ID, nama, atau produk..."
-                onChange={handleChange}
-                className="w-full bg-surface-gray border border-surface-border rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all placeholder:text-text-disable text-text-light"
-              />
-            </div>
+          <div className="flex flex-col sm:flex-row gap-3 p-5 border-b border-[#E4E4E7]">
+            <Input
+              placeholder="Cari ID, nama, atau produk..."
+              icon={FaSearch}
+              value={dataForm.search}
+              onChange={(e) => setDataForm({ ...dataForm, search: e.target.value })}
+              className="flex-1 !gap-0"
+            />
             <div className="flex items-center gap-2 flex-wrap">
-              <FaFilter className="text-text-disable text-xs shrink-0" />
+              <FaFilter className="text-[#A1A1AA] text-xs shrink-0" />
               {['Semua', 'Selesai', 'Dikirim', 'Proses', 'Batal'].map(s => (
-                <button key={s} onClick={() => setDataForm({ ...dataForm, filterStatus: s })}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                    dataForm.filterStatus === s
-                      ? 'bg-primary text-surface-white'
-                      : 'bg-surface-neutral border border-surface-border text-text-disable hover:text-text-light'
-                  }`}>
+                <Button
+                  key={s}
+                  size="sm"
+                  variant={dataForm.filterStatus === s ? 'primary' : 'ghost'}
+                  onClick={() => setDataForm({ ...dataForm, filterStatus: s })}
+                >
                   {s}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -189,9 +183,8 @@ export default function Orders() {
                         )}
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg inline-flex items-center gap-1 ${sc.style}`}>
-                          <StatusIcon className="text-[9px]" />{o.status}
-                        </span>
+                        {/* Badge dari komponen Badge */}
+                        <Badge status={o.status} />
                       </td>
                       <td className="px-5 py-3.5">
                         <button onClick={() => setSelected(isActive ? null : o)}
@@ -215,24 +208,22 @@ export default function Orders() {
               </div>
             )}
           </div>
-        </div>
+        </Card>
 
-        {/* RIGHT: Detail Panel */}
+        {/* RIGHT: Detail Panel — pakai Card */}
         {selected && (() => {
           const sc = statusConfig[selected.status];
           const StatusIcon = sc.icon;
           return (
-            <div className="bg-surface-white border border-surface-border rounded-2xl p-6 space-y-5 sticky top-4 h-fit">
-              <div className="flex items-start justify-between pb-4 border-b border-surface-border">
+            <Card className="sticky top-4 h-fit" padding={true}>
+              <div className="flex items-start justify-between pb-4 border-b border-[#E4E4E7]">
                 <div>
-                  <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-lg">{selected.id}</span>
-                  <p className="text-[10px] text-text-disable mt-1.5 flex items-center gap-1">
-                    <FaCalendarAlt className="text-secondary" />{selected.tanggal}
+                  <span className="text-xs font-black text-[#9E4BDC] bg-[#9E4BDC]/10 px-2.5 py-1 rounded-lg">{selected.id}</span>
+                  <p className="text-[10px] text-[#A1A1AA] mt-1.5 flex items-center gap-1">
+                    <FaCalendarAlt className="text-[#95D5B6]" />{selected.tanggal}
                   </p>
                 </div>
-                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg inline-flex items-center gap-1 ${sc.style}`}>
-                  <StatusIcon className="text-[9px]" />{selected.status}
-                </span>
+                <Badge status={selected.status} />
               </div>
 
               <div className="space-y-2">
@@ -288,113 +279,91 @@ export default function Orders() {
 
               <div className="space-y-2 pt-1">
                 {selected.status === 'Proses' && (
-                  <button className="w-full py-2.5 rounded-xl text-xs font-bold bg-primary text-surface-white hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center gap-2">
-                    <FaTruck className="text-xs" /> Tandai Dikirim
-                  </button>
+                  <Button variant="primary" className="w-full" icon={<FaTruck className="text-xs" />}>
+                    Tandai Dikirim
+                  </Button>
                 )}
                 {selected.status === 'Dikirim' && (
-                  <button className="w-full py-2.5 rounded-xl text-xs font-bold bg-status-success text-surface-white hover:bg-status-success/90 transition-all active:scale-95 flex items-center justify-center gap-2">
-                    <FaCheckCircle className="text-xs" /> Tandai Selesai
-                  </button>
+                  <Button variant="success" className="w-full" icon={<FaCheckCircle className="text-xs" />}>
+                    Tandai Selesai
+                  </Button>
                 )}
-                <button className="w-full py-2.5 rounded-xl text-xs font-bold border border-surface-border text-text-light hover:bg-surface-neutral transition-all flex items-center justify-center gap-2">
-                  <FaUser className="text-xs" /> Lihat Profil Pelanggan
-                </button>
+                <Button variant="outline" className="w-full" icon={<FaUser className="text-xs" />}>
+                  Lihat Profil Pelanggan
+                </Button>
               </div>
-            </div>
+            </Card>
           );
         })()}
       </div>
 
-      {/* ── Modal Tambah Pesanan ── */}
+      {/* ── Modal Tambah Pesanan — pakai Input + Select + Button ── */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-surface-white rounded-2xl shadow-2xl w-full max-w-md border border-surface-border animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
 
-            <div className="flex items-center justify-between px-6 py-5 border-b border-surface-border">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-[#E4E4E7]">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shrink-0">
-                  <FaShoppingBag className="text-surface-white text-sm" />
+                <div className="w-9 h-9 bg-[#9E4BDC] rounded-xl flex items-center justify-center shrink-0">
+                  <FaShoppingBag className="text-white text-sm" />
                 </div>
                 <div>
-                  <p className="text-sm font-black text-text-dark">Tambah Pesanan Baru</p>
-                  <p className="text-[10px] text-text-disable">Isi data transaksi pelanggan</p>
+                  <p className="text-sm font-black text-[#22285E]">Tambah Pesanan Baru</p>
+                  <p className="text-[10px] text-[#A1A1AA]">Isi data transaksi pelanggan</p>
                 </div>
               </div>
               <button onClick={() => setShowForm(false)}
-                className="w-8 h-8 bg-surface-gray border border-surface-border rounded-xl flex items-center justify-center hover:bg-status-warning/10 hover:text-status-warning transition-colors text-text-disable">
+                className="w-8 h-8 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl flex items-center justify-center hover:bg-[#F24E1E]/10 hover:text-[#F24E1E] transition-colors text-[#A1A1AA]">
                 <FaTimes className="text-xs" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Nama Pelanggan</label>
-                <input type="text" name="customer" value={formPesanan.customer} onChange={handleFormChange} required
-                  placeholder="cth: Dewi Lestari" className={inputClass} />
-              </div>
+              <Input label="Nama Pelanggan" type="text" name="customer"
+                value={formPesanan.customer} onChange={handleFormChange}
+                placeholder="cth: Dewi Lestari" icon={FaUser} />
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Produk</label>
-                <input type="text" name="produk" value={formPesanan.produk} onChange={handleFormChange} required
-                  placeholder="cth: Kalung Titanium Rosegold" className={inputClass} />
-              </div>
+              <Input label="Produk" type="text" name="produk"
+                value={formPesanan.produk} onChange={handleFormChange}
+                placeholder="cth: Kalung Titanium Rosegold" icon={FaBoxOpen} />
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Qty (pcs)</label>
-                  <input type="number" name="qty" value={formPesanan.qty} onChange={handleFormChange} min="1" required className={inputClass} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Total (Rp)</label>
-                  <input type="number" name="total" value={formPesanan.total} onChange={handleFormChange} required
-                    placeholder="85000" className={inputClass} />
-                </div>
+                <Input label="Qty (pcs)" type="number" name="qty"
+                  value={formPesanan.qty} onChange={handleFormChange} />
+                <Input label="Total (Rp)" type="number" name="total"
+                  value={formPesanan.total} onChange={handleFormChange}
+                  placeholder="85000" icon={FaMoneyBillWave} />
               </div>
 
               {formPesanan.total && (
-                <div className="flex items-center gap-1.5 bg-status-success/10 border border-status-success/20 rounded-xl px-3 py-2">
+                <div className="flex items-center gap-1.5 bg-[#00B5AD]/10 border border-[#00B5AD]/20 rounded-xl px-3 py-2">
                   <FaStar className="text-yellow-400 text-[10px] shrink-0" />
-                  <span className="text-[11px] font-bold text-status-success">
+                  <span className="text-[11px] font-bold text-[#00B5AD]">
                     +{Math.floor(Number(formPesanan.total) / 1000)} poin akan diberikan
                   </span>
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Alamat Pengiriman</label>
-                <input type="text" name="alamat" value={formPesanan.alamat} onChange={handleFormChange} required
-                  placeholder="cth: Jl. Merdeka No. 12, Perawang" className={inputClass} />
-              </div>
+              <Input label="Alamat Pengiriman" type="text" name="alamat"
+                value={formPesanan.alamat} onChange={handleFormChange}
+                placeholder="cth: Jl. Merdeka No. 12, Perawang" icon={FaMapMarkerAlt} />
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Metode Bayar</label>
-                  <select name="metode" value={formPesanan.metode} onChange={handleFormChange} className={inputClass}>
-                    {['Transfer BCA', 'Transfer BRI', 'Transfer BNI', 'GoPay', 'OVO', 'COD'].map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Status</label>
-                  <select name="status" value={formPesanan.status} onChange={handleFormChange} className={inputClass}>
-                    {['Proses', 'Dikirim', 'Selesai', 'Batal'].map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
+                <Select label="Metode Bayar" name="metode"
+                  value={formPesanan.metode} onChange={handleFormChange}
+                  options={['Transfer BCA','Transfer BRI','Transfer BNI','GoPay','OVO','COD']
+                    .map(m => ({ value: m, label: m }))} />
+                <Select label="Status" name="status"
+                  value={formPesanan.status} onChange={handleFormChange}
+                  options={['Proses','Dikirim','Selesai','Batal']
+                    .map(s => ({ value: s, label: s }))} />
               </div>
 
               <div className="flex gap-3 pt-1">
-                <button type="button" onClick={() => setShowForm(false)}
-                  className="flex-1 py-3 rounded-xl text-sm font-bold border border-surface-border text-text-light hover:bg-surface-neutral transition-all">
-                  Batal
-                </button>
-                <button type="submit"
-                  className="flex-1 py-3 rounded-xl text-sm font-bold bg-primary text-surface-white hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center gap-2">
-                  <FaPlus className="text-xs" /> Simpan
-                </button>
+                <Button type="button" variant="ghost" className="flex-1 border border-[#E4E4E7]"
+                  onClick={() => setShowForm(false)}>Batal</Button>
+                <Button type="submit" variant="primary" className="flex-1"
+                  icon={<FaPlus className="text-xs" />}>Simpan</Button>
               </div>
             </form>
           </div>
