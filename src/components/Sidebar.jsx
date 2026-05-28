@@ -78,7 +78,7 @@ export default function Sidebar() {
         <div className="mt-auto pt-6">
           <div className={`mx-8 mb-4 border-t border-white/10 ${isHovered ? "block" : "hidden"}`} />
           <button
-            onClick={() => { if (confirm("Logout?")) { localStorage.clear(); navigate("/login"); } }}
+            onClick={() => { if (confirm("Logout?")) { localStorage.clear(); window.location.href = "/login"; } }}
             className={`flex items-center text-white/70 hover:text-white transition-all w-full group ${
               isHovered ? "px-8 gap-3 justify-start" : "justify-center"
             }`}

@@ -9,7 +9,7 @@
   "tanggal": "2 Mei 2025",
   "alamat": "Jl. Merdeka No. 12, Perawang",
   "poin": 60,
-  "metode": "GoPay"
+  "metode": "QRIS"
 },
 {
   "id": "#ORD-099",
@@ -22,7 +22,7 @@
   "tanggal": "2 Mei 2025",
   "alamat": "Jl. Pahlawan No. 3, Perawang",
   "poin": 55,
-  "metode": "Transfer BCA"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-098",
@@ -31,11 +31,11 @@
   "gambar": "/src/assets/gambarproduk/clawclip.png",
   "qty": 4,
   "total": 60000,
-  "status": "Dikirim",
+  "status": "Proses",
   "tanggal": "2 Mei 2025",
   "alamat": "Jl. Sudirman No. 5, Perawang",
   "poin": 60,
-  "metode": "COD"
+  "metode": "Cash"
 },
 {
   "id": "#ORD-097",
@@ -48,7 +48,7 @@
   "tanggal": "1 Mei 2025",
   "alamat": "Jl. Ahmad Yani No. 8, Perawang",
   "poin": 85,
-  "metode": "Transfer BCA"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-096",
@@ -61,7 +61,7 @@
   "tanggal": "1 Mei 2025",
   "alamat": "Jl. Merdeka No. 12, Perawang",
   "poin": 50,
-  "metode": "OVO"
+  "metode": "QRIS"
 },
 {
   "id": "#ORD-095",
@@ -74,7 +74,7 @@
   "tanggal": "30 Apr 2025",
   "alamat": "Jl. Pahlawan No. 3, Perawang",
   "poin": 44,
-  "metode": "GoPay"
+  "metode": "QRIS"
 },
 {
   "id": "#ORD-094",
@@ -83,11 +83,11 @@
   "gambar": "/src/assets/gambarproduk/tasminiselempang.png",
   "qty": 1,
   "total": 95000,
-  "status": "Dikirim",
+  "status": "Proses",
   "tanggal": "30 Apr 2025",
   "alamat": "Jl. Diponegoro No. 17, Perawang",
   "poin": 95,
-  "metode": "Transfer BRI"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-093",
@@ -100,7 +100,7 @@
   "tanggal": "29 Apr 2025",
   "alamat": "Jl. Sudirman No. 5, Perawang",
   "poin": 56,
-  "metode": "Transfer BCA"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-092",
@@ -113,7 +113,7 @@
   "tanggal": "29 Apr 2025",
   "alamat": "Jl. Ahmad Yani No. 8, Perawang",
   "poin": 0,
-  "metode": "COD"
+  "metode": "Cash"
 },
 {
   "id": "#ORD-091",
@@ -126,7 +126,7 @@
   "tanggal": "28 Apr 2025",
   "alamat": "Jl. Merdeka No. 12, Perawang",
   "poin": 170,
-  "metode": "Transfer BCA"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-090",
@@ -139,7 +139,7 @@
   "tanggal": "28 Apr 2025",
   "alamat": "Jl. Sudirman No. 5, Perawang",
   "poin": 70,
-  "metode": "COD"
+  "metode": "Cash"
 },
 {
   "id": "#ORD-089",
@@ -152,7 +152,7 @@
   "tanggal": "27 Apr 2025",
   "alamat": "Jl. Ahmad Yani No. 8, Perawang",
   "poin": 90,
-  "metode": "Transfer BCA"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-088",
@@ -165,7 +165,7 @@
   "tanggal": "27 Apr 2025",
   "alamat": "Jl. Pahlawan No. 3, Perawang",
   "poin": 75,
-  "metode": "GoPay"
+  "metode": "QRIS"
 },
 {
   "id": "#ORD-087",
@@ -178,7 +178,7 @@
   "tanggal": "26 Apr 2025",
   "alamat": "Jl. Diponegoro No. 17, Perawang",
   "poin": 55,
-  "metode": "Transfer BRI"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-086",
@@ -191,7 +191,7 @@
   "tanggal": "26 Apr 2025",
   "alamat": "Jl. Imam Bonjol No. 9, Perawang",
   "poin": 0,
-  "metode": "GoPay"
+  "metode": "QRIS"
 },
 {
   "id": "#ORD-085",
@@ -204,7 +204,7 @@
   "tanggal": "25 Apr 2025",
   "alamat": "Jl. Merdeka No. 12, Perawang",
   "poin": 120,
-  "metode": "Transfer BCA"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-084",
@@ -217,7 +217,7 @@
   "tanggal": "25 Apr 2025",
   "alamat": "Jl. Veteran No. 21, Perawang",
   "poin": 60,
-  "metode": "COD"
+  "metode": "Cash"
 },
 {
   "id": "#ORD-083",
@@ -226,11 +226,11 @@
   "gambar": "/src/assets/gambarproduk/tumblrflower.png",
   "qty": 1,
   "total": 65000,
-  "status": "Dikirim",
+  "status": "Proses",
   "tanggal": "24 Apr 2025",
   "alamat": "Jl. Pahlawan No. 3, Perawang",
   "poin": 65,
-  "metode": "OVO"
+  "metode": "QRIS"
 },
 {
   "id": "#ORD-082",
@@ -243,7 +243,7 @@
   "tanggal": "24 Apr 2025",
   "alamat": "Jl. Sudirman No. 5, Perawang",
   "poin": 240,
-  "metode": "Transfer BCA"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-081",
@@ -256,7 +256,7 @@
   "tanggal": "23 Apr 2025",
   "alamat": "Jl. Ahmad Yani No. 8, Perawang",
   "poin": 36,
-  "metode": "GoPay"
+  "metode": "QRIS"
 },
 {
   "id": "#ORD-080",
@@ -269,7 +269,7 @@
   "tanggal": "23 Apr 2025",
   "alamat": "Jl. Merdeka No. 12, Perawang",
   "poin": 60,
-  "metode": "Transfer BCA"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-079",
@@ -282,7 +282,7 @@
   "tanggal": "22 Apr 2025",
   "alamat": "Jl. Diponegoro No. 17, Perawang",
   "poin": 75,
-  "metode": "Transfer BRI"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-078",
@@ -295,7 +295,7 @@
   "tanggal": "22 Apr 2025",
   "alamat": "Jl. Pahlawan No. 3, Perawang",
   "poin": 30,
-  "metode": "COD"
+  "metode": "Cash"
 },
 {
   "id": "#ORD-077",
@@ -304,11 +304,11 @@
   "gambar": "/src/assets/gambarproduk/kalungpearl.png",
   "qty": 1,
   "total": 75000,
-  "status": "Dikirim",
+  "status": "Proses",
   "tanggal": "21 Apr 2025",
   "alamat": "Jl. Sudirman No. 5, Perawang",
   "poin": 75,
-  "metode": "GoPay"
+  "metode": "QRIS"
 },
 {
   "id": "#ORD-076",
@@ -321,7 +321,7 @@
   "tanggal": "21 Apr 2025",
   "alamat": "Jl. Veteran No. 21, Perawang",
   "poin": 45,
-  "metode": "Transfer BCA"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-075",
@@ -334,7 +334,7 @@
   "tanggal": "20 Apr 2025",
   "alamat": "Jl. Ahmad Yani No. 8, Perawang",
   "poin": 45,
-  "metode": "OVO"
+  "metode": "QRIS"
 },
 {
   "id": "#ORD-074",
@@ -347,7 +347,7 @@
   "tanggal": "20 Apr 2025",
   "alamat": "Jl. Merdeka No. 12, Perawang",
   "poin": 55,
-  "metode": "Transfer BCA"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-073",
@@ -360,7 +360,7 @@
   "tanggal": "19 Apr 2025",
   "alamat": "Jl. Imam Bonjol No. 9, Perawang",
   "poin": 0,
-  "metode": "COD"
+  "metode": "Cash"
 },
 {
   "id": "#ORD-072",
@@ -373,7 +373,7 @@
   "tanggal": "19 Apr 2025",
   "alamat": "Jl. Pahlawan No. 3, Perawang",
   "poin": 60,
-  "metode": "GoPay"
+  "metode": "QRIS"
 },
 {
   "id": "#ORD-071",
@@ -386,7 +386,7 @@
   "tanggal": "18 Apr 2025",
   "alamat": "Jl. Sudirman No. 5, Perawang",
   "poin": 70,
-  "metode": "Transfer BCA"
+  "metode": "Transfer Bank"
 },
 {
   "id": "#ORD-070",
@@ -399,5 +399,5 @@
   "tanggal": "18 Apr 2025",
   "alamat": "Jl. Merdeka No. 12, Perawang",
   "poin": 60,
-  "metode": "COD"
+  "metode": "Cash"
 }]

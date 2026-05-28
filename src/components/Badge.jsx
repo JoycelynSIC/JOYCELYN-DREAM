@@ -3,18 +3,17 @@
  * Label status berwarna untuk tabel pesanan, member, dll.
  *
  * Props:
- *  status : "Selesai" | "Proses" | "Dikirim" | "Batal"
+ *  status : "Selesai" | "Proses" | "Batal"
  *           | "Reguler" | "Silver" | "Gold" | "Platinum"
  *           | string bebas (fallback abu-abu)
  */
-import { FaCheckCircle, FaSpinner, FaTruck, FaTimesCircle, FaStar } from 'react-icons/fa';
+import { FaCheckCircle, FaSpinner, FaTimesCircle, FaStar } from 'react-icons/fa';
 
 export default function Badge({ status }) {
   const configs = {
     /* ── Status Pesanan ── */
     Selesai:  { bg: "bg-[#00B5AD]/10",  text: "text-[#00B5AD]",  border: "border-[#00B5AD]/20",  icon: <FaCheckCircle className="text-[10px]" /> },
     Proses:   { bg: "bg-[#F4F4F5]",     text: "text-[#71717A]",  border: "border-[#E4E4E7]",     icon: <FaSpinner className="text-[10px] animate-spin" /> },
-    Dikirim:  { bg: "bg-[#95D5B6]/20",  text: "text-[#22285E]",  border: "border-[#95D5B6]/30",  icon: <FaTruck className="text-[10px]" /> },
     Batal:    { bg: "bg-[#F24E1E]/10",  text: "text-[#F24E1E]",  border: "border-[#F24E1E]/20",  icon: <FaTimesCircle className="text-[10px]" /> },
     /* ── Level Member ── */
     Reguler:  { bg: "bg-[#F4F4F5]",     text: "text-[#71717A]",  border: "border-[#E4E4E7]",     icon: null },

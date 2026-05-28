@@ -8,16 +8,15 @@ import Button    from '../components/Button';
 import Input     from '../components/Input';
 import Select    from '../components/Select';
 import {
-  FaShoppingBag, FaSearch, FaFilter, FaCheckCircle, FaTruck,
+  FaShoppingBag, FaSearch, FaFilter, FaCheckCircle,
   FaSpinner, FaTimesCircle, FaStar, FaBoxOpen, FaEye, FaTimes,
-  FaUser, FaMapMarkerAlt, FaCalendarAlt, FaMoneyBillWave,
+  FaUser, FaCalendarAlt, FaMoneyBillWave,
   FaPlus
 } from 'react-icons/fa';
 
 const statusConfig = {
   Selesai: { style: 'bg-status-success/10 text-status-success border border-status-success/20', icon: FaCheckCircle },
   Proses:  { style: 'bg-surface-neutral text-text-light border border-surface-border',          icon: FaSpinner     },
-  Dikirim: { style: 'bg-secondary/20 text-text-dark border border-secondary/30',                icon: FaTruck       },
   Batal:   { style: 'bg-status-warning/10 text-status-warning border border-status-warning/20', icon: FaTimesCircle },
 };
 
@@ -31,13 +30,8 @@ export default function Orders() {
   const [formPesanan, setFormPesanan] = useState({
     customer: '', produk: '', qty: 1, total: '', status: 'Proses',
     tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-    alamat: '', metode: 'Transfer BCA',
+    metode: 'Transfer Bank',
   });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setDataForm({ ...dataForm, [name]: value });
-  };
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -56,11 +50,11 @@ export default function Orders() {
   const totalOmzet   = orders.filter(o => o.status !== 'Batal').reduce((a, o) => a + o.total, 0);
   const totalSelesai = orders.filter(o => o.status === 'Selesai').length;
   const totalProses  = orders.filter(o => o.status === 'Proses').length;
-  const totalDikirim = orders.filter(o => o.status === 'Dikirim').length;
+  const totalBatal   = orders.filter(o => o.status === 'Batal').length;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formPesanan.customer || !formPesanan.produk || !formPesanan.total || !formPesanan.alamat) return;
+    if (!formPesanan.customer || !formPesanan.produk || !formPesanan.total) return;
     const newOrder = {
       ...formPesanan,
       id:    `#ORD-${String(orders.length + 1).padStart(3, '0')}`,
@@ -72,12 +66,10 @@ export default function Orders() {
     setFormPesanan({
       customer: '', produk: '', qty: 1, total: '', status: 'Proses',
       tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-      alamat: '', metode: 'Transfer BCA',
+      metode: 'Transfer BCA',
     });
     setShowForm(false);
   };
-
-  const inputClass = "w-full bg-surface-gray border border-surface-border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all placeholder:text-text-disable text-text-light";
 
   return (
     <div className="space-y-5 animate-in fade-in duration-500 font-poppins">
@@ -92,23 +84,18 @@ export default function Orders() {
         </button>
       </PageHeader>
 
-      {/* ── Stat Cards — pakai StatCard ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Total Pesanan" value={orders.length}  desc="semua pesanan"   icon={<FaShoppingBag />} iconBgColor="bg-[#F4F4F5]"          iconColor="text-[#9E4BDC]"  />
-        <StatCard label="Selesai"       value={totalSelesai}   desc="transaksi lunas" icon={<FaCheckCircle />} iconBgColor="bg-[#00B5AD]/10"        iconColor="text-[#00B5AD]"  />
-        <StatCard label="Dikirim"       value={totalDikirim}   desc="dalam pengiriman" icon={<FaTruck />}      variant="primary" />
-        <StatCard label="Diproses"      value={totalProses}    desc="menunggu proses" icon={<FaSpinner />}     iconBgColor="bg-[#F4F4F5]"          iconColor="text-[#A1A1AA]"  />
+      {/* ── Stat Cards ── */}
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard label="Total Pesanan" value={orders.length}  desc="semua pesanan"   icon={<FaShoppingBag />} iconBgColor="bg-[#F4F4F5]"   iconColor="text-[#9E4BDC]" />
+        <StatCard label="Selesai"       value={totalSelesai}   desc="transaksi lunas" icon={<FaCheckCircle />} iconBgColor="bg-[#00B5AD]/10" iconColor="text-[#00B5AD]" />
+        <StatCard label="Diproses"      value={totalProses}    desc="menunggu proses" icon={<FaSpinner />}     iconBgColor="bg-[#F4F4F5]"   iconColor="text-[#A1A1AA]" />
       </div>
 
       {/* ── Main 2-col ── */}
       <div className={`grid gap-4 ${selected ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1'}`}>
 
-        {/* LEFT: Tabel — pakai Card */}
-        <Card
-          className={selected ? 'lg:col-span-2' : ''}
-          padding={false}
-          title=""
-        >
+        {/* LEFT: Tabel */}
+        <Card className={selected ? 'lg:col-span-2' : ''} padding={false}>
           {/* Toolbar */}
           <div className="flex flex-col sm:flex-row gap-3 p-5 border-b border-[#E4E4E7]">
             <Input
@@ -120,7 +107,7 @@ export default function Orders() {
             />
             <div className="flex items-center gap-2 flex-wrap">
               <FaFilter className="text-[#A1A1AA] text-xs shrink-0" />
-              {['Semua', 'Selesai', 'Dikirim', 'Proses', 'Batal'].map(s => (
+              {['Semua', 'Selesai', 'Proses', 'Batal'].map(s => (
                 <Button
                   key={s}
                   size="sm"
@@ -145,8 +132,7 @@ export default function Orders() {
               </thead>
               <tbody>
                 {filtered.map(o => {
-                  const sc = statusConfig[o.status];
-                  const StatusIcon = sc.icon;
+                  const sc = statusConfig[o.status] ?? statusConfig.Proses;
                   const isActive = selected?.id === o.id;
                   return (
                     <tr key={o.id}
@@ -183,7 +169,6 @@ export default function Orders() {
                         )}
                       </td>
                       <td className="px-5 py-3.5">
-                        {/* Badge dari komponen Badge */}
                         <Badge status={o.status} />
                       </td>
                       <td className="px-5 py-3.5">
@@ -210,10 +195,8 @@ export default function Orders() {
           </div>
         </Card>
 
-        {/* RIGHT: Detail Panel — pakai Card */}
+        {/* RIGHT: Detail Panel */}
         {selected && (() => {
-          const sc = statusConfig[selected.status];
-          const StatusIcon = sc.icon;
           return (
             <Card className="sticky top-4 h-fit" padding={true}>
               <div className="flex items-start justify-between pb-4 border-b border-[#E4E4E7]">
@@ -226,7 +209,8 @@ export default function Orders() {
                 <Badge status={selected.status} />
               </div>
 
-              <div className="space-y-2">
+              {/* Pelanggan */}
+              <div className="space-y-2 mt-4">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Pelanggan</p>
                 <div className="flex items-center gap-3 p-3 bg-surface-gray border border-surface-border rounded-xl">
                   <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center text-sm font-black text-surface-white shrink-0">
@@ -234,13 +218,10 @@ export default function Orders() {
                   </div>
                   <p className="text-sm font-bold text-text-dark">{selected.customer}</p>
                 </div>
-                <div className="flex items-start gap-2 px-1">
-                  <FaMapMarkerAlt className="text-primary text-xs mt-0.5 shrink-0" />
-                  <p className="text-xs text-text-light">{selected.alamat}</p>
-                </div>
               </div>
 
-              <div className="space-y-2">
+              {/* Detail Produk */}
+              <div className="space-y-2 mt-4">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-text-disable">Detail Produk</p>
                 <div className="flex items-center gap-3 p-3 border border-surface-border rounded-xl">
                   <div className="w-14 h-14 bg-secondary/20 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
@@ -256,7 +237,8 @@ export default function Orders() {
                 </div>
               </div>
 
-              <div>
+              {/* Pembayaran */}
+              <div className="mt-4">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-text-disable mb-2">Pembayaran</p>
                 {[
                   { label: 'Metode', val: selected.metode,                             icon: FaMoneyBillWave },
@@ -277,14 +259,14 @@ export default function Orders() {
                 })}
               </div>
 
-              <div className="space-y-2 pt-1">
+              {/* Aksi */}
+              <div className="space-y-2 pt-4">
                 {selected.status === 'Proses' && (
-                  <Button variant="primary" className="w-full" icon={<FaTruck className="text-xs" />}>
-                    Tandai Dikirim
-                  </Button>
-                )}
-                {selected.status === 'Dikirim' && (
-                  <Button variant="success" className="w-full" icon={<FaCheckCircle className="text-xs" />}>
+                  <Button variant="primary" className="w-full" icon={<FaCheckCircle className="text-xs" />}
+                    onClick={() => {
+                      setOrders(prev => prev.map(o => o.id === selected.id ? { ...o, status: 'Selesai' } : o));
+                      setSelected(p => ({ ...p, status: 'Selesai' }));
+                    }}>
                     Tandai Selesai
                   </Button>
                 )}
@@ -297,7 +279,7 @@ export default function Orders() {
         })()}
       </div>
 
-      {/* ── Modal Tambah Pesanan — pakai Input + Select + Button ── */}
+      {/* ── Modal Tambah Pesanan ── */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
@@ -344,18 +326,14 @@ export default function Orders() {
                 </div>
               )}
 
-              <Input label="Alamat Pengiriman" type="text" name="alamat"
-                value={formPesanan.alamat} onChange={handleFormChange}
-                placeholder="cth: Jl. Merdeka No. 12, Perawang" icon={FaMapMarkerAlt} />
-
               <div className="grid grid-cols-2 gap-3">
                 <Select label="Metode Bayar" name="metode"
                   value={formPesanan.metode} onChange={handleFormChange}
-                  options={['Transfer BCA','Transfer BRI','Transfer BNI','GoPay','OVO','COD']
+                  options={['Transfer Bank','QRIS','Cash']
                     .map(m => ({ value: m, label: m }))} />
                 <Select label="Status" name="status"
                   value={formPesanan.status} onChange={handleFormChange}
-                  options={['Proses','Dikirim','Selesai','Batal']
+                  options={['Proses','Selesai','Batal']
                     .map(s => ({ value: s, label: s }))} />
               </div>
 

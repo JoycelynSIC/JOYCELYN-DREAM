@@ -42,10 +42,10 @@ export default function Select({
           onChange={onChange}
           disabled={disabled}
           className={`
-            w-full bg-[#F4F4F5] border-2 border-transparent rounded-xl py-3
+            w-full bg-white border border-[#E4E4E7] rounded-xl py-3
             ${Icon ? "pl-11" : "px-4"} pr-10
             text-sm font-medium text-[#22285E] outline-none appearance-none
-            focus:border-[#9E4BDC]/30 focus:bg-white focus:ring-4 focus:ring-[#9E4BDC]/5
+            focus:border-[#9E4BDC]/50 focus:ring-4 focus:ring-[#9E4BDC]/5
             disabled:opacity-50 disabled:cursor-not-allowed
             transition-all duration-200 cursor-pointer
           `}

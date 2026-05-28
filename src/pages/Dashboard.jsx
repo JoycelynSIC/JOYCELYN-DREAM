@@ -65,19 +65,19 @@ const jadwal = [
 
 /* ─── Pelanggan terbaru — dari customer.json ─── */
 const pelangganBaru = [
-  { id: 1,  nama: "Dewi Lestari",  status: "Platinum", poin: 5800, belanja: 5800000 },
-  { id: 2,  nama: "Mega Wulandari",status: "Platinum", poin: 6100, belanja: 6100000 },
-  { id: 3,  nama: "Amelia Putri",  status: "Gold",     poin: 2100, belanja: 2100000 },
-  { id: 4,  nama: "Siti Sarah",    status: "Gold",     poin: 1200, belanja: 1200000 },
-  { id: 5,  nama: "Hendra Wijaya", status: "Silver",   poin:  980, belanja:  980000 },
+  { id: 7,  nama: "Fatimah Novitasari", status: "Gold",   poin: 3760, belanja: 4259000 },
+  { id: 15, nama: "Olivia Felicia",     status: "Gold",   poin: 3121, belanja: 4013000 },
+  { id: 27, nama: "Uswatun Dewi",       status: "Gold",   poin: 3151, belanja: 3961000 },
+  { id: 4,  nama: "Ulfah Permatasari",  status: "Gold",   poin: 3016, belanja: 3409000 },
+  { id: 18, nama: "Uswatun Andriani",   status: "Gold",   poin: 2984, belanja: 3609000 },
 ];
 
 /* ─── Pesanan terbaru — dari orders.json ─── */
 const pesananTerbaru = [
-  { id: "#ORD-100", customer: "Dewi Lestari",  produk: "Nail Art Palsu Motif Bunga",   total: 60000,  poin: 60,  status: "Selesai" },
-  { id: "#ORD-099", customer: "Nadia Rahma",   produk: "Tumblr Aesthetic Pastel",       total: 55000,  poin: 55,  status: "Proses"  },
-  { id: "#ORD-098", customer: "Amelia Putri",  produk: "Jepit Rambut Claw Clip Besar",  total: 60000,  poin: 60,  status: "Dikirim" },
-  { id: "#ORD-097", customer: "Siti Sarah",    produk: "Kalung Titanium Rosegold",      total: 85000,  poin: 85,  status: "Selesai" },
+  { id: "#ORD-100", customer: "Jihan Pratiwi",     produk: "Nail Art Palsu Motif Bunga",   total: 60000,  poin: 60,  status: "Selesai" },
+  { id: "#ORD-099", customer: "Vina Anggraini",    produk: "Tumblr Aesthetic Pastel",       total: 55000,  poin: 55,  status: "Proses"  },
+  { id: "#ORD-098", customer: "Fatimah Novitasari",produk: "Jepit Rambut Claw Clip Besar",  total: 60000,  poin: 60,  status: "Proses"  },
+  { id: "#ORD-097", customer: "Olivia Felicia",    produk: "Kalung Titanium Rosegold",      total: 85000,  poin: 85,  status: "Selesai" },
 ];
 
 export default function Dashboard() {
@@ -216,7 +216,6 @@ export default function Dashboard() {
 
         {/* Donut Charts */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Kategori produk terlaris — dari inventory.json */}
           <DonutChart
             title="Kategori Terlaris"
             subtitle="Berdasarkan unit terjual"
@@ -229,17 +228,14 @@ export default function Dashboard() {
               { label: "Lainnya",    value:  7, color: "#E4E4E7" },
             ]}
           />
-          {/* Metode pembayaran — dari orders.json */}
           <DonutChart
             title="Metode Pembayaran"
             subtitle="Preferensi pelanggan Na_store.id"
-            center="GoPay"
+            center="Transfer"
             segments={[
-              { label: "GoPay",        value: 32, color: "#9E4BDC" },
-              { label: "Transfer BCA", value: 28, color: "#95D5B6" },
-              { label: "COD",          value: 22, color: "#22285E" },
-              { label: "OVO",          value: 10, color: "#F24E1E" },
-              { label: "Lainnya",      value:  8, color: "#E4E4E7" },
+              { label: "Transfer Bank", value: 45, color: "#9E4BDC" },
+              { label: "QRIS",          value: 35, color: "#95D5B6" },
+              { label: "Cash",          value: 20, color: "#22285E" },
             ]}
           />
         </div>
@@ -331,13 +327,13 @@ export default function Dashboard() {
           </div>
           <AvatarGroup
             users={[
-              { name: "Dewi Lestari",   color: "bg-[#9E4BDC] text-white"    },
-              { name: "Mega Wulandari", color: "bg-[#22285E] text-white"    },
-              { name: "Amelia Putri",   color: "bg-[#95D5B6] text-[#22285E]" },
-              { name: "Siti Sarah",     color: "bg-yellow-400 text-white"   },
-              { name: "Hendra Wijaya",  color: "bg-[#F24E1E] text-white"    },
-              { name: "Nadia Rahma",    color: "bg-[#00B5AD] text-white"    },
-              { name: "Rina Susanti",   color: "bg-[#9E4BDC] text-white"    },
+              { name: "Fatimah Novitasari", color: "bg-[#9E4BDC] text-white"     },
+              { name: "Olivia Felicia",     color: "bg-[#22285E] text-white"     },
+              { name: "Uswatun Dewi",       color: "bg-[#95D5B6] text-[#22285E]" },
+              { name: "Ulfah Permatasari",  color: "bg-yellow-400 text-white"    },
+              { name: "Uswatun Andriani",   color: "bg-[#F24E1E] text-white"     },
+              { name: "Bunga Susanti",      color: "bg-[#00B5AD] text-white"     },
+              { name: "Vina Anggraini",     color: "bg-[#9E4BDC] text-white"     },
             ]}
             max={5}
             size="md"
