@@ -1,6 +1,67 @@
 import { useState } from 'react';
 import reviewsData from '../data/reviews.json';
 import PageHeader  from '../components/PageHeader';
+
+/* ─── Import gambar produk (agar Vite bundle dengan benar di production) ─── */
+import imgKalungRosegold  from '../assets/gambarproduk/kalungrosegold.png';
+import imgKalungChoker    from '../assets/gambarproduk/kalungchoker.png';
+import imgKalungBintang   from '../assets/gambarproduk/kalungbintang.png';
+import imgKalungPearl     from '../assets/gambarproduk/kalungpearl.png';
+import imgGelangCrystal   from '../assets/gambarproduk/gelangcrystal.png';
+import imgGelangPerak     from '../assets/gambarproduk/gelangperak.png';
+import imgGelangBead      from '../assets/gambarproduk/gelangbead.png';
+import imgGelangTali      from '../assets/gambarproduk/gelangtali.png';
+import imgCincinCouple    from '../assets/gambarproduk/cincincouple.png';
+import imgCincinGold      from '../assets/gambarproduk/cincingold.png';
+import imgCincinResin     from '../assets/gambarproduk/cincinresin.png';
+import imgAntingHoop      from '../assets/gambarproduk/antinghoop.png';
+import imgAntingTassel    from '../assets/gambarproduk/antingtassel.png';
+import imgAntingPearl     from '../assets/gambarproduk/antingpearl.png';
+import imgAntingBintang   from '../assets/gambarproduk/antingbintang.png';
+import imgNailFlower      from '../assets/gambarproduk/pressonnailflower.png';
+import imgNailGlitter     from '../assets/gambarproduk/pressonnailglitter.png';
+import imgNailFrench      from '../assets/gambarproduk/pressonnailfrenchtip.png';
+import imgNailOmbre       from '../assets/gambarproduk/pressonnailombre.png';
+import imgTumblrPastel    from '../assets/gambarproduk/tmblrpastel.png';
+import imgTumblrFlower    from '../assets/gambarproduk/tumblrflower.png';
+import imgTumblrGlass     from '../assets/gambarproduk/tumblrglass.png';
+import imgClawClip        from '../assets/gambarproduk/clawclip.png';
+import imgJepitButterfly  from '../assets/gambarproduk/jepitrambutbutterfly.png';
+import imgBandoPearl      from '../assets/gambarproduk/bandopearl.png';
+import imgScrunchie       from '../assets/gambarproduk/scrunchie.png';
+import imgTasMini         from '../assets/gambarproduk/tasminiselempang.png';
+import imgTasRajut        from '../assets/gambarproduk/tasrajut.png';
+import imgTasKoin         from '../assets/gambarproduk/taskoin.png';
+import imgKacamata        from '../assets/gambarproduk/framekacamata.png';
+import imgMasker          from '../assets/gambarproduk/maskerlucu.png';
+import imgStiker          from '../assets/gambarproduk/stiker.png';
+import imgGanci           from '../assets/gambarproduk/gancisanrio.png';
+import imgIkatPinggang    from '../assets/gambarproduk/ikapinggang.png';
+
+const gambarMap = {
+  'kalungrosegold.png': imgKalungRosegold,     'kalungchoker.png': imgKalungChoker,
+  'kalungbintang.png': imgKalungBintang,       'kalungpearl.png': imgKalungPearl,
+  'gelangcrystal.png': imgGelangCrystal,       'gelangperak.png': imgGelangPerak,
+  'gelangbead.png': imgGelangBead,             'gelangtali.png': imgGelangTali,
+  'cincincouple.png': imgCincinCouple,         'cincingold.png': imgCincinGold,
+  'cincinresin.png': imgCincinResin,           'antinghoop.png': imgAntingHoop,
+  'antingtassel.png': imgAntingTassel,         'antingpearl.png': imgAntingPearl,
+  'antingbintang.png': imgAntingBintang,       'pressonnailflower.png': imgNailFlower,
+  'pressonnailglitter.png': imgNailGlitter,    'pressonnailfrenchtip.png': imgNailFrench,
+  'pressonnailombre.png': imgNailOmbre,        'tmblrpastel.png': imgTumblrPastel,
+  'tumblrflower.png': imgTumblrFlower,         'tumblrglass.png': imgTumblrGlass,
+  'clawclip.png': imgClawClip,                 'jepitrambutbutterfly.png': imgJepitButterfly,
+  'bandopearl.png': imgBandoPearl,             'scrunchie.png': imgScrunchie,
+  'tasminiselempang.png': imgTasMini,          'tasrajut.png': imgTasRajut,
+  'taskoin.png': imgTasKoin,                   'framekacamata.png': imgKacamata,
+  'maskerlucu.png': imgMasker,                 'stiker.png': imgStiker,
+  'gancisanrio.png': imgGanci,                 'ikapinggang.png': imgIkatPinggang,
+};
+
+const getImg = (path) => {
+  if (!path) return null;
+  return gambarMap[path.split('/').pop()] ?? null;
+};
 import StatCard    from '../components/StatCard';
 import Card        from '../components/Card';
 import Badge       from '../components/Badge';
@@ -284,7 +345,7 @@ export default function Reviews() {
                   }`}
                 >
                   <img
-                    src={r.gambar}
+                    src={getImg(r.gambar)}
                     alt={r.produk}
                     className="w-12 h-12 rounded-2xl object-cover shrink-0 bg-[#F4F4F5]"
                     onError={e => { e.target.style.display = 'none'; }}
@@ -371,7 +432,7 @@ export default function Reviews() {
             {/* Produk */}
             <div className="text-center pb-4 border-b border-[#E4E4E7]">
               <img
-                src={selected.gambar}
+                src={getImg(selected.gambar)}
                 alt={selected.produk}
                 className="w-20 h-20 rounded-2xl object-cover mx-auto mb-3 bg-[#F4F4F5]"
                 onError={e => { e.target.style.display = 'none'; }}
