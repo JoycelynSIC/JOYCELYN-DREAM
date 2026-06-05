@@ -6,13 +6,31 @@ import Card        from '../components/Card';
 import Badge       from '../components/Badge';
 import Button      from '../components/Button';
 import Input       from '../components/Input';
-import Select      from '../components/Select';
 import ProgressBar from '../components/ProgressBar';
 import EmptyState  from '../components/EmptyState';
 import Tooltip     from '../components/Tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import {
   FaStar, FaSearch, FaFilter,
-  FaCheckCircle, FaClock, FaEyeSlash, FaEye, FaInfoCircle,
+  FaCheckCircle, FaClock, FaEyeSlash, FaEye, FaInfoCircle, FaChevronDown,
 } from 'react-icons/fa';
 
 /* Map status ulasan → Badge status */
@@ -38,6 +56,8 @@ export default function Reviews() {
   const [dataForm, setDataForm] = useState({
     search: '', filterRating: 'Semua', filterStatus: 'Semua',
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
 
   const _search  = dataForm.search.toLowerCase();
   const filtered = reviews.filter(r => {
@@ -48,6 +68,9 @@ export default function Reviews() {
     const matchStatus = dataForm.filterStatus === 'Semua' || r.status === dataForm.filterStatus;
     return matchSearch && matchRating && matchStatus;
   });
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedData = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const avgRating     = (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1);
   const totalBintang5 = reviews.filter(r => r.rating === 5).length;
@@ -153,37 +176,105 @@ export default function Reviews() {
               placeholder="Cari nama, produk, komentar..."
               icon={FaSearch}
               value={dataForm.search}
-              onChange={(e) => setDataForm(p => ({ ...p, search: e.target.value }))}
+              onChange={(e) => {
+                setDataForm(p => ({ ...p, search: e.target.value }));
+                setCurrentPage(1);
+              }}
               className="flex-1 !gap-0"
             />
             <div className="flex items-center gap-2 flex-wrap">
               <FaFilter className="text-[#A1A1AA] text-xs shrink-0" />
-              <Select
-                value={dataForm.filterRating}
-                onChange={(e) => setDataForm(p => ({ ...p, filterRating: e.target.value }))}
-                options={[
-                  { value: 'Semua', label: 'Semua Rating' },
-                  ...[5,4,3,2,1].map(r => ({ value: String(r), label: `${r} Bintang` })),
-                ]}
-                className="w-36"
-              />
-              <Select
-                value={dataForm.filterStatus}
-                onChange={(e) => setDataForm(p => ({ ...p, filterStatus: e.target.value }))}
-                options={[
-                  { value: 'Semua',         label: 'Semua Status'  },
-                  { value: 'Ditampilkan',   label: 'Ditampilkan'   },
-                  { value: 'Pending',       label: 'Pending'       },
-                  { value: 'Disembunyikan', label: 'Disembunyikan' },
-                ]}
-                className="w-40"
-              />
+
+              {/* Filter Rating */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="
+                    inline-flex items-center gap-2 w-36 justify-between
+                    bg-white border border-[#E4E4E7] rounded-xl px-3 py-2.5
+                    text-sm font-medium text-[#22285E]
+                    hover:border-[#9E4BDC]/50 hover:ring-4 hover:ring-[#9E4BDC]/5
+                    focus:border-[#9E4BDC]/50 focus:ring-4 focus:ring-[#9E4BDC]/5
+                    focus:outline-none transition-all duration-200 cursor-pointer
+                  ">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <FaStar size={12} className="text-yellow-400 shrink-0" />
+                      <span className="truncate">
+                        {dataForm.filterRating === 'Semua' ? 'Semua Rating' : `${dataForm.filterRating} Bintang`}
+                      </span>
+                    </span>
+                    <FaChevronDown size={11} className="text-[#A1A1AA] shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" side="bottom" avoidCollisions={false} className="w-36">
+                  <DropdownMenuLabel className="flex items-center gap-1.5">
+                    <FaStar size={11} className="text-yellow-400" />Rating
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={dataForm.filterRating}
+                    onValueChange={(val) => {
+                      setDataForm(p => ({ ...p, filterRating: val }));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <DropdownMenuRadioItem value="Semua" className="cursor-pointer text-sm">
+                      Semua Rating
+                    </DropdownMenuRadioItem>
+                    {[5, 4, 3, 2, 1].map(r => (
+                      <DropdownMenuRadioItem key={r} value={String(r)} className="cursor-pointer text-sm">
+                        <span className="flex items-center gap-1.5">
+                          {r} <FaStar size={10} className="text-yellow-400" />
+                        </span>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Filter Status */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="
+                    inline-flex items-center gap-2 w-40 justify-between
+                    bg-white border border-[#E4E4E7] rounded-xl px-3 py-2.5
+                    text-sm font-medium text-[#22285E]
+                    hover:border-[#9E4BDC]/50 hover:ring-4 hover:ring-[#9E4BDC]/5
+                    focus:border-[#9E4BDC]/50 focus:ring-4 focus:ring-[#9E4BDC]/5
+                    focus:outline-none transition-all duration-200 cursor-pointer
+                  ">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <FaCheckCircle size={12} className="text-[#A1A1AA] shrink-0" />
+                      <span className="truncate">{dataForm.filterStatus === 'Semua' ? 'Semua Status' : dataForm.filterStatus}</span>
+                    </span>
+                    <FaChevronDown size={11} className="text-[#A1A1AA] shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" side="bottom" avoidCollisions={false} className="w-40">
+                  <DropdownMenuLabel className="flex items-center gap-1.5">
+                    <FaCheckCircle size={11} />Status
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={dataForm.filterStatus}
+                    onValueChange={(val) => {
+                      setDataForm(p => ({ ...p, filterStatus: val }));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    {['Semua', 'Ditampilkan', 'Pending', 'Disembunyikan'].map(s => (
+                      <DropdownMenuRadioItem key={s} value={s} className="cursor-pointer text-sm">
+                        {s === 'Semua' ? 'Semua Status' : s}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
           {/* List ulasan */}
           <div className="divide-y divide-[#E4E4E7]">
-            {filtered.map(r => {
+            {paginatedData.map(r => {
               const isActive = selected?.id === r.id;
               return (
                 <div key={r.id}
@@ -224,11 +315,58 @@ export default function Reviews() {
               />
             )}
           </div>
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-[#E4E4E7] flex justify-center">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) setCurrentPage(currentPage - 1);
+                      }}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const page = i + 1;
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={page === currentPage}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(page);
+                          }}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                      }}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </Card>
 
         {/* RIGHT: Detail Panel — pakai Card + Button ── */}
         {selected && (
-          <Card className="sticky top-4 h-fit">
+          <Card className="sticky top-4 max-h-[calc(100vh-6rem)] overflow-hidden">
+            <ScrollArea className="h-[calc(100vh-8rem)]">
+            <div className="pr-3">
 
             {/* Produk */}
             <div className="text-center pb-4 border-b border-[#E4E4E7]">
@@ -289,6 +427,8 @@ export default function Reviews() {
               </Button>
             </div>
 
+            </div>
+            </ScrollArea>
           </Card>
         )}
       </div>

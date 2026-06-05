@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import customerData from '../data/customer.json';
 import PageHeader    from '../components/PageHeader';
 import StatCard      from '../components/StatCard';
@@ -7,10 +8,22 @@ import Button        from '../components/Button';
 import Input         from '../components/Input';
 import AvatarGroup   from '../components/AvatarGroup';
 import CustomerCard  from '../components/CustomerCard';
+import Badge         from '../components/Badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import {
   FaSearch, FaStar, FaCrown, FaUserPlus, FaEnvelope,
   FaWhatsapp, FaUsers, FaGem, FaShoppingBag, FaEdit, FaPhone,
-  FaMedal, FaThLarge, FaList,
+  FaMedal, FaThLarge, FaList, FaTimes, FaUser,
 } from 'react-icons/fa';
 
 /* ─────────────────────────────────────────────────────
@@ -81,26 +94,61 @@ function poinProgress(poin, member) {
 }
 
 export default function Customers() {
-  const [dataForm, setDataForm] = useState({ search: '', filterMember: 'Semua' });
-  const [selected, setSelected] = useState(customerData[0]);
-  const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
+  const [customers, setCustomers] = useState(customerData);
+  const [dataForm, setDataForm]   = useState({ search: '', filterMember: 'Semua' });
+  const [selected, setSelected]   = useState(customerData[0]);
+  const [viewMode, setViewMode]   = useState('table');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showForm, setShowForm]   = useState(false);
+  const [formPelanggan, setFormPelanggan] = useState({
+    name: '', email: '', phone: '', member: 'Reguler', status: 'Aktif',
+  });
+  const ITEMS_PER_PAGE = 5;
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormPelanggan(p => ({ ...p, [name]: value }));
+  };
+
+  const handleTambahPelanggan = (e) => {
+    e.preventDefault();
+    if (!formPelanggan.name || !formPelanggan.email) return;
+    const newCustomer = {
+      id: customers.length + 1,
+      name: formPelanggan.name,
+      email: formPelanggan.email,
+      phone: formPelanggan.phone,
+      member: formPelanggan.member,
+      status: formPelanggan.status,
+      poin: 0,
+      transaksi: 0,
+      totalBelanja: 0,
+      bergabung: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+    };
+    setCustomers(prev => [newCustomer, ...prev]);
+    setFormPelanggan({ name: '', email: '', phone: '', member: 'Reguler', status: 'Aktif' });
+    setShowForm(false);
+  };
 
   const _search  = dataForm.search.toLowerCase();
-  const filtered = customerData.filter(c => {
+  const filtered = customers.filter(c => {
     const matchSearch = c.name.toLowerCase().includes(_search) || c.email.toLowerCase().includes(_search);
     const matchMember = dataForm.filterMember === 'Semua' || c.member === dataForm.filterMember;
     return matchSearch && matchMember;
   });
 
-  const totalPoin = customerData.reduce((a, c) => a + c.poin, 0);
-  const countByMember = (m) => customerData.filter(c => c.member === m).length;
+  const totalPages    = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedData = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  const totalPoin      = customers.reduce((a, c) => a + c.poin, 0);
+  const countByMember  = (m) => customers.filter(c => c.member === m).length;
 
   return (
     <div className="space-y-5 animate-in fade-in duration-500 font-poppins">
 
       {/* ── Header ── */}
       <PageHeader title="Pelanggan" breadcrumb={['Dashboard', 'Pelanggan']}>
-        <Button variant="primary" icon={<FaUserPlus className="text-xs" />}>
+        <Button variant="primary" icon={<FaUserPlus className="text-xs" />} onClick={() => setShowForm(true)}>
           Tambah Pelanggan
         </Button>
       </PageHeader>
@@ -137,7 +185,7 @@ export default function Customers() {
           ].map(({ member, range, count }) => {
             const cfg      = MEMBER_CONFIG[member];
             const Icon     = cfg.icon;
-            const members  = customerData.filter(c => c.member === member);
+            const members  = customers.filter(c => c.member === member);
             return (
               <div key={member} className={`${cfg.bg} border ${cfg.border} rounded-xl p-4 flex flex-col gap-3`}>
                 <div className="flex items-center gap-3">
@@ -179,7 +227,10 @@ export default function Customers() {
               placeholder="Cari nama atau email..."
               icon={FaSearch}
               value={dataForm.search}
-              onChange={(e) => setDataForm(p => ({ ...p, search: e.target.value }))}
+              onChange={(e) => {
+                setDataForm(p => ({ ...p, search: e.target.value }));
+                setCurrentPage(1);
+              }}
               className="flex-1 !gap-0"
             />
             <div className="flex gap-1.5 flex-wrap">
@@ -187,7 +238,10 @@ export default function Customers() {
                 <Button
                   key={m} size="sm"
                   variant={dataForm.filterMember === m ? 'primary' : 'ghost'}
-                  onClick={() => setDataForm(p => ({ ...p, filterMember: m }))}
+                  onClick={() => {
+                    setDataForm(p => ({ ...p, filterMember: m }));
+                    setCurrentPage(1);
+                  }}
                 >
                   {m}
                 </Button>
@@ -219,7 +273,7 @@ export default function Customers() {
             <div className="p-5">
               {filtered.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {filtered.map((c) => (
+                  {paginatedData.map((c) => (
                     <CustomerCard
                       key={c.id}
                       id={c.id}
@@ -254,10 +308,11 @@ export default function Customers() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((c, idx) => {
+                {paginatedData.map((c, idx) => {
                   const cfg    = MEMBER_CONFIG[c.member] ?? MEMBER_CONFIG.Reguler;
                   const Icon   = cfg.icon;
                   const isActive = selected?.id === c.id;
+                  const absoluteIdx = (currentPage - 1) * ITEMS_PER_PAGE + idx;
                   return (
                     <tr
                       key={c.id}
@@ -268,7 +323,7 @@ export default function Customers() {
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}`}>
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${AVATAR_COLORS[absoluteIdx % AVATAR_COLORS.length]}`}>
                             {c.name.charAt(0)}
                           </div>
                           <div>
@@ -323,18 +378,65 @@ export default function Customers() {
             )}
           </div>
           )}
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-[#E4E4E7] flex justify-center">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) setCurrentPage(currentPage - 1);
+                      }}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const page = i + 1;
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={page === currentPage}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(page);
+                          }}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                      }}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </Card>
 
         {/* RIGHT: Detail Panel */}
         {selected && (() => {
           const cfg    = MEMBER_CONFIG[selected.member] ?? MEMBER_CONFIG.Reguler;
           const Icon   = cfg.icon;
-          const idx    = customerData.findIndex(c => c.id === selected.id);
+          const idx    = customers.findIndex(c => c.id === selected.id);
           const pct    = poinProgress(selected.poin, selected.member);
           const sisaPoin = cfg.next ? cfg.next - selected.poin : 0;
 
           return (
-            <Card className="sticky top-4">
+            <Card className="sticky top-4 max-h-[calc(100vh-6rem)] overflow-hidden">
+              <ScrollArea className="h-[calc(100vh-8rem)]">
+              <div className="pr-3">
 
               {/* Avatar + nama */}
               <div className="text-center pb-4 border-b border-[#E4E4E7]">
@@ -442,10 +544,121 @@ export default function Customers() {
                 </Button>
               </div>
 
+              </div>
+              </ScrollArea>
             </Card>
           );
         })()}
       </div>
+
+      {/* ── Modal Tambah Pelanggan ── */}
+      {showForm && createPortal(
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
+
+            <div className="flex items-center justify-between px-6 py-5 border-b border-[#E4E4E7]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-[#9E4BDC] rounded-xl flex items-center justify-center shrink-0">
+                  <FaUserPlus className="text-white text-sm" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-[#22285E]">Tambah Pelanggan Baru</p>
+                  <p className="text-[10px] text-[#A1A1AA]">Isi data pelanggan Na_store.id</p>
+                </div>
+              </div>
+              <button onClick={() => setShowForm(false)}
+                className="w-8 h-8 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl flex items-center justify-center hover:bg-[#F24E1E]/10 hover:text-[#F24E1E] transition-colors text-[#A1A1AA]">
+                <FaTimes className="text-xs" />
+              </button>
+            </div>
+
+            <form onSubmit={handleTambahPelanggan} className="p-6 space-y-4">
+              <Input
+                label="Nama Lengkap"
+                name="name"
+                value={formPelanggan.name}
+                onChange={handleFormChange}
+                placeholder="cth: Siti Rahma"
+                icon={FaUser}
+              />
+              <Input
+                label="Email"
+                type="email"
+                name="email"
+                value={formPelanggan.email}
+                onChange={handleFormChange}
+                placeholder="cth: siti@email.com"
+                icon={FaEnvelope}
+              />
+              <Input
+                label="No. WhatsApp"
+                name="phone"
+                value={formPelanggan.phone}
+                onChange={handleFormChange}
+                placeholder="cth: 08123456789"
+                icon={FaWhatsapp}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] ml-1">Level Member</label>
+                  <select
+                    name="member"
+                    value={formPelanggan.member}
+                    onChange={handleFormChange}
+                    className="w-full bg-white border border-[#E4E4E7] rounded-xl py-3 px-4 text-sm font-medium text-[#22285E] outline-none appearance-none focus:border-[#9E4BDC]/50 focus:ring-4 focus:ring-[#9E4BDC]/5 transition-all cursor-pointer"
+                  >
+                    {['Reguler', 'Silver', 'Gold', 'Platinum'].map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] ml-1">Status</label>
+                  <select
+                    name="status"
+                    value={formPelanggan.status}
+                    onChange={handleFormChange}
+                    className="w-full bg-white border border-[#E4E4E7] rounded-xl py-3 px-4 text-sm font-medium text-[#22285E] outline-none appearance-none focus:border-[#9E4BDC]/50 focus:ring-4 focus:ring-[#9E4BDC]/5 transition-all cursor-pointer"
+                  >
+                    {['Aktif', 'Tidak Aktif'].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Preview badge member */}
+              {formPelanggan.member && (() => {
+                const cfg  = MEMBER_CONFIG[formPelanggan.member];
+                const Icon = cfg?.icon;
+                return (
+                  <div className="flex items-center gap-2 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl px-4 py-2.5">
+                    <span className="text-[10px] text-[#A1A1AA]">Level:</span>
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg inline-flex items-center gap-1 ${cfg?.badge}`}>
+                      {Icon && <Icon className="text-[9px]" />}
+                      {formPelanggan.member}
+                    </span>
+                    <span className="text-[10px] text-[#A1A1AA] ml-auto">0 poin · 0 transaksi</span>
+                  </div>
+                );
+              })()}
+
+              <div className="flex gap-3 pt-1">
+                <Button type="button" variant="ghost" className="flex-1 border border-[#E4E4E7]" onClick={() => setShowForm(false)}>
+                  Batal
+                </Button>
+                <Button type="submit" variant="primary" className="flex-1" icon={<FaUserPlus className="text-xs" />}>
+                  Simpan Pelanggan
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
 
     </div>
   );

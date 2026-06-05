@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import inventoryData from '../data/inventory.json';
 import PageHeader  from '../components/PageHeader';
@@ -12,17 +13,30 @@ import ProgressBar from '../components/ProgressBar';
 import EmptyState  from '../components/EmptyState';
 import Tooltip     from '../components/Tooltip';
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
   FaSearch, FaPlus, FaBoxOpen, FaTag, FaLayerGroup,
   FaCheckCircle, FaExclamationCircle, FaTimesCircle, FaChartLine,
-  FaTimes, FaInfoCircle,
+  FaTimes, FaInfoCircle, FaChevronDown,
 } from 'react-icons/fa';
 
-/* Badge status stok — pakai komponen Badge dengan status custom */
-const statusBadgeMap = {
-  'Aman':         'Selesai',   // hijau
-  'Hampir Habis': 'Proses',    // abu
-  'Habis':        'Batal',     // merah
-};
+/* Badge status stok — pakai komponen Badge langsung dengan status dari data */
 
 const kategoriOptions = [
   'Kalung','Gelang','Cincin','Anting','Nail Art',
@@ -54,13 +68,16 @@ export default function Inventory() {
     const harga  = parseInt(formProduk.harga);
     const stock  = parseInt(formProduk.stock);
     const status = stock === 0 ? 'Habis' : stock <= 8 ? 'Hampir Habis' : 'Aman';
-    setItems(prev => [...prev, {
-      id: items.length + 1, name: formProduk.name,
+    setItems(prev => [{
+      id: prev.length + 1, name: formProduk.name,
       kategori: formProduk.kategori, harga, stock, terjual: 0, status,
-    }]);
+    }, ...prev]);
     setFormProduk({ name: '', kategori: 'Kalung', harga: '', stock: '' });
     setShowForm(false);
   };
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
 
   const _search      = dataForm.searchTerm.toLowerCase();
   const kategoriList = ['Semua', ...new Set(items.map(i => i.kategori))];
@@ -71,6 +88,9 @@ export default function Inventory() {
     const matchStatus   = dataForm.filterStatus === 'Semua Status' || item.status === dataForm.filterStatus;
     return matchSearch && matchKategori && matchStatus;
   });
+
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const paginatedData = filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   /* Preview status otomatis di form */
   const previewStatus = formProduk.stock === '' ? null
@@ -114,36 +134,107 @@ export default function Inventory() {
         />
       </div>
 
-      {/* ── Filter & Search — pakai Input + Select ── */}
+      {/* ── Filter & Search ── */}
       <div className="flex flex-col sm:flex-row gap-3">
         <Input
           placeholder="Cari produk..."
           icon={FaSearch}
           value={dataForm.searchTerm}
-          onChange={(e) => setDataForm(p => ({ ...p, searchTerm: e.target.value }))}
+          onChange={(e) => {
+            setDataForm(p => ({ ...p, searchTerm: e.target.value }));
+            setCurrentPage(1);
+          }}
           className="flex-1 !gap-0"
         />
-        <Select
-          icon={FaLayerGroup}
-          value={dataForm.filterKategori}
-          onChange={(e) => setDataForm(p => ({ ...p, filterKategori: e.target.value }))}
-          options={kategoriList.map(k => ({ value: k, label: k }))}
-          className="sm:w-44"
-        />
-        <Select
-          icon={FaCheckCircle}
-          value={dataForm.filterStatus}
-          onChange={(e) => setDataForm(p => ({ ...p, filterStatus: e.target.value }))}
-          options={['Semua Status','Aman','Hampir Habis','Habis'].map(s => ({ value: s, label: s }))}
-          className="sm:w-44"
-        />
+
+        {/* Filter Kategori */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="
+              inline-flex items-center gap-2 sm:w-48 w-full justify-between
+              bg-white border border-[#E4E4E7] rounded-xl px-4 py-3
+              text-sm font-medium text-[#22285E]
+              hover:border-[#9E4BDC]/50 hover:ring-4 hover:ring-[#9E4BDC]/5
+              focus:border-[#9E4BDC]/50 focus:ring-4 focus:ring-[#9E4BDC]/5
+              focus:outline-none transition-all duration-200 cursor-pointer
+            ">
+              <span className="flex items-center gap-2 min-w-0">
+                <FaLayerGroup size={13} className="text-[#A1A1AA] shrink-0" />
+                <span className="truncate">{dataForm.filterKategori}</span>
+              </span>
+              <FaChevronDown size={11} className="text-[#A1A1AA] shrink-0" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" side="bottom" avoidCollisions={false} className="w-48 p-0">
+            <div className="px-2 pt-2 pb-1">
+              <DropdownMenuLabel className="flex items-center gap-1.5 px-0">
+                <FaLayerGroup size={11} />Kategori
+              </DropdownMenuLabel>
+            </div>
+            <DropdownMenuSeparator />
+            <ScrollArea className="max-h-52">
+            <DropdownMenuRadioGroup
+              value={dataForm.filterKategori}
+              onValueChange={(val) => {
+                setDataForm(p => ({ ...p, filterKategori: val }));
+                setCurrentPage(1);
+              }}
+            >
+              {kategoriList.map(k => (
+                <DropdownMenuRadioItem key={k} value={k} className="cursor-pointer text-sm">
+                  {k}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            </ScrollArea>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Filter Status */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="
+              inline-flex items-center gap-2 sm:w-44 w-full justify-between
+              bg-white border border-[#E4E4E7] rounded-xl px-4 py-3
+              text-sm font-medium text-[#22285E]
+              hover:border-[#9E4BDC]/50 hover:ring-4 hover:ring-[#9E4BDC]/5
+              focus:border-[#9E4BDC]/50 focus:ring-4 focus:ring-[#9E4BDC]/5
+              focus:outline-none transition-all duration-200 cursor-pointer
+            ">
+              <span className="flex items-center gap-2 min-w-0">
+                <FaCheckCircle size={13} className="text-[#A1A1AA] shrink-0" />
+                <span className="truncate">{dataForm.filterStatus}</span>
+              </span>
+              <FaChevronDown size={11} className="text-[#A1A1AA] shrink-0" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" side="bottom" avoidCollisions={false} className="w-44">
+            <DropdownMenuLabel className="flex items-center gap-1.5">
+              <FaCheckCircle size={11} />Status Stok
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup
+              value={dataForm.filterStatus}
+              onValueChange={(val) => {
+                setDataForm(p => ({ ...p, filterStatus: val }));
+                setCurrentPage(1);
+              }}
+            >
+              {['Semua Status', 'Aman', 'Hampir Habis', 'Habis'].map(s => (
+                <DropdownMenuRadioItem key={s} value={s} className="cursor-pointer text-sm">
+                  {s}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* ── Tabel — pakai Card ── */}
       <Card padding={false}>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead>
+            <thead className="overflow-visible">
               <tr className="bg-[#F4F4F5] border-b border-[#E4E4E7]">
                 {[
                   { label: 'Produk',   icon: FaBoxOpen,   tip: null },
@@ -168,7 +259,7 @@ export default function Inventory() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E4E4E7]">
-              {filteredData.map(item => (
+              {paginatedData.map(item => (
                 <tr key={item.id} className="hover:bg-[#F4F4F5]/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -215,8 +306,8 @@ export default function Inventory() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    {/* Badge — pakai komponen Badge dengan mapping status */}
-                    <Badge status={statusBadgeMap[item.status] ?? 'Proses'} />
+                    {/* Badge — pakai komponen Badge langsung dengan status stok */}
+                    <Badge status={item.status} />
                   </td>
                 </tr>
               ))}
@@ -235,11 +326,59 @@ export default function Inventory() {
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-[#E4E4E7] flex justify-center">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) setCurrentPage(currentPage - 1);
+                    }}
+                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+                {Array.from({ length: totalPages }).map((_, i) => {
+                  const page = i + 1;
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href="#"
+                        isActive={page === currentPage}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage(page);
+                        }}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                    }}
+                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </Card>
 
       {/* ── Modal Tambah Produk ── */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      {showForm && createPortal(
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}
+        >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
 
             {/* Header modal */}
@@ -304,7 +443,7 @@ export default function Inventory() {
               {previewStatus && (
                 <div className="flex items-center gap-2 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl px-4 py-2.5">
                   <span className="text-[10px] text-[#A1A1AA]">Status otomatis:</span>
-                  <Badge status={statusBadgeMap[previewStatus]} />
+                  <Badge status={previewStatus} />
                   <span className="text-[10px] font-bold text-[#22285E]">{previewStatus}</span>
                 </div>
               )}
@@ -319,7 +458,8 @@ export default function Inventory() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import {
   FaBell, FaUsers, FaShoppingBag, FaPlusCircle,
-  FaStar, FaGem, FaBoxOpen, FaExclamationTriangle,
+  FaStar, FaBoxOpen,
 } from "react-icons/fa";
 
 import PageHeader   from "../components/PageHeader";
@@ -22,6 +22,8 @@ import ActivityItem from "../components/ActivityItem";
 import Badge        from "../components/Badge";
 import Card         from "../components/Card";
 import AvatarGroup  from "../components/AvatarGroup";
+import ordersData    from "../data/orders.json";
+import inventoryData from "../data/inventory.json";
 
 /* ─── Data grafik transaksi harian Na_store.id ─── */
 const chartDataMap = {
@@ -72,13 +74,8 @@ const pelangganBaru = [
   { id: 18, nama: "Uswatun Andriani",   status: "Gold",   poin: 2984, belanja: 3609000 },
 ];
 
-/* ─── Pesanan terbaru — dari orders.json ─── */
-const pesananTerbaru = [
-  { id: "#ORD-100", customer: "Jihan Pratiwi",     produk: "Nail Art Palsu Motif Bunga",   total: 60000,  poin: 60,  status: "Selesai" },
-  { id: "#ORD-099", customer: "Vina Anggraini",    produk: "Tumblr Aesthetic Pastel",       total: 55000,  poin: 55,  status: "Proses"  },
-  { id: "#ORD-098", customer: "Fatimah Novitasari",produk: "Jepit Rambut Claw Clip Besar",  total: 60000,  poin: 60,  status: "Proses"  },
-  { id: "#ORD-097", customer: "Olivia Felicia",    produk: "Kalung Titanium Rosegold",      total: 85000,  poin: 85,  status: "Selesai" },
-];
+/* ─── Pesanan terbaru — 4 teratas dari orders.json ─── */
+const pesananTerbaru = ordersData.slice(0, 4);
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("Bulanan");
@@ -135,7 +132,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
 
         {/* Banner Promo */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 h-full">
           <BannerPromo
             title="Kelola toko aksesorismu dalam satu sentuhan"
             subtitle="Pantau pesanan, stok gelang, kalung, anting & lebih — kapan saja di Na_store.id."
@@ -251,31 +248,73 @@ export default function Dashboard() {
           </Link>
         }
       >
+        {/* Header */}
         <div className="grid grid-cols-5 gap-4 px-4 pb-3 border-b border-[#E4E4E7]">
           {["ID Pesanan", "Pelanggan", "Produk", "Total + Poin", "Status"].map((h) => (
             <p key={h} className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">{h}</p>
           ))}
         </div>
-        <div className="mt-1 space-y-0.5">
-          {pesananTerbaru.map((o) => (
-            <div key={o.id} className="grid grid-cols-5 items-center gap-4 px-4 py-3 rounded-xl hover:bg-[#F4F4F5] transition-all">
-              <span className="text-xs font-black text-[#9E4BDC] bg-[#9E4BDC]/10 px-2 py-1 rounded-lg w-fit">{o.id}</span>
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 bg-[#9E4BDC]/10 rounded-lg flex items-center justify-center text-[#9E4BDC] text-xs font-black shrink-0">
-                  {o.customer.charAt(0)}
+
+        {/* Rows */}
+        <div className="divide-y divide-[#F4F4F5]">
+          {pesananTerbaru.map((o) => {
+            const invItem = inventoryData.find(i => i.name === o.produk);
+            const imgSrc  = invItem?.gambar ?? null;
+            return (
+              <div key={o.id} className="grid grid-cols-5 items-center gap-4 px-4 py-3 hover:bg-[#F9F9FB] transition-colors">
+
+                {/* ID Pesanan */}
+                <span className="text-xs font-black text-[#9E4BDC] bg-[#9E4BDC]/10 px-2.5 py-1 rounded-lg w-fit whitespace-nowrap">{o.id}</span>
+
+                {/* Pelanggan — avatar inisial + nama + tanggal */}
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 shrink-0 rounded-lg bg-[#9E4BDC]/10 flex items-center justify-center text-[#9E4BDC] text-xs font-black">
+                    {o.customer.charAt(0)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#22285E] truncate">{o.customer}</p>
+                    <p className="text-[10px] text-[#A1A1AA] mt-0.5">{o.tanggal}</p>
+                  </div>
                 </div>
-                <p className="text-xs font-bold text-[#22285E] truncate">{o.customer}</p>
+
+                {/* Produk — gambar + nama + qty */}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {invItem ? (
+                    <Link to={`/inventory/${invItem.id}`} className="w-9 h-9 shrink-0 rounded-lg overflow-hidden bg-[#F4F4F5] border border-[#E4E4E7] hover:border-[#9E4BDC]/40 transition-colors">
+                      {imgSrc
+                        ? <img src={imgSrc} alt={o.produk} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center"><FaBoxOpen className="text-[#A1A1AA] text-xs" /></div>
+                      }
+                    </Link>
+                  ) : (
+                    <div className="w-9 h-9 shrink-0 rounded-lg bg-[#F4F4F5] border border-[#E4E4E7] flex items-center justify-center">
+                      <FaBoxOpen className="text-[#A1A1AA] text-xs" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    {invItem ? (
+                      <Link to={`/inventory/${invItem.id}`} className="text-xs font-semibold text-[#22285E] truncate block hover:text-[#9E4BDC] transition-colors">{o.produk}</Link>
+                    ) : (
+                      <p className="text-xs font-semibold text-[#22285E] truncate">{o.produk}</p>
+                    )}
+                    <p className="text-[10px] text-[#A1A1AA] mt-0.5">{o.qty} pcs</p>
+                  </div>
+                </div>
+
+                {/* Total + Poin */}
+                <div>
+                  <p className="text-xs font-bold text-[#22285E] whitespace-nowrap">Rp {o.total.toLocaleString("id")}</p>
+                  <p className="text-[10px] text-[#00B5AD] font-semibold flex items-center gap-0.5 mt-0.5">
+                    <FaStar className="text-yellow-400 text-[8px]" />+{o.poin} poin
+                  </p>
+                </div>
+
+                {/* Status */}
+                <div><Badge status={o.status} /></div>
+
               </div>
-              <p className="text-xs text-[#71717A] truncate">{o.produk}</p>
-              <div>
-                <p className="text-xs font-bold text-[#22285E]">Rp {o.total.toLocaleString("id")}</p>
-                <p className="text-[10px] text-[#00B5AD] font-semibold flex items-center gap-0.5">
-                  <FaStar className="text-yellow-400 text-[8px]" />+{o.poin} poin
-                </p>
-              </div>
-              <Badge status={o.status} />
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
 

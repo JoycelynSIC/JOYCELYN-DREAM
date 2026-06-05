@@ -22,6 +22,7 @@ export default function Input({
   icon: Icon,
   error,
   disabled = false,
+  name,
   className = "",
 }) {
   return (
@@ -41,6 +42,7 @@ export default function Input({
 
         <input
           type={type}
+          name={name}
           value={value}
           onChange={onChange}
           placeholder={placeholder}

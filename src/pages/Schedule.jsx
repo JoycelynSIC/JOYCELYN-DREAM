@@ -8,13 +8,14 @@
  */
 import { useState } from "react";
 import {
-  FaChevronLeft, FaChevronRight, FaPlus, FaTimes,
+  FaPlus, FaTimes,
   FaMapMarkerAlt, FaAlignLeft, FaClock, FaBoxOpen,
   FaCheckDouble, FaArchive, FaCamera, FaHeadset,
   FaCalendarAlt, FaUserFriends, FaSearch,
 } from "react-icons/fa";
 import PageHeader from "../components/PageHeader";
 import scheduleData from "../data/schedule.json";
+import { Calendar } from "@/components/ui/calendar";
 
 /* ─── Konstanta ─────────────────────────────────── */
 const HARI_PENDEK = ["MIN", "SEN", "SEL", "RAB", "KAM", "JUM", "SAB"];
@@ -39,154 +40,24 @@ const KATEGORI_CONFIG = {
 
 const REMINDER_TYPES = ["Restock", "Promo", "Packing", "CS / WA"];
 
-/* ─── Helper: bangun grid kalender ──────────────── */
-function buildCalendar(year, month) {
-  const firstDay = new Date(year, month, 1).getDay();
-  const total    = new Date(year, month + 1, 0).getDate();
-  return Array.from({ length: firstDay }, () => null)
-    .concat(Array.from({ length: total }, (_, i) => i + 1));
-}
-
-/* ─── Mini Calendar ─────────────────────────────── */
-function MiniCalendar({ year, month, selectedDate, onSelect, markedDates = [] }) {
-  const today = new Date();
-  const days  = buildCalendar(year, month);
-
-  return (
-    <div className="flex-1 min-w-0">
-      {/* Nama bulan */}
-      <p className="text-sm font-bold text-[#22285E] text-center mb-3">
-        {BULAN_EN[month]} {year}
-      </p>
-
-      {/* Header hari */}
-      <div className="grid grid-cols-7 mb-1">
-        {HARI_PENDEK.map((h) => (
-          <div key={h} className="text-center text-[9px] font-bold text-[#A1A1AA] py-1">
-            {h}
-          </div>
-        ))}
-      </div>
-
-      {/* Grid tanggal */}
-      <div className="grid grid-cols-7 gap-0.5">
-        {days.map((day, i) => {
-          const isToday =
-            day === today.getDate() &&
-            month === today.getMonth() &&
-            year === today.getFullYear();
-          const isSelected =
-            day === selectedDate?.day &&
-            month === selectedDate?.month &&
-            year === selectedDate?.year;
-          const hasEvent = day && markedDates.includes(day);
-
-          return (
-            <button
-              key={i}
-              disabled={!day}
-              onClick={() => day && onSelect({ day, month, year })}
-              className={`
-                relative aspect-square rounded-full text-[11px] font-semibold
-                flex flex-col items-center justify-center transition-all
-                ${!day ? "invisible" : ""}
-                ${isSelected
-                  ? "bg-[#9E4BDC] text-white shadow-md shadow-[#9E4BDC]/30 font-bold"
-                  : isToday
-                  ? "bg-[#9E4BDC]/15 text-[#9E4BDC] font-bold"
-                  : "text-[#22285E] hover:bg-[#F4F4F5]"
-                }
-              `}
-            >
-              {day}
-              {hasEvent && (
-                <span
-                  className={`absolute bottom-0.5 w-1 h-1 rounded-full
-                    ${isSelected ? "bg-white/70" : "bg-[#9E4BDC]"}`}
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Event Card (Upcoming Events) ──────────────── */
-function EventCard({ task, time, kategori, accent = "#9E4BDC" }) {
-  const cfg  = KATEGORI_CONFIG[kategori] ?? KATEGORI_CONFIG.Restok;
-  const Icon = cfg.icon;
-
-  return (
-    <div className="bg-white border border-[#E4E4E7] rounded-2xl p-4 flex items-start justify-between gap-3 hover:shadow-md transition-all group">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-[#22285E] leading-snug">{task}</p>
-        <p className="text-[11px] text-[#A1A1AA] mt-1 flex items-center gap-1">
-          <FaClock className="text-[9px]" /> {time}
-        </p>
-        {/* Avatar placeholder mirip figma */}
-        <div className="flex items-center gap-1 mt-2">
-          {[...Array(3)].map((_, i) => (
-            <div
-              key={i}
-              className="w-5 h-5 rounded-full border-2 border-white -ml-1 first:ml-0 flex items-center justify-center text-[8px] font-bold text-white"
-              style={{ backgroundColor: ["#9E4BDC","#95D5B6","#F24E1E"][i] }}
-            >
-              {["J","N","A"][i]}
-            </div>
-          ))}
-        </div>
-      </div>
-      {/* Ikon kategori */}
-      <div
-        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-        style={{ backgroundColor: accent + "20" }}
-      >
-        <Icon style={{ color: accent }} className="text-sm" />
-      </div>
-      {/* Garis aksen kiri */}
-      <div
-        className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full"
-        style={{ backgroundColor: accent }}
-      />
-    </div>
-  );
-}
-
 /* ─── Komponen Utama ─────────────────────────────── */
 export default function Schedule() {
   const today = new Date();
 
   const [activeTab, setActiveTab]       = useState("Tickets");
-  const [viewYear,  setViewYear]        = useState(today.getFullYear());
-  const [viewMonth, setViewMonth]       = useState(today.getMonth());
-  const [selected,  setSelected]        = useState({
-    day: today.getDate(), month: today.getMonth(), year: today.getFullYear(),
-  });
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [startTime, setStartTime]       = useState("10:30");
+  const [endTime, setEndTime]           = useState("12:30");
   const [tasks, setTasks]               = useState(scheduleData);
   const [reminderName, setReminderName] = useState("Restock Gelang Bead");
   const [reminderType, setReminderType] = useState("Restock");
   const [showSuccess, setShowSuccess]   = useState(false);
 
-  /* Bulan kedua */
-  const month2 = viewMonth === 11 ? 0  : viewMonth + 1;
-  const year2  = viewMonth === 11 ? viewYear + 1 : viewYear;
-
-  const prevPair = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
-    else setViewMonth((m) => m - 1);
-  };
-  const nextPair = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); }
-    else setViewMonth((m) => m + 1);
-  };
-
   /* Tanggal yang ada jadwal */
   const markedDates = [2, 5, 8, 12, 15, 19, 22, 26, 29];
 
   /* Label tanggal terpilih */
-  const selLabel = `${selected.day} ${BULAN[selected.month]} ${selected.year}`;
+  const selLabel = `${selectedDate.getDate()} ${BULAN[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
 
   /* Buat pengingat */
   const handleCreateReminder = () => {
@@ -196,7 +67,7 @@ export default function Schedule() {
       {
         id:       Date.now(),
         task:     reminderName,
-        time:     "09:00 - 10:00",
+        time:     `${startTime} - ${endTime}`,
         kategori: reminderType === "Restock"  ? "Restok"
                 : reminderType === "Packing"  ? "Packing"
                 : reminderType === "CS / WA"  ? "CS"
@@ -248,7 +119,7 @@ export default function Schedule() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
 
         {/* ── Kalender 2 bulan ── */}
-        <div className="lg:col-span-2 bg-white border border-[#E4E4E7] rounded-3xl p-6 shadow-sm">
+        <div className="lg:col-span-2 bg-white border border-[#E4E4E7] rounded-3xl p-6 shadow-sm flex flex-col justify-between">
 
           {/* Toggle One way / Two way */}
           <div className="flex justify-center mb-6">
@@ -269,43 +140,47 @@ export default function Schedule() {
           </div>
 
           {/* Dua kalender berdampingan */}
-          <div className="flex items-start gap-6">
-            {/* Tombol prev */}
-            <button
-              onClick={prevPair}
-              className="mt-8 w-8 h-8 rounded-full bg-[#F4F4F5] hover:bg-[#9E4BDC]/10 flex items-center justify-center text-[#22285E] transition-all shrink-0"
-            >
-              <FaChevronLeft className="text-xs" />
-            </button>
-
-            {/* Kalender bulan 1 */}
-            <MiniCalendar
-              year={viewYear}
-              month={viewMonth}
-              selectedDate={selected}
-              onSelect={setSelected}
-              markedDates={markedDates}
+          <div className="flex justify-center">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(date) => date && setSelectedDate(date)}
+              numberOfMonths={2}
+              className="p-0 border border-[#E4E4E7] rounded-2xl bg-white shadow-xs p-4"
             />
+          </div>
 
-            {/* Divider */}
-            <div className="w-px self-stretch bg-[#E4E4E7] mx-2 hidden sm:block" />
+          {/* Time Picker */}
+          <div className="mt-6 pt-5 border-t border-[#E4E4E7] flex flex-col sm:flex-row gap-4 items-center justify-center">
+            <div className="flex flex-col gap-1.5 w-full sm:w-48">
+              <label htmlFor="time-from" className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] ml-1">
+                Start Time
+              </label>
+              <div className="relative flex items-center bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl px-4 py-2.5">
+                <input
+                  id="time-from"
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full bg-transparent text-sm text-[#22285E] font-medium outline-none"
+                />
+              </div>
+            </div>
 
-            {/* Kalender bulan 2 */}
-            <MiniCalendar
-              year={year2}
-              month={month2}
-              selectedDate={selected}
-              onSelect={setSelected}
-              markedDates={markedDates}
-            />
-
-            {/* Tombol next */}
-            <button
-              onClick={nextPair}
-              className="mt-8 w-8 h-8 rounded-full bg-[#F4F4F5] hover:bg-[#9E4BDC]/10 flex items-center justify-center text-[#22285E] transition-all shrink-0"
-            >
-              <FaChevronRight className="text-xs" />
-            </button>
+            <div className="flex flex-col gap-1.5 w-full sm:w-48">
+              <label htmlFor="time-to" className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] ml-1">
+                End Time
+              </label>
+              <div className="relative flex items-center bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl px-4 py-2.5">
+                <input
+                  id="time-to"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full bg-transparent text-sm text-[#22285E] font-medium outline-none"
+                />
+              </div>
+            </div>
           </div>
 
           {/* ── Filter bar bawah kalender ── */}
@@ -388,7 +263,7 @@ export default function Schedule() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-[11px] text-[#71717A]">
                 <FaClock className="text-[#9E4BDC] text-xs shrink-0" />
-                <span className="font-semibold">09:00 — 10:00</span>
+                <span className="font-semibold">{startTime} — {endTime}</span>
               </div>
               <div className="flex items-center gap-2 text-[11px] text-[#71717A]">
                 <FaCalendarAlt className="text-[#9E4BDC] text-xs shrink-0" />
@@ -400,9 +275,9 @@ export default function Schedule() {
                   { bg: "#95D5B6", label: "N" },
                 ].map((av, i) => (
                   <div
-                    key={i}
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black text-white border-2 border-white -ml-1 first:ml-0"
-                    style={{ backgroundColor: av.bg }}
+                      key={i}
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black text-white border-2 border-white -ml-1 first:ml-0"
+                      style={{ backgroundColor: av.bg }}
                   >
                     {av.label}
                   </div>

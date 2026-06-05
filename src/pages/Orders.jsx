@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import ordersData from '../data/orders.json';
 import PageHeader from '../components/PageHeader';
 import Badge     from '../components/Badge';
@@ -7,6 +8,16 @@ import Card      from '../components/Card';
 import Button    from '../components/Button';
 import Input     from '../components/Input';
 import Select    from '../components/Select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import {
   FaShoppingBag, FaSearch, FaFilter, FaCheckCircle,
   FaSpinner, FaTimesCircle, FaStar, FaBoxOpen, FaEye, FaTimes,
@@ -38,6 +49,9 @@ export default function Orders() {
     setFormPesanan({ ...formPesanan, [name]: value });
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+
   const _search = dataForm.search.toLowerCase();
   const filtered = orders.filter(o => {
     const matchSearch = o.customer.toLowerCase().includes(_search)
@@ -46,6 +60,9 @@ export default function Orders() {
     const matchStatus = dataForm.filterStatus === 'Semua' || o.status === dataForm.filterStatus;
     return matchSearch && matchStatus;
   });
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedData = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const totalOmzet   = orders.filter(o => o.status !== 'Batal').reduce((a, o) => a + o.total, 0);
   const totalSelesai = orders.filter(o => o.status === 'Selesai').length;
@@ -102,7 +119,10 @@ export default function Orders() {
               placeholder="Cari ID, nama, atau produk..."
               icon={FaSearch}
               value={dataForm.search}
-              onChange={(e) => setDataForm({ ...dataForm, search: e.target.value })}
+              onChange={(e) => {
+                setDataForm({ ...dataForm, search: e.target.value });
+                setCurrentPage(1);
+              }}
               className="flex-1 !gap-0"
             />
             <div className="flex items-center gap-2 flex-wrap">
@@ -112,7 +132,10 @@ export default function Orders() {
                   key={s}
                   size="sm"
                   variant={dataForm.filterStatus === s ? 'primary' : 'ghost'}
-                  onClick={() => setDataForm({ ...dataForm, filterStatus: s })}
+                  onClick={() => {
+                    setDataForm({ ...dataForm, filterStatus: s });
+                    setCurrentPage(1);
+                  }}
                 >
                   {s}
                 </Button>
@@ -131,7 +154,7 @@ export default function Orders() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(o => {
+                {paginatedData.map(o => {
                   const sc = statusConfig[o.status] ?? statusConfig.Proses;
                   const isActive = selected?.id === o.id;
                   return (
@@ -193,12 +216,59 @@ export default function Orders() {
               </div>
             )}
           </div>
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-[#E4E4E7] flex justify-center">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) setCurrentPage(currentPage - 1);
+                      }}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const page = i + 1;
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={page === currentPage}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(page);
+                          }}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                      }}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </Card>
 
         {/* RIGHT: Detail Panel */}
         {selected && (() => {
           return (
-            <Card className="sticky top-4 h-fit" padding={true}>
+            <Card className="sticky top-4 max-h-[calc(100vh-6rem)] overflow-hidden" padding={true}>
+            <ScrollArea className="h-[calc(100vh-8rem)]">
+            <div className="pr-3">
               <div className="flex items-start justify-between pb-4 border-b border-[#E4E4E7]">
                 <div>
                   <span className="text-xs font-black text-[#9E4BDC] bg-[#9E4BDC]/10 px-2.5 py-1 rounded-lg">{selected.id}</span>
@@ -274,14 +344,19 @@ export default function Orders() {
                   Lihat Profil Pelanggan
                 </Button>
               </div>
+            </div>
+            </ScrollArea>
             </Card>
           );
         })()}
       </div>
 
       {/* ── Modal Tambah Pesanan ── */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      {showForm && createPortal(
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}
+        >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
 
             <div className="flex items-center justify-between px-6 py-5 border-b border-[#E4E4E7]">
@@ -345,7 +420,8 @@ export default function Orders() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

@@ -20,6 +20,7 @@ export default function Select({
   onChange,
   icon: Icon,
   disabled = false,
+  name,
   className = "",
 }) {
   return (
@@ -38,6 +39,7 @@ export default function Select({
         )}
 
         <select
+          name={name}
           value={value}
           onChange={onChange}
           disabled={disabled}

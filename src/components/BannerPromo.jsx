@@ -17,7 +17,7 @@ export default function BannerPromo({
   onCta,
 }) {
   return (
-    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#9E4BDC] to-[#7B2FBE] p-6 flex flex-col justify-between min-h-[160px]">
+    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#9E4BDC] to-[#7B2FBE] p-6 flex flex-col justify-between h-full min-h-[160px]">
       {/* Dekorasi lingkaran latar */}
       <div className="absolute -right-8 -top-8 w-36 h-36 bg-white/10 rounded-full pointer-events-none" />
       <div className="absolute right-10 bottom-0 w-20 h-20 bg-white/5 rounded-full pointer-events-none" />
