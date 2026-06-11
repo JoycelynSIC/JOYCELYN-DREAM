@@ -1,113 +1,230 @@
-/**
+﻿/**
  * KOMPONEN 14 — DonutChart
- * Pie chart donat menggunakan Recharts PieChart.
- *
- * Props:
- *  title    : string
- *  subtitle : string
- *  segments : Array<{ label, value, color }>  — value dalam persen (total = 100)
- *  center   : string  — teks di tengah donat
+ * Recharts donut - bersih, jelas, efek hover proper.
  */
-import {
-  PieChart, Pie, Cell, Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { useState } from 'react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from 'recharts';
 
-/* Tooltip kustom */
-function PieTooltip({ active, payload }) {
-  if (!active || !payload?.length) return null;
-  const d = payload[0];
+/* ── Active Shape: pakai Sector bawaan Recharts, tidak ada SVG manual ── */
+function renderActiveShape(props) {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
   return (
-    <div className="bg-white border border-[#E4E4E7] rounded-xl px-3 py-2 shadow-lg text-xs font-poppins">
-      <p className="font-bold text-[#22285E]">{d.name}</p>
-      <p style={{ color: d.payload.color }} className="font-black text-sm">
-        {d.value}%
-      </p>
+    <Sector
+      cx={cx}
+      cy={cy}
+      innerRadius={innerRadius - 2}
+      outerRadius={outerRadius + 8}
+      startAngle={startAngle}
+      endAngle={endAngle}
+      fill={fill}
+      style={{ filter: 'drop-shadow(0 0 8px ' + fill + 'aa)' }}
+    />
+  );
+}
+
+/* ── Tooltip: putih solid, garis kiri berwarna, teks jelas ── */
+function PieTooltip({ active, payload }) {
+  if (!active || !payload || !payload.length) return null;
+  const seg = payload[0];
+  const color = seg.payload.color;
+  return (
+    <div style={{
+      background: '#ffffff',
+      border: '1px solid #e4e4e7',
+      borderLeft: '5px solid ' + color,
+      borderRadius: '10px',
+      padding: '10px 16px',
+      boxShadow: '0 6px 24px rgba(0,0,0,0.13)',
+      fontFamily: 'Poppins, sans-serif',
+      minWidth: '130px',
+      pointerEvents: 'none',
+    }}>
+      <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'6px' }}>
+        <span style={{
+          width:'10px', height:'10px', borderRadius:'50%',
+          background: color, display:'inline-block', flexShrink:0,
+        }} />
+        <span style={{ fontSize:'11px', fontWeight:600, color:'#3f3f46' }}>
+          {seg.name}
+        </span>
+      </div>
+      <span style={{ fontSize:'22px', fontWeight:900, color: color, lineHeight:1 }}>
+        {seg.value}%
+      </span>
     </div>
   );
 }
 
-/* Label di dalam slice */
-function renderLabel({ cx, cy, midAngle, innerRadius, outerRadius, value }) {
-  if (value < 8) return null; // jangan tampil kalau slice terlalu kecil
-  const RADIAN = Math.PI / 180;
-  const r = innerRadius + (outerRadius - innerRadius) * 0.55;
-  const x = cx + r * Math.cos(-midAngle * RADIAN);
-  const y = cy + r * Math.sin(-midAngle * RADIAN);
-  return (
-    <text
-      x={x} y={y}
-      fill="white"
-      textAnchor="middle"
-      dominantBaseline="central"
-      fontSize={10}
-      fontWeight="bold"
-      fontFamily="Poppins, sans-serif"
-    >
-      {value}%
-    </text>
-  );
-}
-
+/* ── Komponen utama ── */
 export default function DonutChart({ title, subtitle, segments = [], center }) {
+  const [activeIdx, setActiveIdx] = useState(null);
+
+  const largest = segments.length
+    ? segments.reduce((a, b) => (b.value > a.value ? b : a))
+    : null;
+
+  const hovered = activeIdx !== null ? segments[activeIdx] : null;
+  const centerColor = hovered ? hovered.color : '#22285E';
+  const centerValue = hovered ? hovered.value : (largest ? largest.value : 0);
+  const centerLabel = center || (largest ? largest.label : '');
+
   return (
-    <div className="bg-white border border-[#E4E4E7] rounded-2xl p-5">
+    <div
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 32px rgba(158,75,220,0.15)'; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 16px rgba(34,40,94,0.07)'; }}
+      style={{
+        position: 'relative',
+        background: 'linear-gradient(145deg, #ffffff 0%, #f8f6ff 100%)',
+        border: '1.5px solid #e4e4e7',
+        borderRadius: '20px',
+        padding: '18px 20px 16px',
+        boxShadow: '0 2px 16px rgba(34,40,94,0.07)',
+        fontFamily: 'Poppins, sans-serif',
+        overflow: 'hidden',
+        transition: 'box-shadow 0.3s ease',
+      }}
+    >
+      {/* Blob dekorasi */}
+      <div style={{
+        position:'absolute', top:'-28px', right:'-28px',
+        width:'90px', height:'90px', borderRadius:'50%', pointerEvents:'none',
+        background:'radial-gradient(circle, rgba(158,75,220,0.09) 0%, transparent 70%)',
+      }} />
+
       {/* Header */}
       {(title || subtitle) && (
-        <div className="mb-4">
-          {title   && <h3 className="text-sm font-bold text-[#22285E]">{title}</h3>}
-          {subtitle && <p className="text-[10px] text-[#A1A1AA] mt-0.5">{subtitle}</p>}
+        <div style={{ marginBottom:'14px', position:'relative', zIndex:1 }}>
+          {title && (
+            <p style={{ margin:0, fontSize:'13px', fontWeight:800, color:'#22285E' }}>
+              {title}
+            </p>
+          )}
+          {subtitle && (
+            <p style={{ margin:'3px 0 0', fontSize:'10px', fontWeight:500, color:'#a1a1aa' }}>
+              {subtitle}
+            </p>
+          )}
         </div>
       )}
 
-      <div className="flex items-center gap-4">
-        {/* ── Pie Chart ── */}
-        <div className="relative shrink-0" style={{ width: 130, height: 130 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:'16px', position:'relative', zIndex:1 }}>
+
+        {/* Donut */}
+        <div style={{ position:'relative', width:'148px', height:'148px', flexShrink:0 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={segments}
                 dataKey="value"
                 nameKey="label"
-                cx="50%"
-                cy="50%"
-                innerRadius={36}
-                outerRadius={60}
+                cx="50%" cy="50%"
+                innerRadius={46}
+                outerRadius={64}
                 paddingAngle={3}
-                labelLine={false}
-                label={renderLabel}
                 strokeWidth={0}
+                animationBegin={0}
+                animationDuration={750}
+                activeIndex={activeIdx !== null ? activeIdx : undefined}
+                activeShape={renderActiveShape}
+                onMouseEnter={(_, i) => setActiveIdx(i)}
+                onMouseLeave={() => setActiveIdx(null)}
               >
                 {segments.map((seg, i) => (
-                  <Cell key={i} fill={seg.color} />
+                  <Cell
+                    key={i}
+                    fill={seg.color}
+                    opacity={activeIdx === null || activeIdx === i ? 1 : 0.3}
+                    style={{ transition:'opacity 0.2s', cursor:'pointer' }}
+                  />
                 ))}
               </Pie>
-              <Tooltip content={<PieTooltip />} />
+              <Tooltip
+                content={<PieTooltip />}
+                isAnimationActive={false}
+                wrapperStyle={{ zIndex: 50, outline:'none' }}
+              />
             </PieChart>
           </ResponsiveContainer>
 
-          {/* Teks tengah lubang donat */}
-          {center && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className="text-[11px] font-black text-[#22285E] text-center leading-tight px-1">
-                {center}
-              </span>
-            </div>
-          )}
+          {/* Center teks */}
+          <div style={{
+            position:'absolute', inset:0,
+            display:'flex', flexDirection:'column',
+            alignItems:'center', justifyContent:'center',
+            pointerEvents:'none', userSelect:'none',
+          }}>
+            <span style={{
+              fontSize:'21px', fontWeight:900, lineHeight:1,
+              color: centerColor,
+              transition:'color 0.2s',
+            }}>
+              {centerValue}%
+            </span>
+            <span style={{
+              fontSize:'9px', fontWeight:600, color:'#71717a',
+              marginTop:'5px', textAlign:'center',
+              maxWidth:'58px', lineHeight:1.3,
+            }}>
+              {hovered ? hovered.label : centerLabel}
+            </span>
+          </div>
         </div>
 
-        {/* ── Legenda ── */}
-        <div className="space-y-2 flex-1 min-w-0">
-          {segments.map((seg, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span
-                className="w-2.5 h-2.5 rounded-sm shrink-0"
-                style={{ backgroundColor: seg.color }}
-              />
-              <span className="text-[10px] text-[#71717A] flex-1 truncate">{seg.label}</span>
-              <span className="text-[10px] font-bold text-[#22285E] shrink-0">{seg.value}%</span>
-            </div>
-          ))}
+        {/* Legenda */}
+        <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:'9px' }}>
+          {segments.map((seg, i) => {
+            const isActive = activeIdx === i;
+            return (
+              <div
+                key={i}
+                onMouseEnter={() => setActiveIdx(i)}
+                onMouseLeave={() => setActiveIdx(null)}
+                style={{ cursor:'default' }}
+              >
+                {/* Label row */}
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'5px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'7px', minWidth:0, flex:1 }}>
+                    <span style={{
+                      display:'inline-block', flexShrink:0,
+                      width:'10px', height:'10px', borderRadius:'50%',
+                      background: seg.color,
+                      boxShadow: isActive ? '0 0 7px ' + seg.color : 'none',
+                      transform: isActive ? 'scale(1.3)' : 'scale(1)',
+                      transition:'transform 0.2s, box-shadow 0.2s',
+                    }} />
+                    <span style={{
+                      fontSize:'10px',
+                      fontWeight: isActive ? 700 : 500,
+                      color: isActive ? '#22285E' : '#52525b',
+                      overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis',
+                      transition:'color 0.15s',
+                    }}>
+                      {seg.label}
+                    </span>
+                  </div>
+                  <span style={{
+                    fontSize:'11px', fontWeight:800,
+                    color: seg.color,
+                    marginLeft:'6px', flexShrink:0,
+                  }}>
+                    {seg.value}%
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ width:'100%', height:'5px', borderRadius:'99px', background:'#f0f0f4', overflow:'hidden' }}>
+                  <div style={{
+                    height:'100%', borderRadius:'99px',
+                    width: seg.value + '%',
+                    background: seg.color,
+                    opacity: activeIdx === null || isActive ? 1 : 0.25,
+                    boxShadow: isActive ? '0 0 7px ' + seg.color + '88' : 'none',
+                    transition:'opacity 0.2s, box-shadow 0.2s',
+                  }} />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

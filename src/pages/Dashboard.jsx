@@ -1,6 +1,6 @@
 /**
  * Dashboard — Na_store.id CRM
- * Toko Aksesoris: Gelang · Kalung · Anting · Cincin · Nail Art · dll
+ * Layout mengikuti referensi: Stat Cards → Banner + Grafik → Daily Task + 2 Pie Charts → Recent Orders
  */
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -10,7 +10,8 @@ import {
 } from "recharts";
 import {
   FaBell, FaUsers, FaShoppingBag, FaPlusCircle,
-  FaStar, FaBoxOpen,
+  FaStar, FaBoxOpen, FaClock, FaBoxes, FaCheckDouble,
+  FaArchive, FaCamera, FaHeadset, FaCoins,
 } from "react-icons/fa";
 
 import PageHeader   from "../components/PageHeader";
@@ -18,14 +19,13 @@ import StatCard     from "../components/StatCard";
 import BannerPromo  from "../components/BannerPromo";
 import TabFilter    from "../components/TabFilter";
 import DonutChart   from "../components/DonutChart";
-import ActivityItem from "../components/ActivityItem";
 import Badge        from "../components/Badge";
 import Card         from "../components/Card";
 import AvatarGroup  from "../components/AvatarGroup";
 import ordersData    from "../data/orders.json";
 import inventoryData from "../data/inventory.json";
 
-/* ─── Import gambar produk (agar Vite bundle dengan benar di production) ─── */
+/* ─── Import gambar produk ─── */
 import imgKalungRosegold  from "../assets/gambarproduk/kalungrosegold.png";
 import imgKalungChoker    from "../assets/gambarproduk/kalungchoker.png";
 import imgKalungBintang   from "../assets/gambarproduk/kalungbintang.png";
@@ -80,64 +80,116 @@ const gambarMap = {
   "maskerlucu.png": imgMasker,                 "stiker.png": imgStiker,
   "gancisanrio.png": imgGanci,                 "ikapinggang.png": imgIkatPinggang,
 };
-
 const getImg = (path) => {
   if (!path) return null;
   return gambarMap[path.split("/").pop()] ?? null;
 };
 
-/* ─── Data grafik transaksi harian Na_store.id ─── */
+/* ─── Data grafik transaksi harian ─── */
 const chartDataMap = {
   Harian: [
-    { hari: "Sen", nilai: 18 }, { hari: "Sel", nilai: 32 },
-    { hari: "Rab", nilai: 25 }, { hari: "Kam", nilai: 41 },
-    { hari: "Jum", nilai: 36 }, { hari: "Sab", nilai: 58 },
-    { hari: "Min", nilai: 47 },
+    { hari: "Sen", nilai: 18, repeat: 10 }, { hari: "Sel", nilai: 32, repeat: 20 },
+    { hari: "Rab", nilai: 25, repeat: 15 }, { hari: "Kam", nilai: 41, repeat: 28 },
+    { hari: "Jum", nilai: 36, repeat: 22 }, { hari: "Sab", nilai: 58, repeat: 40 },
+    { hari: "Min", nilai: 47, repeat: 32 },
   ],
   Mingguan: [
-    { hari: "Mg 1", nilai: 62 }, { hari: "Mg 2", nilai: 78 },
-    { hari: "Mg 3", nilai: 55 }, { hari: "Mg 4", nilai: 91 },
+    { hari: "Mg 1", nilai: 62, repeat: 30 }, { hari: "Mg 2", nilai: 78, repeat: 45 },
+    { hari: "Mg 3", nilai: 55, repeat: 28 }, { hari: "Mg 4", nilai: 91, repeat: 60 },
   ],
   Bulanan: [
-    { hari: "Jan", nilai: 70 }, { hari: "Feb", nilai: 52 },
-    { hari: "Mar", nilai: 91 }, { hari: "Apr", nilai: 44 },
-    { hari: "Mei", nilai: 97 }, { hari: "Jun", nilai: 63 },
-    { hari: "Jul", nilai: 85 },
+    { hari: "Jan", nilai: 70, repeat: 38 }, { hari: "Feb", nilai: 52, repeat: 25 },
+    { hari: "Mar", nilai: 91, repeat: 55 }, { hari: "Apr", nilai: 44, repeat: 20 },
+    { hari: "Mei", nilai: 97, repeat: 62 }, { hari: "Jun", nilai: 63, repeat: 40 },
+    { hari: "Jul", nilai: 85, repeat: 50 },
   ],
 };
 
-/* ─── Tooltip ─── */
+/* ─── Custom Tooltip grafik ─── */
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white px-4 py-3 rounded-xl shadow-lg border border-[#E4E4E7] text-xs font-poppins">
       <p className="text-[#A1A1AA] uppercase font-bold tracking-widest mb-1">{label}</p>
-      <p className="text-[#22285E] font-bold">{payload[0].value} Transaksi</p>
+      <p className="text-[#9E4BDC] font-bold">{payload[0]?.value} Transaksi Baru</p>
+      {payload[1] && <p className="text-[#22285E] font-bold mt-0.5">{payload[1].value} Repeat Order</p>}
     </div>
   );
 }
 
-/* ─── Jadwal harian toko — dari schedule.json ─── */
-const jadwal = [
-  { jam: "09:00", title: "Restock Gelang & Kalung",    time: "09:00 – 10:00", color: "purple" },
-  { jam: "10:30", title: "QC Cincin Couple Silver",     time: "10:30 – 12:00", color: "teal"   },
-  { jam: "13:00", title: "Packing Pesanan Reseller",    time: "13:00 – 14:30", color: "dark"   },
-  { jam: "15:00", title: "Update Foto Produk Baru",     time: "15:00 – 16:00", color: "green"  },
-  { jam: "16:30", title: "Balas Chat & WA Pelanggan",   time: "16:30 – 17:30", color: "purple" },
+/* ─── Jadwal harian dari schedule.json (hardcoded sesuai data) ─── */
+const JADWAL = [
+  {
+    jam: "09:00",
+    title: "Restok Kalung Titanium",
+    time: "09:00 – 10:00",
+    kategori: "Restok",
+    color: "purple",
+    icon: FaBoxes,
+  },
+  {
+    jam: "10:30",
+    title: "QC Cincin Couple Silver",
+    time: "10:30 – 12:00",
+    kategori: "QC",
+    color: "teal",
+    icon: FaCheckDouble,
+  },
+  {
+    jam: "13:00",
+    title: "Packing Pesanan Reseller",
+    time: "13:00 – 14:30",
+    kategori: "Packing",
+    color: "dark",
+    icon: FaArchive,
+  },
+  {
+    jam: "15:00",
+    title: "Update Foto Produk Baru",
+    time: "15:00 – 16:00",
+    kategori: "Konten",
+    color: "green",
+    icon: FaCamera,
+  },
+  {
+    jam: "16:30",
+    title: "Balas Chat Pelanggan",
+    time: "16:30 – 17:30",
+    kategori: "CS",
+    color: "orange",
+    icon: FaHeadset,
+  },
 ];
 
-/* ─── Pelanggan terbaru — dari customer.json ─── */
+const JADWAL_COLOR_MAP = {
+  purple: { bg: "bg-[#9E4BDC]",        text: "text-white",        dot: "bg-[#9E4BDC]"  },
+  teal:   { bg: "bg-[#00B5AD]",        text: "text-white",        dot: "bg-[#00B5AD]"  },
+  dark:   { bg: "bg-[#22285E]",        text: "text-white",        dot: "bg-[#22285E]"  },
+  green:  { bg: "bg-[#95D5B6]",        text: "text-[#22285E]",    dot: "bg-[#95D5B6]"  },
+  orange: { bg: "bg-[#F24E1E]",        text: "text-white",        dot: "bg-[#F24E1E]"  },
+};
+
+/* ─── Pelanggan Top ─── */
 const pelangganBaru = [
-  { id: 7,  nama: "Fatimah Novitasari", status: "Gold",   poin: 3760, belanja: 4259000 },
-  { id: 15, nama: "Olivia Felicia",     status: "Gold",   poin: 3121, belanja: 4013000 },
-  { id: 27, nama: "Uswatun Dewi",       status: "Gold",   poin: 3151, belanja: 3961000 },
-  { id: 4,  nama: "Ulfah Permatasari",  status: "Gold",   poin: 3016, belanja: 3409000 },
-  { id: 18, nama: "Uswatun Andriani",   status: "Gold",   poin: 2984, belanja: 3609000 },
+  { id: 7,  nama: "Fatimah Novitasari", status: "Gold", poin: 3760, belanja: 4259000 },
+  { id: 15, nama: "Olivia Felicia",     status: "Gold", poin: 3121, belanja: 4013000 },
+  { id: 27, nama: "Uswatun Dewi",       status: "Gold", poin: 3151, belanja: 3961000 },
+  { id: 4,  nama: "Ulfah Permatasari",  status: "Gold", poin: 3016, belanja: 3409000 },
+  { id: 18, nama: "Uswatun Andriani",   status: "Gold", poin: 2984, belanja: 3609000 },
 ];
 
-/* ─── Pesanan terbaru — 4 teratas dari orders.json ─── */
 const pesananTerbaru = ordersData.slice(0, 4);
 
+/* ─── Hitung total omzet dari pesanan Selesai ─── */
+const totalOmzet = ordersData
+  .filter((o) => o.status === "Selesai")
+  .reduce((sum, o) => sum + o.total, 0);
+const omzetLabel =
+  totalOmzet >= 1_000_000
+    ? `${(totalOmzet / 1_000_000).toFixed(1)} jt`
+    : `${(totalOmzet / 1_000).toFixed(0)} rb`;
+
+/* ════════════════════════════════════════════════════════ */
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("Bulanan");
 
@@ -181,11 +233,10 @@ export default function Dashboard() {
         />
         <StatCard
           variant="green"
-          label="Tambah Produk"
-          value="Aksesoris"
-          desc="Klik untuk tambah"
-          icon={<FaPlusCircle />}
-          onClick={() => (window.location.href = "/inventory")}
+          label="Total Omzet"
+          value={`Rp ${omzetLabel}`}
+          desc="Dari pesanan selesai"
+          icon={<FaCoins />}
         />
       </div>
 
@@ -232,8 +283,8 @@ export default function Dashboard() {
                 <XAxis dataKey="hari" tick={{ fontSize: 10, fill: "#A1A1AA" }} axisLine={false} tickLine={false} dy={6} />
                 <YAxis tick={{ fontSize: 10, fill: "#A1A1AA" }} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="nilai" stroke="#9E4BDC" strokeWidth={2.5} fill="url(#gradPurple)" dot={false} activeDot={{ r: 5, fill: "#9E4BDC" }} />
-                <Area type="monotone" dataKey="nilai" stroke="#22285E" strokeWidth={1.5} fill="url(#gradDark)"   dot={false} strokeDasharray="4 3" />
+                <Area type="monotone" dataKey="nilai"  stroke="#9E4BDC" strokeWidth={2.5} fill="url(#gradPurple)" dot={false} activeDot={{ r: 5, fill: "#9E4BDC" }} />
+                <Area type="monotone" dataKey="repeat" stroke="#22285E" strokeWidth={1.5} fill="url(#gradDark)"   dot={false} strokeDasharray="4 3" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -251,49 +302,98 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* ══ ROW 3 — Jadwal + Donut ══ */}
+      {/* ══ ROW 3 — Daily Task + 2 Pie Charts (layout mirip referensi) ══ */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
 
-        {/* Jadwal Harian */}
+        {/* ── Daily Task Timeline ── */}
         <Card
           className="lg:col-span-3"
-          title="Jadwal Harian"
-          subtitle="Aktivitas operasional Na_store.id hari ini"
+          title="Daily Task"
+          subtitle="Jadwal operasional Na_store.id hari ini"
         >
-          <div className="space-y-2 mt-1">
-            {jadwal.map((item, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <span className="text-[10px] text-[#A1A1AA] font-bold w-10 shrink-0 text-right">
-                  {item.jam}
-                </span>
-                <ActivityItem title={item.title} time={item.time} color={item.color} className="flex-1" />
-              </div>
-            ))}
+          {/* Timeline grid — jam di kiri, blok di kanan */}
+          <div className="relative mt-2">
+            {/* Garis vertikal waktu */}
+            <div className="absolute left-12 top-0 bottom-0 w-px bg-[#E4E4E7]" />
+
+            <div className="space-y-2.5">
+              {JADWAL.map((item, i) => {
+                const c = JADWAL_COLOR_MAP[item.color] ?? JADWAL_COLOR_MAP.purple;
+                const Icon = item.icon;
+                return (
+                  <div key={i} className="flex items-center gap-3 relative">
+                    {/* Jam */}
+                    <span className="text-[10px] text-[#A1A1AA] font-bold w-10 shrink-0 text-right pr-1 z-10">
+                      {item.jam}
+                    </span>
+
+                    {/* Dot on line */}
+                    <div className={`w-2.5 h-2.5 rounded-full shrink-0 z-10 border-2 border-white shadow-sm ${c.dot}`} />
+
+                    {/* Blok aktivitas */}
+                    <div
+                      className={`flex-1 flex items-center gap-3 rounded-xl px-4 py-3 ${c.bg} ${c.text} hover:opacity-90 transition-opacity cursor-default`}
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                        <Icon className="text-xs" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold leading-tight truncate">{item.title}</p>
+                        <p className="text-[10px] opacity-75 mt-0.5 flex items-center gap-1">
+                          <FaClock className="text-[8px]" />
+                          {item.time}
+                        </p>
+                      </div>
+                      <span className="text-[9px] font-bold opacity-60 shrink-0 hidden sm:block">
+                        {item.kategori}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Footer info */}
+          <div className="mt-4 pt-4 border-t border-[#E4E4E7] flex items-center justify-between">
+            <p className="text-[10px] text-[#A1A1AA]">
+              {JADWAL.length} kegiatan terjadwal hari ini
+            </p>
+            <Link
+              to="/schedule"
+              className="text-[10px] font-bold text-[#9E4BDC] hover:underline"
+            >
+              Lihat Jadwal Lengkap →
+            </Link>
           </div>
         </Card>
 
-        {/* Donut Charts */}
+        {/* ── 2 Pie Charts ── */}
         <div className="lg:col-span-2 space-y-4">
+
+          {/* Pie Chart 1: Segmentasi Pelanggan */}
           <DonutChart
-            title="Kategori Terlaris"
-            subtitle="Berdasarkan unit terjual"
-            center="Nail Art"
+            title="Segmentasi Pelanggan"
+            subtitle="Status member aktif Na_store.id"
+            center="Gold"
             segments={[
-              { label: "Nail Art",   value: 35, color: "#9E4BDC" },
-              { label: "Aksesoris Rambut", value: 28, color: "#95D5B6" },
-              { label: "Anting",     value: 18, color: "#F24E1E" },
-              { label: "Gelang",     value: 12, color: "#22285E" },
-              { label: "Lainnya",    value:  7, color: "#E4E4E7" },
+              { label: "Gold Member",   value: 70, color: "#9E4BDC" },
+              { label: "Silver Member", value: 20, color: "#95D5B6" },
+              { label: "Bronze Member", value: 10, color: "#E4E4E7" },
             ]}
           />
+
+          {/* Pie Chart 2: Kategori Produk Terlaris */}
           <DonutChart
-            title="Metode Pembayaran"
-            subtitle="Preferensi pelanggan Na_store.id"
-            center="Transfer"
+            title="Kategori Produk Terlaris"
+            subtitle="Berdasarkan unit terjual bulan ini"
+            center="Nail Art"
             segments={[
-              { label: "Transfer Bank", value: 45, color: "#9E4BDC" },
-              { label: "QRIS",          value: 35, color: "#95D5B6" },
-              { label: "Cash",          value: 20, color: "#22285E" },
+              { label: "Nail Art",        value: 35, color: "#9E4BDC" },
+              { label: "Aksesoris Rambut", value: 28, color: "#95D5B6" },
+              { label: "Anting",           value: 18, color: "#F24E1E" },
+              { label: "Gelang",           value: 12, color: "#22285E" },
+              { label: "Lainnya",          value:  7, color: "#E4E4E7" },
             ]}
           />
         </div>
@@ -327,7 +427,7 @@ export default function Dashboard() {
                 {/* ID Pesanan */}
                 <span className="text-xs font-black text-[#9E4BDC] bg-[#9E4BDC]/10 px-2.5 py-1 rounded-lg w-fit whitespace-nowrap">{o.id}</span>
 
-                {/* Pelanggan — avatar inisial + nama + tanggal */}
+                {/* Pelanggan */}
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="w-8 h-8 shrink-0 rounded-lg bg-[#9E4BDC]/10 flex items-center justify-center text-[#9E4BDC] text-xs font-black">
                     {o.customer.charAt(0)}
@@ -338,7 +438,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Produk — gambar + nama + qty */}
+                {/* Produk */}
                 <div className="flex items-center gap-2.5 min-w-0">
                   {invItem ? (
                     <Link to={`/inventory/${invItem.id}`} className="w-9 h-9 shrink-0 rounded-lg overflow-hidden bg-[#F4F4F5] border border-[#E4E4E7] hover:border-[#9E4BDC]/40 transition-colors">
@@ -372,14 +472,13 @@ export default function Dashboard() {
 
                 {/* Status */}
                 <div><Badge status={o.status} /></div>
-
               </div>
             );
           })}
         </div>
       </Card>
 
-      {/* ══ ROW 5 — Top Pelanggan ══ */}
+      {/* ══ ROW 5 — Top Pelanggan Setia ══ */}
       <Card
         title="Top Pelanggan Setia"
         subtitle="Pelanggan dengan poin & belanja tertinggi di Na_store.id"
@@ -392,7 +491,6 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {pelangganBaru.map((p, i) => (
             <div key={p.id} className="bg-[#F4F4F5] rounded-2xl p-4 flex flex-col items-center text-center gap-2 hover:bg-[#9E4BDC]/5 transition-all">
-              {/* Rank badge */}
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black text-white ${
                 i === 0 ? "bg-[#9E4BDC]" : i === 1 ? "bg-[#22285E]" : "bg-[#95D5B6]"
               }`}>
@@ -419,7 +517,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* AvatarGroup — semua pelanggan setia */}
         <div className="mt-5 pt-4 border-t border-[#E4E4E7] flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-[#22285E]">Semua Pelanggan Aktif</p>
