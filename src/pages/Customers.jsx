@@ -23,8 +23,10 @@ import {
 import {
   FaSearch, FaStar, FaCrown, FaUserPlus, FaEnvelope,
   FaWhatsapp, FaUsers, FaGem, FaShoppingBag, FaEdit, FaPhone,
-  FaMedal, FaThLarge, FaList, FaTimes, FaUser,
+  FaMedal, FaThLarge, FaList, FaTimes, FaUser, FaTrash, FaSave,
 } from 'react-icons/fa';
+import Select from '../components/Select';
+import { useToast, ToastContainer } from '../components/Toast';
 
 /* ─────────────────────────────────────────────────────
    Konfigurasi level member Na_store.id
@@ -94,6 +96,8 @@ function poinProgress(poin, member) {
 }
 
 export default function Customers() {
+  const { toasts, showToast, removeToast } = useToast();
+
   const [customers, setCustomers] = useState(() => {
     const saved = localStorage.getItem('joy_dream_customers');
     return saved ? JSON.parse(saved) : customerData;
@@ -110,6 +114,11 @@ export default function Customers() {
   const [formPelanggan, setFormPelanggan] = useState({
     name: '', email: '', phone: '', member: 'Reguler', status: 'Aktif',
   });
+  // Edit mode: null = tidak edit, object = pelanggan yang sedang diedit
+  const [editTarget, setEditTarget] = useState(null);
+  const [editForm, setEditForm]     = useState({ name: '', email: '', phone: '', member: 'Reguler', status: 'Aktif' });
+  // Hapus modal
+  const [hapusTarget, setHapusTarget] = useState(null);
   const ITEMS_PER_PAGE = 5;
 
   const searchInputRef = useRef(null);
@@ -123,19 +132,15 @@ export default function Customers() {
     }
   }, []);
 
-  // Efek untuk menyimpan data ke localStorage dan mendeteksi penambahan pelanggan baru
+  // Efek untuk menyimpan data ke localStorage
   useEffect(() => {
     localStorage.setItem('joy_dream_customers', JSON.stringify(customers));
-
-    if (customers.length > prevCustomersCountRef.current) {
-      alert(`Pelanggan baru berhasil ditambahkan! Total pelanggan sekarang: ${customers.length}`);
-    }
     prevCustomersCountRef.current = customers.length;
   }, [customers]);
 
   // Efek untuk keyboard Escape dan fokus input modal ketika terbuka
   useEffect(() => {
-    if (!showForm) return;
+    if (!showForm && !editTarget) return;
 
     const timer = setTimeout(() => {
       if (nameInputRef.current) {
@@ -146,6 +151,7 @@ export default function Customers() {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         setShowForm(false);
+        setEditTarget(null);
       }
     };
 
@@ -154,11 +160,43 @@ export default function Customers() {
       clearTimeout(timer);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [showForm]);
+  }, [showForm, editTarget]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormPelanggan(p => ({ ...p, [name]: value }));
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(p => ({ ...p, [name]: value }));
+  };
+
+  const openEdit = (c) => {
+    setEditTarget(c);
+    setEditForm({ name: c.name, email: c.email, phone: c.phone, member: c.member, status: c.status });
+  };
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault();
+    if (!editForm.name || !editForm.email) return;
+    setCustomers(prev => prev.map(c =>
+      c.id === editTarget.id ? { ...c, ...editForm } : c
+    ));
+    // Update selected jika yang diedit adalah yang sedang dipilih
+    if (selected?.id === editTarget.id) {
+      setSelected(p => ({ ...p, ...editForm }));
+    }
+    showToast({ type: 'update', title: 'Pelanggan diperbarui!', message: `Data "${editForm.name}" berhasil diupdate.` });
+    setEditTarget(null);
+  };
+
+  const handleHapus = () => {
+    const nama = hapusTarget.name;
+    setCustomers(prev => prev.filter(c => c.id !== hapusTarget.id));
+    if (selected?.id === hapusTarget.id) setSelected(null);
+    setHapusTarget(null);
+    showToast({ type: 'delete', title: 'Pelanggan dihapus!', message: `"${nama}" telah dihapus permanen.` });
   };
 
   const handleTambahPelanggan = (e) => {
@@ -179,6 +217,7 @@ export default function Customers() {
     setCustomers(prev => [newCustomer, ...prev]);
     setFormPelanggan({ name: '', email: '', phone: '', member: 'Reguler', status: 'Aktif' });
     setShowForm(false);
+    showToast({ type: 'success', title: 'Pelanggan ditambahkan!', message: `"${formPelanggan.name}" berhasil disimpan.` });
   };
 
   const _search  = dataForm.search.toLowerCase();
@@ -354,7 +393,7 @@ export default function Customers() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-[#F4F4F5] border-b border-[#E4E4E7]">
-                  {['Pelanggan', 'Level Member', 'Poin', 'Transaksi', 'Status'].map(h => (
+                  {['Pelanggan', 'Level Member', 'Poin', 'Transaksi', 'Status', 'Aksi'].map(h => (
                     <th key={h} className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">{h}</th>
                   ))}
                 </tr>
@@ -415,6 +454,24 @@ export default function Customers() {
                         }`}>
                           {c.status}
                         </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openEdit(c); }}
+                            className="w-7 h-7 rounded-lg border border-[#E4E4E7] bg-white flex items-center justify-center text-[#A1A1AA] hover:bg-[#9E4BDC]/10 hover:text-[#9E4BDC] hover:border-[#9E4BDC]/30 transition-all"
+                            title="Edit pelanggan"
+                          >
+                            <FaEdit className="text-[10px]" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setHapusTarget(c); }}
+                            className="w-7 h-7 rounded-lg border border-[#E4E4E7] bg-white flex items-center justify-center text-[#A1A1AA] hover:bg-[#F24E1E]/10 hover:text-[#F24E1E] hover:border-[#F24E1E]/30 transition-all"
+                            title="Hapus pelanggan"
+                          >
+                            <FaTrash className="text-[10px]" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -588,11 +645,17 @@ export default function Customers() {
 
               {/* Aksi */}
               <div className="space-y-2 pt-4">
-                <Button variant="primary" className="w-full" icon={<FaWhatsapp />}>
+                <Button variant="primary" className="w-full" icon={<FaWhatsapp />}
+                  onClick={() => window.open(`https://wa.me/${selected.phone?.replace(/\D/g, '')}`, '_blank')}>
                   Kirim Pesan WA
                 </Button>
-                <Button variant="outline" className="w-full" icon={<FaEdit />}>
+                <Button variant="outline" className="w-full" icon={<FaEdit />}
+                  onClick={() => openEdit(selected)}>
                   Edit Data Pelanggan
+                </Button>
+                <Button variant="warning" className="w-full" icon={<FaTrash />}
+                  onClick={() => setHapusTarget(selected)}>
+                  Hapus Pelanggan
                 </Button>
               </div>
 
@@ -603,9 +666,143 @@ export default function Customers() {
         })()}
       </div>
 
-      {/* ── Modal Tambah Pelanggan ── */}
-      {showForm && createPortal(
+      {/* ── Modal Edit Pelanggan ── */}
+      {editTarget && createPortal(
         <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setEditTarget(null); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-[#E4E4E7]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-[#22285E] rounded-xl flex items-center justify-center shrink-0">
+                  <FaEdit className="text-white text-sm" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-[#22285E]">Edit Pelanggan</p>
+                  <p className="text-[10px] text-[#A1A1AA]">Perbarui data {editTarget.name}</p>
+                </div>
+              </div>
+              <button onClick={() => setEditTarget(null)}
+                className="w-8 h-8 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl flex items-center justify-center hover:bg-[#F24E1E]/10 hover:text-[#F24E1E] transition-colors text-[#A1A1AA]">
+                <FaTimes className="text-xs" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveEdit} className="p-6 space-y-4">
+              <Input
+                ref={nameInputRef}
+                label="Nama Lengkap"
+                name="name"
+                value={editForm.name}
+                onChange={handleEditChange}
+                placeholder="cth: Siti Rahma"
+                icon={FaUser}
+              />
+              <Input
+                label="Email"
+                type="email"
+                name="email"
+                value={editForm.email}
+                onChange={handleEditChange}
+                placeholder="cth: siti@email.com"
+                icon={FaEnvelope}
+              />
+              <Input
+                label="No. WhatsApp"
+                name="phone"
+                value={editForm.phone}
+                onChange={handleEditChange}
+                placeholder="cth: 08123456789"
+                icon={FaWhatsapp}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] ml-1">Level Member</label>
+                  <select
+                    name="member"
+                    value={editForm.member}
+                    onChange={handleEditChange}
+                    className="w-full bg-white border border-[#E4E4E7] rounded-xl py-3 px-4 text-sm font-medium text-[#22285E] outline-none appearance-none focus:border-[#9E4BDC]/50 focus:ring-4 focus:ring-[#9E4BDC]/5 transition-all cursor-pointer"
+                  >
+                    {['Reguler', 'Silver', 'Gold', 'Platinum'].map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] ml-1">Status</label>
+                  <select
+                    name="status"
+                    value={editForm.status}
+                    onChange={handleEditChange}
+                    className="w-full bg-white border border-[#E4E4E7] rounded-xl py-3 px-4 text-sm font-medium text-[#22285E] outline-none appearance-none focus:border-[#9E4BDC]/50 focus:ring-4 focus:ring-[#9E4BDC]/5 transition-all cursor-pointer"
+                  >
+                    {['Aktif', 'Tidak Aktif'].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {editForm.member && (() => {
+                const cfg  = MEMBER_CONFIG[editForm.member];
+                const Icon = cfg?.icon;
+                return (
+                  <div className="flex items-center gap-2 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl px-4 py-2.5">
+                    <span className="text-[10px] text-[#A1A1AA]">Level:</span>
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg inline-flex items-center gap-1 ${cfg?.badge}`}>
+                      {Icon && <Icon className="text-[9px]" />}
+                      {editForm.member}
+                    </span>
+                  </div>
+                );
+              })()}
+              <div className="flex gap-3 pt-1">
+                <Button type="button" variant="ghost" className="flex-1 border border-[#E4E4E7]" onClick={() => setEditTarget(null)}>
+                  Batal
+                </Button>
+                <Button type="submit" variant="primary" className="flex-1" icon={<FaEdit className="text-xs" />}>
+                  Simpan Perubahan
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Modal Konfirmasi Hapus Pelanggan ── */}
+      {hapusTarget && createPortal(
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setHapusTarget(null); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 text-center space-y-4">
+              <div className="w-14 h-14 bg-[#F24E1E]/10 rounded-2xl flex items-center justify-center mx-auto">
+                <FaTrash className="text-[#F24E1E] text-xl" />
+              </div>
+              <div>
+                <p className="text-base font-black text-[#22285E]">Hapus Pelanggan?</p>
+                <p className="text-sm text-[#71717A] mt-1">
+                  Pelanggan <span className="font-bold text-[#22285E]">"{hapusTarget.name}"</span> akan dihapus secara permanen.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button variant="ghost" className="flex-1 border border-[#E4E4E7]" onClick={() => setHapusTarget(null)}>
+                  Batal
+                </Button>
+                <Button variant="warning" className="flex-1" icon={<FaTrash className="text-xs" />} onClick={handleHapus}>
+                  Hapus
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Modal Tambah Pelanggan ── */}
+      {showForm && createPortal(        <div
           className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
           onMouseDown={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}
         >
@@ -712,6 +909,9 @@ export default function Customers() {
         </div>,
         document.body
       )}
+
+      {/* ── Toast Notifikasi ── */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
 
     </div>
   );

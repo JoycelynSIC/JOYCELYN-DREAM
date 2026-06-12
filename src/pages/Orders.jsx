@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import ordersData from '../data/orders.json';
+import inventoryData from '../data/inventory.json';
 import PageHeader from '../components/PageHeader';
 
 /* ─── Import gambar produk (agar Vite bundle dengan benar di production) ─── */
@@ -59,8 +60,9 @@ import {
   FaShoppingBag, FaSearch, FaFilter, FaCheckCircle,
   FaSpinner, FaTimesCircle, FaStar, FaBoxOpen, FaEye, FaTimes,
   FaUser, FaCalendarAlt, FaMoneyBillWave,
-  FaPlus
+  FaPlus, FaEdit, FaTrash,
 } from 'react-icons/fa';
+import { useToast, ToastContainer } from '../components/Toast';
 
 const gambarMap = {
   'kalungrosegold.png': imgKalungRosegold,     'kalungchoker.png': imgKalungChoker,
@@ -84,6 +86,8 @@ const gambarMap = {
 
 const getImg = (path) => {
   if (!path) return null;
+  // Base64 / blob URL langsung (produk yang ditambah via form)
+  if (path.startsWith('data:') || path.startsWith('blob:')) return path;
   return gambarMap[path.split('/').pop()] ?? null;
 };
 
@@ -94,9 +98,13 @@ const statusConfig = {
 };
 
 export default function Orders() {
+  const { toasts, showToast, removeToast } = useToast();
   const [orders, setOrders]     = useState(ordersData);
   const [selected, setSelected] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [editTarget, setEditTarget]   = useState(null);
+  const [hapusTarget, setHapusTarget] = useState(null);
+  const [editForm, setEditForm] = useState({ status: 'Proses', metode: 'Transfer Bank' });
 
   const [dataForm, setDataForm] = useState({ search: '', filterStatus: 'Semua' });
 
@@ -106,9 +114,74 @@ export default function Orders() {
     metode: 'Transfer Bank',
   });
 
+  /* ── State untuk product autocomplete ── */
+  const [produkQuery, setProdukQuery]           = useState('');
+  const [produkDropdown, setProdukDropdown]     = useState(false);
+  const [selectedProduk, setSelectedProduk]     = useState(null);
+  const produkInputRef                          = useRef(null);
+  const produkDropdownRef                       = useRef(null);
+
+  // Ambil inventory dari localStorage jika ada (supaya sinkron dengan halaman Inventory)
+  const inventoryItems = (() => {
+    try {
+      const saved = localStorage.getItem('joy_dream_inventory');
+      return saved ? JSON.parse(saved) : inventoryData;
+    } catch { return inventoryData; }
+  })();
+
+  const produkSuggestions = produkQuery.trim() === ''
+    ? inventoryItems.slice(0, 6)
+    : inventoryItems.filter(p =>
+        p.name.toLowerCase().includes(produkQuery.toLowerCase()) ||
+        p.kategori.toLowerCase().includes(produkQuery.toLowerCase())
+      ).slice(0, 8);
+
+  // Tutup dropdown ketika klik di luar
+  useEffect(() => {
+    const handler = (e) => {
+      if (
+        produkDropdownRef.current && !produkDropdownRef.current.contains(e.target) &&
+        produkInputRef.current && !produkInputRef.current.contains(e.target)
+      ) {
+        setProdukDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleSelectProduk = (item) => {
+    setSelectedProduk(item);
+    setProdukQuery(item.name);
+    setProdukDropdown(false);
+    // Auto-isi gambar & update total jika qty sudah ada
+    const qty = Number(formPesanan.qty) || 1;
+    setFormPesanan(p => ({
+      ...p,
+      produk: item.name,
+      gambar: item.gambar,
+      total: String(item.harga * qty),
+    }));
+  };
+
+  const handleProdukQueryChange = (e) => {
+    const val = e.target.value;
+    setProdukQuery(val);
+    setProdukDropdown(true);
+    setSelectedProduk(null);
+    setFormPesanan(p => ({ ...p, produk: val, gambar: '', total: '' }));
+  };
+
   const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setFormPesanan({ ...formPesanan, [name]: value });
+    setFormPesanan(prev => {
+      const updated = { ...prev, [name]: value };
+      // Auto-kalkulasi total jika qty berubah dan ada produk terpilih dari inventory
+      if (name === 'qty' && selectedProduk) {
+        updated.total = String(selectedProduk.harga * (Number(value) || 1));
+      }
+      return updated;
+    });
   };
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -142,12 +215,46 @@ export default function Orders() {
       poin:  formPesanan.status === 'Batal' ? 0 : Math.floor(Number(formPesanan.total) / 1000),
     };
     setOrders(prev => [newOrder, ...prev]);
+    const namaPelanggan = formPesanan.customer;
     setFormPesanan({
       customer: '', produk: '', qty: 1, total: '', status: 'Proses',
       tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
       metode: 'Transfer BCA',
     });
+    setProdukQuery('');
+    setSelectedProduk(null);
     setShowForm(false);
+    showToast({ type: 'success', title: 'Pesanan ditambahkan!', message: `Pesanan dari "${namaPelanggan}" berhasil disimpan.` });
+  };
+
+  const openEdit = (o) => {
+    setEditTarget(o);
+    setEditForm({ status: o.status, metode: o.metode });
+  };
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault();
+    const updated = orders.map(o =>
+      o.id === editTarget.id
+        ? { ...o, status: editForm.status, metode: editForm.metode,
+            poin: editForm.status === 'Batal' ? 0 : Math.floor(o.total / 1000) }
+        : o
+    );
+    setOrders(updated);
+    if (selected?.id === editTarget.id) {
+      setSelected(prev => ({ ...prev, status: editForm.status, metode: editForm.metode,
+        poin: editForm.status === 'Batal' ? 0 : Math.floor(prev.total / 1000) }));
+    }
+    showToast({ type: 'update', title: 'Pesanan diperbarui!', message: `${editTarget.id} berhasil diupdate.` });
+    setEditTarget(null);
+  };
+
+  const handleHapus = () => {
+    const id = hapusTarget.id;
+    setOrders(prev => prev.filter(o => o.id !== hapusTarget.id));
+    if (selected?.id === hapusTarget.id) setSelected(null);
+    setHapusTarget(null);
+    showToast({ type: 'delete', title: 'Pesanan dihapus!', message: `Pesanan ${id} telah dihapus permanen.` });
   };
 
   return (
@@ -257,14 +364,30 @@ export default function Orders() {
                         <Badge status={o.status} />
                       </td>
                       <td className="px-5 py-3.5">
-                        <button onClick={() => setSelected(isActive ? null : o)}
-                          className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                            isActive
-                              ? 'bg-primary text-surface-white'
-                              : 'bg-surface-gray border border-surface-border text-text-disable hover:bg-secondary/20 hover:text-status-success'
-                          }`}>
-                          {isActive ? <FaTimes className="text-[10px]" /> : <FaEye className="text-[10px]" />}
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => setSelected(isActive ? null : o)}
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                              isActive
+                                ? 'bg-primary text-surface-white'
+                                : 'bg-surface-gray border border-surface-border text-text-disable hover:bg-secondary/20 hover:text-status-success'
+                            }`}>
+                            {isActive ? <FaTimes className="text-[10px]" /> : <FaEye className="text-[10px]" />}
+                          </button>
+                          <button
+                            onClick={() => openEdit(o)}
+                            className="w-7 h-7 rounded-lg border border-surface-border bg-surface-gray flex items-center justify-center text-text-disable hover:bg-[#9E4BDC]/10 hover:text-[#9E4BDC] hover:border-[#9E4BDC]/30 transition-all"
+                            title="Edit pesanan"
+                          >
+                            <FaEdit className="text-[10px]" />
+                          </button>
+                          <button
+                            onClick={() => setHapusTarget(o)}
+                            className="w-7 h-7 rounded-lg border border-surface-border bg-surface-gray flex items-center justify-center text-text-disable hover:bg-[#F24E1E]/10 hover:text-[#F24E1E] hover:border-[#F24E1E]/30 transition-all"
+                            title="Hapus pesanan"
+                          >
+                            <FaTrash className="text-[10px]" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -413,13 +536,118 @@ export default function Orders() {
         })()}
       </div>
 
+      {/* ── Modal Edit Pesanan ── */}
+      {editTarget && createPortal(
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setEditTarget(null); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-[#E4E4E7]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-[#22285E] rounded-xl flex items-center justify-center shrink-0">
+                  <FaEdit className="text-white text-sm" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-[#22285E]">Edit Pesanan</p>
+                  <p className="text-[10px] text-[#A1A1AA]">Ubah status/metode {editTarget.id}</p>
+                </div>
+              </div>
+              <button onClick={() => setEditTarget(null)}
+                className="w-8 h-8 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl flex items-center justify-center hover:bg-[#F24E1E]/10 hover:text-[#F24E1E] transition-colors text-[#A1A1AA]">
+                <FaTimes className="text-xs" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveEdit} className="p-6 space-y-4">
+              <div className="p-3 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl space-y-1">
+                <p className="text-xs font-bold text-[#22285E]">{editTarget.customer}</p>
+                <p className="text-[10px] text-[#A1A1AA]">{editTarget.produk} · {editTarget.qty} pcs</p>
+                <p className="text-xs font-black text-[#9E4BDC]">Rp {editTarget.total.toLocaleString('id')}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] ml-1">Status</label>
+                  <select
+                    name="status"
+                    value={editForm.status}
+                    onChange={(e) => setEditForm(p => ({ ...p, status: e.target.value }))}
+                    className="w-full bg-white border border-[#E4E4E7] rounded-xl py-3 px-4 text-sm font-medium text-[#22285E] outline-none appearance-none focus:border-[#9E4BDC]/50 focus:ring-4 focus:ring-[#9E4BDC]/5 transition-all cursor-pointer"
+                  >
+                    {['Proses', 'Selesai', 'Batal'].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] ml-1">Metode Bayar</label>
+                  <select
+                    name="metode"
+                    value={editForm.metode}
+                    onChange={(e) => setEditForm(p => ({ ...p, metode: e.target.value }))}
+                    className="w-full bg-white border border-[#E4E4E7] rounded-xl py-3 px-4 text-sm font-medium text-[#22285E] outline-none appearance-none focus:border-[#9E4BDC]/50 focus:ring-4 focus:ring-[#9E4BDC]/5 transition-all cursor-pointer"
+                  >
+                    {['Transfer Bank', 'QRIS', 'Cash'].map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={() => setEditTarget(null)}
+                  className="flex-1 px-5 py-2.5 text-sm font-medium rounded-xl text-[#71717A] hover:bg-[#F4F4F5] border border-[#E4E4E7] transition-all">
+                  Batal
+                </button>
+                <button type="submit"
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl bg-[#9E4BDC] text-white hover:bg-[#B16FE3] transition-all">
+                  <FaEdit className="text-xs" /> Simpan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Modal Konfirmasi Hapus Pesanan ── */}
+      {hapusTarget && createPortal(
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setHapusTarget(null); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 text-center space-y-4">
+              <div className="w-14 h-14 bg-[#F24E1E]/10 rounded-2xl flex items-center justify-center mx-auto">
+                <FaTrash className="text-[#F24E1E] text-xl" />
+              </div>
+              <div>
+                <p className="text-base font-black text-[#22285E]">Hapus Pesanan?</p>
+                <p className="text-sm text-[#71717A] mt-1">
+                  Pesanan <span className="font-bold text-[#22285E]">{hapusTarget.id}</span> dari{' '}
+                  <span className="font-bold">{hapusTarget.customer}</span> akan dihapus permanen.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setHapusTarget(null)}
+                  className="flex-1 px-5 py-2.5 text-sm font-medium rounded-xl text-[#71717A] hover:bg-[#F4F4F5] border border-[#E4E4E7] transition-all">
+                  Batal
+                </button>
+                <button onClick={handleHapus}
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl bg-[#F24E1E] text-white hover:opacity-90 transition-all">
+                  <FaTrash className="text-xs" /> Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* ── Modal Tambah Pesanan ── */}
       {showForm && createPortal(
         <div
           className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
           onMouseDown={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
+        >          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
 
             <div className="flex items-center justify-between px-6 py-5 border-b border-[#E4E4E7]">
               <div className="flex items-center gap-3">
@@ -442,9 +670,126 @@ export default function Orders() {
                 value={formPesanan.customer} onChange={handleFormChange}
                 placeholder="cth: Dewi Lestari" icon={FaUser} />
 
-              <Input label="Produk" type="text" name="produk"
-                value={formPesanan.produk} onChange={handleFormChange}
-                placeholder="cth: Kalung Titanium Rosegold" icon={FaBoxOpen} />
+              {/* ── Autocomplete Produk ── */}
+              <div className="flex flex-col gap-1.5 relative">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] ml-1">
+                  Produk
+                </label>
+
+                {/* Input field */}
+                <div className="relative">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A1A1AA] pointer-events-none">
+                    <FaBoxOpen size={13} />
+                  </div>
+                  <input
+                    ref={produkInputRef}
+                    type="text"
+                    value={produkQuery}
+                    onChange={handleProdukQueryChange}
+                    onFocus={() => setProdukDropdown(true)}
+                    placeholder="Ketik nama produk..."
+                    autoComplete="off"
+                    className="w-full bg-white border border-[#E4E4E7] rounded-xl py-3 pl-9 pr-4 text-sm font-medium text-[#22285E] placeholder:text-[#A1A1AA] outline-none focus:border-[#9E4BDC]/50 focus:ring-4 focus:ring-[#9E4BDC]/5 transition-all"
+                  />
+                  {/* Chip produk terpilih */}
+                  {selectedProduk && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedProduk(null);
+                        setProdukQuery('');
+                        setFormPesanan(p => ({ ...p, produk: '', gambar: '', total: '' }));
+                        produkInputRef.current?.focus();
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#9E4BDC]/10 flex items-center justify-center text-[#9E4BDC] hover:bg-[#F24E1E]/10 hover:text-[#F24E1E] transition-colors"
+                    >
+                      <FaTimes className="text-[9px]" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Preview produk terpilih */}
+                {selectedProduk && (
+                  <div className="flex items-center gap-2.5 bg-[#9E4BDC]/5 border border-[#9E4BDC]/20 rounded-xl px-3 py-2">
+                    <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-[#F4F4F5] flex items-center justify-center">
+                      {getImg(selectedProduk.gambar)
+                        ? <img src={getImg(selectedProduk.gambar)} alt={selectedProduk.name} className="w-full h-full object-cover" />
+                        : <FaBoxOpen className="text-[#A1A1AA] text-[10px]" />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-[#22285E] truncate">{selectedProduk.name}</p>
+                      <p className="text-[10px] text-[#9E4BDC] font-semibold">
+                        Rp {selectedProduk.harga.toLocaleString('id')} / pcs
+                      </p>
+                    </div>
+                    <Badge status={selectedProduk.status} />
+                  </div>
+                )}
+
+                {/* Dropdown suggestions */}
+                {produkDropdown && produkSuggestions.length > 0 && (
+                  <div
+                    ref={produkDropdownRef}
+                    className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-[#E4E4E7] rounded-2xl shadow-xl overflow-hidden"
+                  >
+                    {produkQuery.trim() === '' && (
+                      <div className="px-3 py-2 border-b border-[#E4E4E7]">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">
+                          Produk Tersedia
+                        </p>
+                      </div>
+                    )}
+                    <div className="max-h-52 overflow-y-auto">
+                      {produkSuggestions.map(item => {
+                        const img = getImg(item.gambar);
+                        const stockColor = item.status === 'Habis'
+                          ? 'text-[#F24E1E]'
+                          : item.status === 'Hampir Habis'
+                          ? 'text-amber-500'
+                          : 'text-[#00B5AD]';
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onMouseDown={(e) => { e.preventDefault(); handleSelectProduk(item); }}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-[#9E4BDC]/5 transition-colors ${
+                              item.status === 'Habis' ? 'opacity-60' : ''
+                            }`}
+                          >
+                            {/* Gambar */}
+                            <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 bg-[#F4F4F5] flex items-center justify-center border border-[#E4E4E7]">
+                              {img
+                                ? <img src={img} alt={item.name} className="w-full h-full object-cover" />
+                                : <FaBoxOpen className="text-[#A1A1AA] text-[10px]" />
+                              }
+                            </div>
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-[#22285E] truncate leading-tight">{item.name}</p>
+                              <p className="text-[10px] text-[#A1A1AA]">{item.kategori}</p>
+                            </div>
+                            {/* Harga + stok */}
+                            <div className="text-right shrink-0">
+                              <p className="text-xs font-black text-[#9E4BDC]">
+                                Rp {item.harga.toLocaleString('id')}
+                              </p>
+                              <p className={`text-[10px] font-semibold ${stockColor}`}>
+                                {item.stock === 0 ? 'Habis' : `${item.stock} pcs`}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {produkQuery.trim() !== '' && produkSuggestions.length === 0 && (
+                      <div className="px-3 py-4 text-center text-xs text-[#A1A1AA]">
+                        Produk tidak ditemukan
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <Input label="Qty (pcs)" type="number" name="qty"
@@ -485,6 +830,9 @@ export default function Orders() {
         </div>,
         document.body
       )}
+
+      {/* ── Toast Notifikasi ── */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
 
     </div>
   );

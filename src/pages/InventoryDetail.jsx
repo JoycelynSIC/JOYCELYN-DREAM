@@ -1,13 +1,18 @@
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import inventoryData from '../data/inventory.json';
 import PageHeader  from '../components/PageHeader';
 import Badge       from '../components/Badge';
 import Button      from '../components/Button';
+import Input       from '../components/Input';
+import Select      from '../components/Select';
 import ProgressBar from '../components/ProgressBar';
 import {
   FaArrowLeft, FaBoxOpen, FaTag, FaLayerGroup, FaChartLine,
   FaExclamationCircle, FaEdit, FaTrash, FaWhatsapp,
-  FaFire, FaCoins, FaShoppingBag, FaCheckCircle,
+  FaFire, FaCoins, FaShoppingBag, FaCheckCircle, FaTimes,
+  FaImage, FaUpload,
 } from 'react-icons/fa';
 
 /* ── Gambar produk ── */
@@ -68,12 +73,17 @@ const gambarMap = {
 
 const getImg = (path) => {
   if (!path) return null;
+  if (path.startsWith('data:') || path.startsWith('blob:')) return path;
   return gambarMap[path.split('/').pop()] ?? null;
 };
 
 const progressVariant = { 'Aman': 'success', 'Hampir Habis': 'warning', 'Habis': 'warning' };
 
-/* ── Row info kecil reusable ── */
+const kategoriOptions = [
+  'Kalung','Gelang','Cincin','Anting','Nail Art',
+  'Tumblr','Aksesoris Rambut','Tas','Lainnya',
+];
+
 function InfoRow({ label, children }) {
   return (
     <div className="flex items-center justify-between py-2.5 border-b border-[#F4F4F5] last:border-0">
@@ -83,10 +93,208 @@ function InfoRow({ label, children }) {
   );
 }
 
+/* ── Modal Edit Produk ── */
+function EditModal({ item, onClose, onSave }) {
+  const [form, setForm] = useState({
+    name:     item.name,
+    kategori: item.kategori,
+    harga:    item.harga,
+    stock:    item.stock,
+  });
+  const [imgPreview, setImgPreview] = useState(() => getImg(item.gambar) ?? null);
+  const [imgData, setImgData]       = useState(null);
+  const fileInputRef = useRef(null);
+  const nameRef      = useRef(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => nameRef.current?.focus(), 50);
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => { clearTimeout(timer); window.removeEventListener('keydown', onKey); };
+  }, [onClose]);
+
+  const handleChange  = (e) => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+
+  const handleFile = (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => { setImgPreview(ev.target.result); setImgData(ev.target.result); };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.name || !form.harga || !form.stock) return;
+    const harga  = parseInt(form.harga);
+    const stock  = parseInt(form.stock);
+    const status = stock === 0 ? 'Habis' : stock <= 8 ? 'Hampir Habis' : 'Aman';
+    const gambar = imgData ?? item.gambar ?? null;
+    onSave({ ...form, harga, stock, status, gambar });
+  };
+
+  const previewStatus = String(form.stock) === ''
+    ? null
+    : parseInt(form.stock) === 0 ? 'Habis'
+    : parseInt(form.stock) <= 8  ? 'Hampir Habis'
+    : 'Aman';
+
+  return createPortal(
+    <div
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#E4E4E7] sticky top-0 bg-white z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-[#22285E] rounded-xl flex items-center justify-center shrink-0">
+              <FaEdit className="text-white text-sm" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-[#22285E]">Edit Produk</p>
+              <p className="text-[10px] text-[#A1A1AA]">Perbarui data {item.name}</p>
+            </div>
+          </div>
+          <button onClick={onClose}
+            className="w-8 h-8 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl flex items-center justify-center hover:bg-[#F24E1E]/10 hover:text-[#F24E1E] transition-colors text-[#A1A1AA]">
+            <FaTimes className="text-xs" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Upload Gambar */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] ml-1">Foto Produk</label>
+            <div
+              onDrop={(e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}
+              onDragOver={(e) => e.preventDefault()}
+              onClick={() => fileInputRef.current?.click()}
+              className="relative w-full h-36 border-2 border-dashed border-[#E4E4E7] rounded-xl overflow-hidden cursor-pointer hover:border-[#9E4BDC]/50 hover:bg-[#9E4BDC]/5 transition-all group flex items-center justify-center"
+            >
+              {imgPreview ? (
+                <>
+                  <img src={imgPreview} alt="preview" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <FaUpload className="text-white text-lg" />
+                    <span className="text-white text-xs font-bold">Ganti Foto</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-[#A1A1AA] group-hover:text-[#9E4BDC] transition-colors">
+                  <FaImage className="text-2xl" />
+                  <p className="text-xs font-semibold">Klik atau drag foto produk</p>
+                  <p className="text-[10px]">PNG, JPG, WEBP — maks. 5MB</p>
+                </div>
+              )}
+            </div>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+              onChange={(e) => handleFile(e.target.files[0])} />
+          </div>
+
+          <Input ref={nameRef} label="Nama Produk" name="name" value={form.name}
+            onChange={handleChange} placeholder="cth: Kalung Titanium Rosegold" icon={FaBoxOpen} />
+
+          <Select label="Kategori" name="kategori" value={form.kategori}
+            onChange={handleChange} icon={FaLayerGroup}
+            options={kategoriOptions.map(k => ({ value: k, label: k }))} />
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Harga (Rp)" type="number" name="harga" value={form.harga}
+              onChange={handleChange} placeholder="85000" icon={FaTag} />
+            <Input label="Stok (pcs)" type="number" name="stock" value={form.stock}
+              onChange={handleChange} placeholder="20" icon={FaChartLine} />
+          </div>
+
+          {previewStatus && (
+            <div className="flex items-center gap-2 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl px-4 py-2.5">
+              <span className="text-[10px] text-[#A1A1AA]">Status otomatis:</span>
+              <Badge status={previewStatus} />
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <Button type="button" variant="ghost" className="flex-1 border border-[#E4E4E7]" onClick={onClose}>Batal</Button>
+            <Button type="submit" variant="primary" className="flex-1" icon={<FaEdit className="text-xs" />}>
+              Simpan Perubahan
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/* ── Modal Konfirmasi Hapus ── */
+function HapusModal({ item, onClose, onConfirm }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
+        <div className="p-6 text-center space-y-4">
+          <div className="w-14 h-14 bg-[#F24E1E]/10 rounded-2xl flex items-center justify-center mx-auto">
+            <FaTrash className="text-[#F24E1E] text-xl" />
+          </div>
+          <div>
+            <p className="text-base font-black text-[#22285E]">Hapus Produk?</p>
+            <p className="text-sm text-[#71717A] mt-1">
+              Produk <span className="font-bold text-[#22285E]">"{item.name}"</span> akan dihapus secara permanen.
+            </p>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button variant="ghost" className="flex-1 border border-[#E4E4E7]" onClick={onClose}>Batal</Button>
+            <Button variant="warning" className="flex-1" icon={<FaTrash className="text-xs" />} onClick={onConfirm}>Hapus</Button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   HALAMAN DETAIL
+══════════════════════════════════════════════════════════════════════ */
 export default function InventoryDetail() {
   const { id }   = useParams();
   const navigate = useNavigate();
-  const item     = inventoryData.find(i => i.id === Number(id));
+
+  // Baca dari localStorage (sama dengan Inventory.jsx) supaya data sinkron
+  const [allItems, setAllItems] = useState(() => {
+    const saved = localStorage.getItem('joy_dream_inventory');
+    return saved ? JSON.parse(saved) : inventoryData;
+  });
+
+  const [showEdit,  setShowEdit]  = useState(false);
+  const [showHapus, setShowHapus] = useState(false);
+
+  const item = allItems.find(i => i.id === Number(id));
+
+  const persistAndUpdate = (updatedList) => {
+    localStorage.setItem('joy_dream_inventory', JSON.stringify(updatedList));
+    setAllItems(updatedList);
+  };
+
+  const handleSaveEdit = (data) => {
+    const updated = allItems.map(it =>
+      it.id === item.id ? { ...it, ...data } : it
+    );
+    persistAndUpdate(updated);
+    setShowEdit(false);
+  };
+
+  const handleHapus = () => {
+    const updated = allItems.filter(it => it.id !== item.id);
+    persistAndUpdate(updated);
+    navigate('/inventory');
+  };
 
   if (!item) {
     return (
@@ -109,11 +317,11 @@ export default function InventoryDetail() {
   const poinPerItem  = Math.floor(item.harga / 1000);
   const poinTotal    = poinPerItem * item.terjual;
 
-  const sameCat      = inventoryData.filter(i => i.kategori === item.kategori);
+  const sameCat      = allItems.filter(i => i.kategori === item.kategori);
   const avgTerjual   = sameCat.reduce((s, i) => s + i.terjual, 0) / sameCat.length;
   const isBestSeller = item.terjual >= avgTerjual * 1.3;
 
-  const produkTerkait = inventoryData
+  const produkTerkait = allItems
     .filter(i => i.kategori === item.kategori && i.id !== item.id)
     .slice(0, 4);
 
@@ -130,7 +338,7 @@ export default function InventoryDetail() {
       <div className="bg-white border border-[#E4E4E7] rounded-2xl overflow-hidden">
         <div className="flex flex-col md:flex-row">
 
-          {/* Gambar — fixed width, tidak aspect-square agar tidak ada ruang kosong */}
+          {/* Gambar */}
           <div className="relative md:w-56 shrink-0 bg-[#F9F9FB] border-b md:border-b-0 md:border-r border-[#E4E4E7]">
             {img
               ? <img src={img} alt={item.name} className="w-full h-full object-cover min-h-[200px] md:min-h-full" />
@@ -146,10 +354,9 @@ export default function InventoryDetail() {
             )}
           </div>
 
-          {/* Info utama — mengisi sisa lebar */}
+          {/* Info utama */}
           <div className="flex-1 p-5 flex flex-col justify-between gap-4">
 
-            {/* Nama + badge + kategori */}
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">
@@ -164,7 +371,7 @@ export default function InventoryDetail() {
               <Badge status={item.status} />
             </div>
 
-            {/* 4 stat angka dalam satu baris */}
+            {/* 4 stat angka */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 { icon: FaBoxOpen,    color: 'text-[#9E4BDC]', bg: 'bg-[#9E4BDC]/8',  label: 'Stok',        val: `${item.stock} pcs` },
@@ -185,7 +392,7 @@ export default function InventoryDetail() {
               })}
             </div>
 
-            {/* Progress stok + tombol aksi — 1 baris */}
+            {/* Progress stok + tombol aksi */}
             <div className="flex items-end gap-4">
               <div className="flex-1 space-y-1.5">
                 <div className="flex items-center justify-between">
@@ -220,10 +427,12 @@ export default function InventoryDetail() {
                     Restock WA
                   </Button>
                 )}
-                <Button variant="primary" size="sm" icon={<FaEdit className="text-xs" />}>
+                <Button variant="primary" size="sm" icon={<FaEdit className="text-xs" />}
+                  onClick={() => setShowEdit(true)}>
                   Edit
                 </Button>
-                <Button variant="warning" size="sm" icon={<FaTrash className="text-xs" />}>
+                <Button variant="warning" size="sm" icon={<FaTrash className="text-xs" />}
+                  onClick={() => setShowHapus(true)}>
                   Hapus
                 </Button>
               </div>
@@ -236,7 +445,6 @@ export default function InventoryDetail() {
       {/* ══ BARIS TENGAH: Detail + Penjualan ══ */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-        {/* Info Detail */}
         <div className="bg-white border border-[#E4E4E7] rounded-2xl p-5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] mb-3">Informasi Produk</p>
           <InfoRow label="ID Produk">#PRD-{String(item.id).padStart(3, '0')}</InfoRow>
@@ -251,7 +459,6 @@ export default function InventoryDetail() {
           <InfoRow label="Status Stok"><Badge status={item.status} /></InfoRow>
         </div>
 
-        {/* Performa Penjualan */}
         <div className="bg-white border border-[#E4E4E7] rounded-2xl p-5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] mb-3">Performa Penjualan</p>
           <InfoRow label="Stok Tersisa">{item.stock} pcs</InfoRow>
@@ -314,6 +521,10 @@ export default function InventoryDetail() {
           </div>
         </div>
       )}
+
+      {/* ── Modals ── */}
+      {showEdit  && <EditModal  item={item} onClose={() => setShowEdit(false)}  onSave={handleSaveEdit} />}
+      {showHapus && <HapusModal item={item} onClose={() => setShowHapus(false)} onConfirm={handleHapus} />}
 
     </div>
   );

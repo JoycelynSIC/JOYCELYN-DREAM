@@ -92,6 +92,7 @@ const gambarMap = {
 
 const getImg = (path) => {
   if (!path) return null;
+  if (path.startsWith('data:') || path.startsWith('blob:')) return path;
   return gambarMap[path.split('/').pop()] ?? null;
 };
 

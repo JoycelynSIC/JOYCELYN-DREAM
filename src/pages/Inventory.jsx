@@ -42,6 +42,7 @@ import imgIkatPinggang    from '../assets/gambarproduk/ikapinggang.png';
 
 import StatCard    from '../components/StatCard';
 import Badge       from '../components/Badge';
+import { useToast, ToastContainer } from '../components/Toast';
 import Card        from '../components/Card';
 import Button      from '../components/Button';
 import Input       from '../components/Input';
@@ -70,7 +71,8 @@ import {
 import {
   FaSearch, FaPlus, FaBoxOpen, FaTag, FaLayerGroup,
   FaCheckCircle, FaExclamationCircle, FaTimesCircle, FaChartLine,
-  FaTimes, FaInfoCircle, FaChevronDown,
+  FaTimes, FaInfoCircle, FaChevronDown, FaEdit, FaTrash,
+  FaImage, FaUpload,
 } from 'react-icons/fa';
 
 const gambarMap = {
@@ -95,22 +97,278 @@ const gambarMap = {
 
 const getImg = (path) => {
   if (!path) return null;
+  // Base64 / blob URL langsung
+  if (path.startsWith('data:') || path.startsWith('blob:')) return path;
   return gambarMap[path.split('/').pop()] ?? null;
 };
-
-/* Badge status stok — pakai komponen Badge langsung dengan status dari data */
 
 const kategoriOptions = [
   'Kalung','Gelang','Cincin','Anting','Nail Art',
   'Tumblr','Aksesoris Rambut','Tas','Lainnya',
 ];
 
+/* ── Komponen Modal Form (Tambah / Edit) ── */
+function ProdukFormModal({ mode = 'add', initialData = null, onClose, onSave }) {
+  const [form, setForm] = useState({
+    name:     initialData?.name     ?? '',
+    kategori: initialData?.kategori ?? 'Kalung',
+    harga:    initialData?.harga    ?? '',
+    stock:    initialData?.stock    ?? '',
+  });
+  const [imgPreview, setImgPreview] = useState(() => {
+    if (!initialData?.gambar) return null;
+    return getImg(initialData.gambar) ?? null;
+  });
+  // Simpan data URL gambar baru (base64) untuk produk baru / edit
+  const [imgData, setImgData] = useState(null);
+  const fileInputRef = useRef(null);
+  const nameRef = useRef(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => nameRef.current?.focus(), 50);
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => { clearTimeout(timer); window.removeEventListener('keydown', onKey); };
+  }, [onClose]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(p => ({ ...p, [name]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setImgPreview(ev.target.result);
+      setImgData(ev.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setImgPreview(ev.target.result);
+      setImgData(ev.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.name || !form.harga || !form.stock) return;
+    const harga  = parseInt(form.harga);
+    const stock  = parseInt(form.stock);
+    const status = stock === 0 ? 'Habis' : stock <= 8 ? 'Hampir Habis' : 'Aman';
+    // Tentukan nilai gambar: kalau ada upload baru pakai data URL, kalau tidak pakai yang lama
+    const gambar = imgData ?? initialData?.gambar ?? null;
+    onSave({ ...form, harga, stock, status, gambar });
+  };
+
+  const previewStatus = form.stock === ''
+    ? null
+    : parseInt(form.stock) === 0 ? 'Habis'
+    : parseInt(form.stock) <= 8  ? 'Hampir Habis'
+    : 'Aman';
+
+  const isEdit = mode === 'edit';
+
+  return createPortal(
+    <div
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#E4E4E7] sticky top-0 bg-white z-10">
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isEdit ? 'bg-[#22285E]' : 'bg-[#9E4BDC]'}`}>
+              {isEdit ? <FaEdit className="text-white text-sm" /> : <FaBoxOpen className="text-white text-sm" />}
+            </div>
+            <div>
+              <p className="text-sm font-black text-[#22285E]">
+                {isEdit ? 'Edit Produk' : 'Tambah Produk Baru'}
+              </p>
+              <p className="text-[10px] text-[#A1A1AA]">
+                {isEdit ? `Edit data ${initialData?.name}` : 'Isi data produk aksesoris'}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose}
+            className="w-8 h-8 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl flex items-center justify-center hover:bg-[#F24E1E]/10 hover:text-[#F24E1E] transition-colors text-[#A1A1AA]">
+            <FaTimes className="text-xs" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Upload Gambar */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] ml-1">
+              Foto Produk
+            </label>
+            <div
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+              onClick={() => fileInputRef.current?.click()}
+              className="relative w-full h-36 border-2 border-dashed border-[#E4E4E7] rounded-xl overflow-hidden cursor-pointer
+                hover:border-[#9E4BDC]/50 hover:bg-[#9E4BDC]/5 transition-all group flex items-center justify-center"
+            >
+              {imgPreview ? (
+                <>
+                  <img src={imgPreview} alt="preview" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <FaUpload className="text-white text-lg" />
+                    <span className="text-white text-xs font-bold">Ganti Foto</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-[#A1A1AA] group-hover:text-[#9E4BDC] transition-colors">
+                  <FaImage className="text-2xl" />
+                  <p className="text-xs font-semibold">Klik atau drag foto produk</p>
+                  <p className="text-[10px]">PNG, JPG, WEBP — maks. 5MB</p>
+                </div>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
+
+          <Input
+            ref={nameRef}
+            label="Nama Produk"
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            placeholder="cth: Kalung Titanium Rosegold"
+            icon={FaBoxOpen}
+          />
+
+          <Select
+            label="Kategori"
+            name="kategori"
+            value={form.kategori}
+            onChange={handleChange}
+            icon={FaLayerGroup}
+            options={kategoriOptions.map(k => ({ value: k, label: k }))}
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Harga (Rp)"
+              type="number"
+              name="harga"
+              value={form.harga}
+              onChange={handleChange}
+              placeholder="85000"
+              icon={FaTag}
+            />
+            <Input
+              label="Stok (pcs)"
+              type="number"
+              name="stock"
+              value={form.stock}
+              onChange={handleChange}
+              placeholder="20"
+              icon={FaChartLine}
+            />
+          </div>
+
+          {previewStatus && (
+            <div className="flex items-center gap-2 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl px-4 py-2.5">
+              <span className="text-[10px] text-[#A1A1AA]">Status otomatis:</span>
+              <Badge status={previewStatus} />
+              <span className="text-[10px] font-bold text-[#22285E]">{previewStatus}</span>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <Button type="button" variant="ghost" className="flex-1 border border-[#E4E4E7]" onClick={onClose}>
+              Batal
+            </Button>
+            <Button type="submit" variant="primary" className="flex-1"
+              icon={isEdit ? <FaEdit className="text-xs" /> : <FaPlus className="text-xs" />}>
+              {isEdit ? 'Simpan Perubahan' : 'Simpan Produk'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/* ── Komponen Modal Konfirmasi Hapus ── */
+function HapusModal({ item, onClose, onConfirm }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const img = getImg(item.gambar);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
+        <div className="p-6 text-center space-y-4">
+          <div className="w-14 h-14 bg-[#F24E1E]/10 rounded-2xl flex items-center justify-center mx-auto">
+            <FaTrash className="text-[#F24E1E] text-xl" />
+          </div>
+          <div>
+            <p className="text-base font-black text-[#22285E]">Hapus Produk?</p>
+            <p className="text-sm text-[#71717A] mt-1">
+              Produk <span className="font-bold text-[#22285E]">"{item.name}"</span> akan dihapus secara permanen.
+            </p>
+          </div>
+          {img && (
+            <div className="w-20 h-20 rounded-xl overflow-hidden mx-auto border border-[#E4E4E7]">
+              <img src={img} alt={item.name} className="w-full h-full object-cover" />
+            </div>
+          )}
+          <div className="flex gap-3 pt-2">
+            <Button variant="ghost" className="flex-1 border border-[#E4E4E7]" onClick={onClose}>
+              Batal
+            </Button>
+            <Button variant="warning" className="flex-1" icon={<FaTrash className="text-xs" />}
+              onClick={onConfirm}>
+              Hapus
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   HALAMAN UTAMA
+══════════════════════════════════════════════════════════════════════ */
 export default function Inventory() {
   const [items, setItems] = useState(() => {
     const saved = localStorage.getItem('joy_dream_inventory');
     return saved ? JSON.parse(saved) : inventoryData;
   });
-  const [showForm, setShowForm] = useState(false);
+
+  const { toasts, showToast, removeToast } = useToast();
+
+  // null = tutup, 'add' = tambah, item-object = edit
+  const [formMode, setFormMode]       = useState(null);
+  const [hapusTarget, setHapusTarget] = useState(null);
 
   const [dataForm, setDataForm] = useState({
     searchTerm:     '',
@@ -118,72 +376,15 @@ export default function Inventory() {
     filterStatus:   'Semua Status',
   });
 
-  const [formProduk, setFormProduk] = useState({
-    name: '', kategori: 'Kalung', harga: '', stock: '',
-  });
-
   const searchInputRef = useRef(null);
-  const nameInputRef = useRef(null);
-  const prevItemsCountRef = useRef(items.length);
 
-  // Efek untuk memfokuskan input pencarian saat halaman dimuat
   useEffect(() => {
-    if (searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
+    searchInputRef.current?.focus();
   }, []);
 
-  // Efek untuk menyimpan data ke localStorage dan mendeteksi penambahan produk baru
   useEffect(() => {
     localStorage.setItem('joy_dream_inventory', JSON.stringify(items));
-
-    if (items.length > prevItemsCountRef.current) {
-      alert(`Produk baru berhasil ditambahkan! Total produk sekarang: ${items.length}`);
-    }
-    prevItemsCountRef.current = items.length;
   }, [items]);
-
-  // Efek untuk keyboard Escape dan fokus input modal ketika terbuka
-  useEffect(() => {
-    if (!showForm) return;
-
-    const timer = setTimeout(() => {
-      if (nameInputRef.current) {
-        nameInputRef.current.focus();
-      }
-    }, 50);
-
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        setShowForm(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [showForm]);
-
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setFormProduk(p => ({ ...p, [name]: value }));
-  };
-
-  const handleTambahProduk = (e) => {
-    e.preventDefault();
-    if (!formProduk.name || !formProduk.harga || !formProduk.stock) return;
-    const harga  = parseInt(formProduk.harga);
-    const stock  = parseInt(formProduk.stock);
-    const status = stock === 0 ? 'Habis' : stock <= 8 ? 'Hampir Habis' : 'Aman';
-    setItems(prev => [{
-      id: prev.length + 1, name: formProduk.name,
-      kategori: formProduk.kategori, harga, stock, terjual: 0, status,
-    }, ...prev]);
-    setFormProduk({ name: '', kategori: 'Kalung', harga: '', stock: '' });
-    setShowForm(false);
-  };
 
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
@@ -198,25 +399,45 @@ export default function Inventory() {
     return matchSearch && matchKategori && matchStatus;
   });
 
-  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const totalPages    = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
   const paginatedData = filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  /* Preview status otomatis di form */
-  const previewStatus = formProduk.stock === '' ? null
-    : parseInt(formProduk.stock) === 0 ? 'Habis'
-    : parseInt(formProduk.stock) <= 8  ? 'Hampir Habis'
-    : 'Aman';
+  const handleSave = (data) => {
+    if (formMode === 'add') {
+      const newItem = {
+        id:      items.length + 1,
+        terjual: 0,
+        ...data,
+      };
+      setItems(prev => [newItem, ...prev]);
+      showToast({ type: 'success', title: 'Produk ditambahkan!', message: `"${data.name}" berhasil disimpan.` });
+    } else {
+      // mode edit — formMode berisi object item lama
+      setItems(prev => prev.map(it =>
+        it.id === formMode.id ? { ...it, ...data } : it
+      ));
+      showToast({ type: 'update', title: 'Produk diperbarui!', message: `"${data.name}" berhasil diupdate.` });
+    }
+    setFormMode(null);
+  };
+
+  const handleHapus = () => {
+    const nama = hapusTarget.name;
+    setItems(prev => prev.filter(it => it.id !== hapusTarget.id));
+    setHapusTarget(null);
+    showToast({ type: 'delete', title: 'Produk dihapus!', message: `"${nama}" telah dihapus permanen.` });
+  };
 
   return (
     <div className="space-y-5 animate-in fade-in duration-500 font-poppins">
 
       <PageHeader title="Persediaan" breadcrumb={['Dashboard', 'Persediaan']}>
-        <Button variant="primary" icon={<FaPlus className="text-xs" />} onClick={() => setShowForm(true)}>
+        <Button variant="primary" icon={<FaPlus className="text-xs" />} onClick={() => setFormMode('add')}>
           Tambah Produk
         </Button>
       </PageHeader>
 
-      {/* ── Stat Cards — pakai StatCard ── */}
+      {/* ── Stat Cards ── */}
       <div className="grid grid-cols-3 gap-3">
         <StatCard
           label="Total Produk"
@@ -283,19 +504,19 @@ export default function Inventory() {
             </div>
             <DropdownMenuSeparator />
             <ScrollArea className="max-h-52">
-            <DropdownMenuRadioGroup
-              value={dataForm.filterKategori}
-              onValueChange={(val) => {
-                setDataForm(p => ({ ...p, filterKategori: val }));
-                setCurrentPage(1);
-              }}
-            >
-              {kategoriList.map(k => (
-                <DropdownMenuRadioItem key={k} value={k} className="cursor-pointer text-sm">
-                  {k}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
+              <DropdownMenuRadioGroup
+                value={dataForm.filterKategori}
+                onValueChange={(val) => {
+                  setDataForm(p => ({ ...p, filterKategori: val }));
+                  setCurrentPage(1);
+                }}
+              >
+                {kategoriList.map(k => (
+                  <DropdownMenuRadioItem key={k} value={k} className="cursor-pointer text-sm">
+                    {k}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
             </ScrollArea>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -340,19 +561,20 @@ export default function Inventory() {
         </DropdownMenu>
       </div>
 
-      {/* ── Tabel — pakai Card ── */}
+      {/* ── Tabel ── */}
       <Card padding={false}>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="overflow-visible">
               <tr className="bg-[#F4F4F5] border-b border-[#E4E4E7]">
                 {[
-                  { label: 'Produk',   icon: FaBoxOpen,   tip: null },
+                  { label: 'Produk',   icon: FaBoxOpen,    tip: null },
                   { label: 'Kategori', icon: FaLayerGroup, tip: null },
                   { label: 'Harga',    icon: FaTag,        tip: null },
                   { label: 'Stok',     icon: null,         tip: 'Jumlah unit tersisa di gudang' },
                   { label: 'Terjual',  icon: FaChartLine,  tip: 'Total unit terjual sepanjang waktu' },
                   { label: 'Status',   icon: null,         tip: 'Aman ≥ 9 pcs · Hampir Habis ≤ 8 pcs · Habis = 0' },
+                  { label: 'Aksi',     icon: null,         tip: null },
                 ].map((h, i) => (
                   <th key={i} className="px-6 py-3.5">
                     <div className="flex items-center gap-1.5">
@@ -416,14 +638,33 @@ export default function Inventory() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    {/* Badge — pakai komponen Badge langsung dengan status stok */}
                     <Badge status={item.status} />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <Tooltip content="Edit produk" position="top">
+                        <button
+                          onClick={() => setFormMode(item)}
+                          className="w-8 h-8 rounded-lg border border-[#E4E4E7] bg-white flex items-center justify-center text-[#A1A1AA] hover:bg-[#9E4BDC]/10 hover:text-[#9E4BDC] hover:border-[#9E4BDC]/30 transition-all"
+                        >
+                          <FaEdit className="text-xs" />
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Hapus produk" position="top">
+                        <button
+                          onClick={() => setHapusTarget(item)}
+                          className="w-8 h-8 rounded-lg border border-[#E4E4E7] bg-white flex items-center justify-center text-[#A1A1AA] hover:bg-[#F24E1E]/10 hover:text-[#F24E1E] hover:border-[#F24E1E]/30 transition-all"
+                        >
+                          <FaTrash className="text-xs" />
+                        </button>
+                      </Tooltip>
+                    </div>
                   </td>
                 </tr>
               ))}
               {filteredData.length === 0 && (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={7}>
                     <EmptyState
                       variant="search"
                       title="Produk tidak ditemukan"
@@ -483,95 +724,27 @@ export default function Inventory() {
         )}
       </Card>
 
-      {/* ── Modal Tambah Produk ── */}
-      {showForm && createPortal(
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
-          onMouseDown={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-[#E4E4E7] animate-in fade-in zoom-in-95 duration-200">
-
-            {/* Header modal */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-[#E4E4E7]">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-[#9E4BDC] rounded-xl flex items-center justify-center shrink-0">
-                  <FaBoxOpen className="text-white text-sm" />
-                </div>
-                <div>
-                  <p className="text-sm font-black text-[#22285E]">Tambah Produk Baru</p>
-                  <p className="text-[10px] text-[#A1A1AA]">Isi data produk aksesoris</p>
-                </div>
-              </div>
-              <button onClick={() => setShowForm(false)}
-                className="w-8 h-8 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl flex items-center justify-center hover:bg-[#F24E1E]/10 hover:text-[#F24E1E] transition-colors text-[#A1A1AA]">
-                <FaTimes className="text-xs" />
-              </button>
-            </div>
-
-            {/* Form — pakai komponen Input & Select */}
-            <form onSubmit={handleTambahProduk} className="p-6 space-y-4">
-              <Input
-                ref={nameInputRef}
-                label="Nama Produk"
-                name="name"
-                value={formProduk.name}
-                onChange={handleFormChange}
-                placeholder="cth: Kalung Titanium Rosegold"
-                icon={FaBoxOpen}
-              />
-
-              <Select
-                label="Kategori"
-                name="kategori"
-                value={formProduk.kategori}
-                onChange={handleFormChange}
-                icon={FaLayerGroup}
-                options={kategoriOptions.map(k => ({ value: k, label: k }))}
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  label="Harga (Rp)"
-                  type="number"
-                  name="harga"
-                  value={formProduk.harga}
-                  onChange={handleFormChange}
-                  placeholder="85000"
-                  icon={FaTag}
-                />
-                <Input
-                  label="Stok (pcs)"
-                  type="number"
-                  name="stock"
-                  value={formProduk.stock}
-                  onChange={handleFormChange}
-                  placeholder="20"
-                  icon={FaChartLine}
-                />
-              </div>
-
-              {/* Preview status otomatis — pakai Badge */}
-              {previewStatus && (
-                <div className="flex items-center gap-2 bg-[#F4F4F5] border border-[#E4E4E7] rounded-xl px-4 py-2.5">
-                  <span className="text-[10px] text-[#A1A1AA]">Status otomatis:</span>
-                  <Badge status={previewStatus} />
-                  <span className="text-[10px] font-bold text-[#22285E]">{previewStatus}</span>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-1">
-                <Button type="button" variant="ghost" className="flex-1 border border-[#E4E4E7]" onClick={() => setShowForm(false)}>
-                  Batal
-                </Button>
-                <Button type="submit" variant="primary" className="flex-1" icon={<FaPlus className="text-xs" />}>
-                  Simpan Produk
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
+      {/* ── Modal Form Tambah / Edit ── */}
+      {formMode !== null && (
+        <ProdukFormModal
+          mode={formMode === 'add' ? 'add' : 'edit'}
+          initialData={formMode === 'add' ? null : formMode}
+          onClose={() => setFormMode(null)}
+          onSave={handleSave}
+        />
       )}
+
+      {/* ── Modal Konfirmasi Hapus ── */}
+      {hapusTarget && (
+        <HapusModal
+          item={hapusTarget}
+          onClose={() => setHapusTarget(null)}
+          onConfirm={handleHapus}
+        />
+      )}
+
+      {/* ── Toast Notifikasi ── */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
 
     </div>
   );
