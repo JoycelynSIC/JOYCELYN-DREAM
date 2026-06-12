@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import customerData from '../data/customer.json';
 import PageHeader    from '../components/PageHeader';
@@ -94,9 +94,16 @@ function poinProgress(poin, member) {
 }
 
 export default function Customers() {
-  const [customers, setCustomers] = useState(customerData);
+  const [customers, setCustomers] = useState(() => {
+    const saved = localStorage.getItem('joy_dream_customers');
+    return saved ? JSON.parse(saved) : customerData;
+  });
   const [dataForm, setDataForm]   = useState({ search: '', filterMember: 'Semua' });
-  const [selected, setSelected]   = useState(customerData[0]);
+  const [selected, setSelected]   = useState(() => {
+    const saved = localStorage.getItem('joy_dream_customers');
+    const parsed = saved ? JSON.parse(saved) : customerData;
+    return parsed[0] || null;
+  });
   const [viewMode, setViewMode]   = useState('table');
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm]   = useState(false);
@@ -104,6 +111,50 @@ export default function Customers() {
     name: '', email: '', phone: '', member: 'Reguler', status: 'Aktif',
   });
   const ITEMS_PER_PAGE = 5;
+
+  const searchInputRef = useRef(null);
+  const nameInputRef = useRef(null);
+  const prevCustomersCountRef = useRef(customers.length);
+
+  // Efek untuk memfokuskan input pencarian saat halaman dimuat
+  useEffect(() => {
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, []);
+
+  // Efek untuk menyimpan data ke localStorage dan mendeteksi penambahan pelanggan baru
+  useEffect(() => {
+    localStorage.setItem('joy_dream_customers', JSON.stringify(customers));
+
+    if (customers.length > prevCustomersCountRef.current) {
+      alert(`Pelanggan baru berhasil ditambahkan! Total pelanggan sekarang: ${customers.length}`);
+    }
+    prevCustomersCountRef.current = customers.length;
+  }, [customers]);
+
+  // Efek untuk keyboard Escape dan fokus input modal ketika terbuka
+  useEffect(() => {
+    if (!showForm) return;
+
+    const timer = setTimeout(() => {
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+      }
+    }, 50);
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowForm(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showForm]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -156,7 +207,7 @@ export default function Customers() {
       {/* ── Stat Cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
-          label="Total Pelanggan" value={customerData.length} desc="terdaftar"
+          label="Total Pelanggan" value={customers.length} desc="terdaftar"
           icon={<FaUsers />} iconBgColor="bg-[#F4F4F5]" iconColor="text-[#9E4BDC]"
         />
         <StatCard
@@ -224,6 +275,7 @@ export default function Customers() {
           {/* Toolbar */}
           <div className="flex flex-col sm:flex-row gap-3 p-5 border-b border-[#E4E4E7]">
             <Input
+              ref={searchInputRef}
               placeholder="Cari nama atau email..."
               icon={FaSearch}
               value={dataForm.search}
@@ -577,6 +629,7 @@ export default function Customers() {
 
             <form onSubmit={handleTambahPelanggan} className="p-6 space-y-4">
               <Input
+                ref={nameInputRef}
                 label="Nama Lengkap"
                 name="name"
                 value={formPelanggan.name}

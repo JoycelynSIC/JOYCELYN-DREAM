@@ -38,30 +38,6 @@ import imgStiker          from '../assets/gambarproduk/stiker.png';
 import imgGanci           from '../assets/gambarproduk/gancisanrio.png';
 import imgIkatPinggang    from '../assets/gambarproduk/ikapinggang.png';
 
-const gambarMap = {
-  'kalungrosegold.png': imgKalungRosegold,     'kalungchoker.png': imgKalungChoker,
-  'kalungbintang.png': imgKalungBintang,       'kalungpearl.png': imgKalungPearl,
-  'gelangcrystal.png': imgGelangCrystal,       'gelangperak.png': imgGelangPerak,
-  'gelangbead.png': imgGelangBead,             'gelangtali.png': imgGelangTali,
-  'cincincouple.png': imgCincinCouple,         'cincingold.png': imgCincinGold,
-  'cincinresin.png': imgCincinResin,           'antinghoop.png': imgAntingHoop,
-  'antingtassel.png': imgAntingTassel,         'antingpearl.png': imgAntingPearl,
-  'antingbintang.png': imgAntingBintang,       'pressonnailflower.png': imgNailFlower,
-  'pressonnailglitter.png': imgNailGlitter,    'pressonnailfrenchtip.png': imgNailFrench,
-  'pressonnailombre.png': imgNailOmbre,        'tmblrpastel.png': imgTumblrPastel,
-  'tumblrflower.png': imgTumblrFlower,         'tumblrglass.png': imgTumblrGlass,
-  'clawclip.png': imgClawClip,                 'jepitrambutbutterfly.png': imgJepitButterfly,
-  'bandopearl.png': imgBandoPearl,             'scrunchie.png': imgScrunchie,
-  'tasminiselempang.png': imgTasMini,          'tasrajut.png': imgTasRajut,
-  'taskoin.png': imgTasKoin,                   'framekacamata.png': imgKacamata,
-  'maskerlucu.png': imgMasker,                 'stiker.png': imgStiker,
-  'gancisanrio.png': imgGanci,                 'ikapinggang.png': imgIkatPinggang,
-};
-
-const getImg = (path) => {
-  if (!path) return null;
-  return gambarMap[path.split('/').pop()] ?? null;
-};
 import StatCard    from '../components/StatCard';
 import Card        from '../components/Card';
 import Badge       from '../components/Badge';
@@ -93,6 +69,31 @@ import {
   FaStar, FaSearch, FaFilter,
   FaCheckCircle, FaClock, FaEyeSlash, FaEye, FaInfoCircle, FaChevronDown,
 } from 'react-icons/fa';
+
+const gambarMap = {
+  'kalungrosegold.png': imgKalungRosegold,     'kalungchoker.png': imgKalungChoker,
+  'kalungbintang.png': imgKalungBintang,       'kalungpearl.png': imgKalungPearl,
+  'gelangcrystal.png': imgGelangCrystal,       'gelangperak.png': imgGelangPerak,
+  'gelangbead.png': imgGelangBead,             'gelangtali.png': imgGelangTali,
+  'cincincouple.png': imgCincinCouple,         'cincingold.png': imgCincinGold,
+  'cincinresin.png': imgCincinResin,           'antinghoop.png': imgAntingHoop,
+  'antingtassel.png': imgAntingTassel,         'antingpearl.png': imgAntingPearl,
+  'antingbintang.png': imgAntingBintang,       'pressonnailflower.png': imgNailFlower,
+  'pressonnailglitter.png': imgNailGlitter,    'pressonnailfrenchtip.png': imgNailFrench,
+  'pressonnailombre.png': imgNailOmbre,        'tmblrpastel.png': imgTumblrPastel,
+  'tumblrflower.png': imgTumblrFlower,         'tumblrglass.png': imgTumblrGlass,
+  'clawclip.png': imgClawClip,                 'jepitrambutbutterfly.png': imgJepitButterfly,
+  'bandopearl.png': imgBandoPearl,             'scrunchie.png': imgScrunchie,
+  'tasminiselempang.png': imgTasMini,          'tasrajut.png': imgTasRajut,
+  'taskoin.png': imgTasKoin,                   'framekacamata.png': imgKacamata,
+  'maskerlucu.png': imgMasker,                 'stiker.png': imgStiker,
+  'gancisanrio.png': imgGanci,                 'ikapinggang.png': imgIkatPinggang,
+};
+
+const getImg = (path) => {
+  if (!path) return null;
+  return gambarMap[path.split('/').pop()] ?? null;
+};
 
 /* Map status ulasan → Badge status */
 const reviewBadgeMap = {

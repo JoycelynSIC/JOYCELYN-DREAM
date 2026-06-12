@@ -39,6 +39,29 @@ import imgStiker          from '../assets/gambarproduk/stiker.png';
 import imgGanci           from '../assets/gambarproduk/gancisanrio.png';
 import imgIkatPinggang    from '../assets/gambarproduk/ikapinggang.png';
 
+import Badge     from '../components/Badge';
+import StatCard  from '../components/StatCard';
+import Card      from '../components/Card';
+import Button    from '../components/Button';
+import Input     from '../components/Input';
+import Select    from '../components/Select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  FaShoppingBag, FaSearch, FaFilter, FaCheckCircle,
+  FaSpinner, FaTimesCircle, FaStar, FaBoxOpen, FaEye, FaTimes,
+  FaUser, FaCalendarAlt, FaMoneyBillWave,
+  FaPlus
+} from 'react-icons/fa';
+
 const gambarMap = {
   'kalungrosegold.png': imgKalungRosegold,     'kalungchoker.png': imgKalungChoker,
   'kalungbintang.png': imgKalungBintang,       'kalungpearl.png': imgKalungPearl,
@@ -63,28 +86,6 @@ const getImg = (path) => {
   if (!path) return null;
   return gambarMap[path.split('/').pop()] ?? null;
 };
-import Badge     from '../components/Badge';
-import StatCard  from '../components/StatCard';
-import Card      from '../components/Card';
-import Button    from '../components/Button';
-import Input     from '../components/Input';
-import Select    from '../components/Select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import {
-  FaShoppingBag, FaSearch, FaFilter, FaCheckCircle,
-  FaSpinner, FaTimesCircle, FaStar, FaBoxOpen, FaEye, FaTimes,
-  FaUser, FaCalendarAlt, FaMoneyBillWave,
-  FaPlus
-} from 'react-icons/fa';
 
 const statusConfig = {
   Selesai: { style: 'bg-status-success/10 text-status-success border border-status-success/20', icon: FaCheckCircle },

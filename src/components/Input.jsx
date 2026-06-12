@@ -1,3 +1,5 @@
+import { forwardRef } from "react";
+
 /**
  * KOMPONEN 4 — Input
  * Field teks serbaguna dengan label, ikon, dan pesan error.
@@ -13,7 +15,7 @@
  *  disabled    : boolean
  *  className   : string
  */
-export default function Input({
+const Input = forwardRef(({
   label,
   type = "text",
   placeholder,
@@ -24,7 +26,7 @@ export default function Input({
   disabled = false,
   name,
   className = "",
-}) {
+}, ref) => {
   return (
     <div className={`flex flex-col gap-1.5 w-full ${className}`}>
       {label && (
@@ -41,6 +43,7 @@ export default function Input({
         )}
 
         <input
+          ref={ref}
           type={type}
           name={name}
           value={value}
@@ -67,4 +70,9 @@ export default function Input({
       )}
     </div>
   );
-}
+});
+
+Input.displayName = "Input";
+
+export default Input;
+

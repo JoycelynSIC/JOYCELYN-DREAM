@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import inventoryData from '../data/inventory.json';
@@ -40,30 +40,6 @@ import imgStiker          from '../assets/gambarproduk/stiker.png';
 import imgGanci           from '../assets/gambarproduk/gancisanrio.png';
 import imgIkatPinggang    from '../assets/gambarproduk/ikapinggang.png';
 
-const gambarMap = {
-  'kalungrosegold.png': imgKalungRosegold,     'kalungchoker.png': imgKalungChoker,
-  'kalungbintang.png': imgKalungBintang,       'kalungpearl.png': imgKalungPearl,
-  'gelangcrystal.png': imgGelangCrystal,       'gelangperak.png': imgGelangPerak,
-  'gelangbead.png': imgGelangBead,             'gelangtali.png': imgGelangTali,
-  'cincincouple.png': imgCincinCouple,         'cincingold.png': imgCincinGold,
-  'cincinresin.png': imgCincinResin,           'antinghoop.png': imgAntingHoop,
-  'antingtassel.png': imgAntingTassel,         'antingpearl.png': imgAntingPearl,
-  'antingbintang.png': imgAntingBintang,       'pressonnailflower.png': imgNailFlower,
-  'pressonnailglitter.png': imgNailGlitter,    'pressonnailfrenchtip.png': imgNailFrench,
-  'pressonnailombre.png': imgNailOmbre,        'tmblrpastel.png': imgTumblrPastel,
-  'tumblrflower.png': imgTumblrFlower,         'tumblrglass.png': imgTumblrGlass,
-  'clawclip.png': imgClawClip,                 'jepitrambutbutterfly.png': imgJepitButterfly,
-  'bandopearl.png': imgBandoPearl,             'scrunchie.png': imgScrunchie,
-  'tasminiselempang.png': imgTasMini,          'tasrajut.png': imgTasRajut,
-  'taskoin.png': imgTasKoin,                   'framekacamata.png': imgKacamata,
-  'maskerlucu.png': imgMasker,                 'stiker.png': imgStiker,
-  'gancisanrio.png': imgGanci,                 'ikapinggang.png': imgIkatPinggang,
-};
-
-const getImg = (path) => {
-  if (!path) return null;
-  return gambarMap[path.split('/').pop()] ?? null;
-};
 import StatCard    from '../components/StatCard';
 import Badge       from '../components/Badge';
 import Card        from '../components/Card';
@@ -97,6 +73,31 @@ import {
   FaTimes, FaInfoCircle, FaChevronDown,
 } from 'react-icons/fa';
 
+const gambarMap = {
+  'kalungrosegold.png': imgKalungRosegold,     'kalungchoker.png': imgKalungChoker,
+  'kalungbintang.png': imgKalungBintang,       'kalungpearl.png': imgKalungPearl,
+  'gelangcrystal.png': imgGelangCrystal,       'gelangperak.png': imgGelangPerak,
+  'gelangbead.png': imgGelangBead,             'gelangtali.png': imgGelangTali,
+  'cincincouple.png': imgCincinCouple,         'cincingold.png': imgCincinGold,
+  'cincinresin.png': imgCincinResin,           'antinghoop.png': imgAntingHoop,
+  'antingtassel.png': imgAntingTassel,         'antingpearl.png': imgAntingPearl,
+  'antingbintang.png': imgAntingBintang,       'pressonnailflower.png': imgNailFlower,
+  'pressonnailglitter.png': imgNailGlitter,    'pressonnailfrenchtip.png': imgNailFrench,
+  'pressonnailombre.png': imgNailOmbre,        'tmblrpastel.png': imgTumblrPastel,
+  'tumblrflower.png': imgTumblrFlower,         'tumblrglass.png': imgTumblrGlass,
+  'clawclip.png': imgClawClip,                 'jepitrambutbutterfly.png': imgJepitButterfly,
+  'bandopearl.png': imgBandoPearl,             'scrunchie.png': imgScrunchie,
+  'tasminiselempang.png': imgTasMini,          'tasrajut.png': imgTasRajut,
+  'taskoin.png': imgTasKoin,                   'framekacamata.png': imgKacamata,
+  'maskerlucu.png': imgMasker,                 'stiker.png': imgStiker,
+  'gancisanrio.png': imgGanci,                 'ikapinggang.png': imgIkatPinggang,
+};
+
+const getImg = (path) => {
+  if (!path) return null;
+  return gambarMap[path.split('/').pop()] ?? null;
+};
+
 /* Badge status stok — pakai komponen Badge langsung dengan status dari data */
 
 const kategoriOptions = [
@@ -105,7 +106,10 @@ const kategoriOptions = [
 ];
 
 export default function Inventory() {
-  const [items,    setItems]    = useState(inventoryData);
+  const [items, setItems] = useState(() => {
+    const saved = localStorage.getItem('joy_dream_inventory');
+    return saved ? JSON.parse(saved) : inventoryData;
+  });
   const [showForm, setShowForm] = useState(false);
 
   const [dataForm, setDataForm] = useState({
@@ -117,6 +121,50 @@ export default function Inventory() {
   const [formProduk, setFormProduk] = useState({
     name: '', kategori: 'Kalung', harga: '', stock: '',
   });
+
+  const searchInputRef = useRef(null);
+  const nameInputRef = useRef(null);
+  const prevItemsCountRef = useRef(items.length);
+
+  // Efek untuk memfokuskan input pencarian saat halaman dimuat
+  useEffect(() => {
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, []);
+
+  // Efek untuk menyimpan data ke localStorage dan mendeteksi penambahan produk baru
+  useEffect(() => {
+    localStorage.setItem('joy_dream_inventory', JSON.stringify(items));
+
+    if (items.length > prevItemsCountRef.current) {
+      alert(`Produk baru berhasil ditambahkan! Total produk sekarang: ${items.length}`);
+    }
+    prevItemsCountRef.current = items.length;
+  }, [items]);
+
+  // Efek untuk keyboard Escape dan fokus input modal ketika terbuka
+  useEffect(() => {
+    if (!showForm) return;
+
+    const timer = setTimeout(() => {
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+      }
+    }, 50);
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowForm(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showForm]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -198,6 +246,7 @@ export default function Inventory() {
       {/* ── Filter & Search ── */}
       <div className="flex flex-col sm:flex-row gap-3">
         <Input
+          ref={searchInputRef}
           placeholder="Cari produk..."
           icon={FaSearch}
           value={dataForm.searchTerm}
@@ -462,6 +511,7 @@ export default function Inventory() {
             {/* Form — pakai komponen Input & Select */}
             <form onSubmit={handleTambahProduk} className="p-6 space-y-4">
               <Input
+                ref={nameInputRef}
                 label="Nama Produk"
                 name="name"
                 value={formProduk.name}
