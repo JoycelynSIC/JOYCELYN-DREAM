@@ -84,8 +84,9 @@ const notifikasi = [
 ];
 
 export default function Header({ pageTitle = "Dashboard" }) {
-  const displayName = "Joycelyn Dhealiva";
-  const email = "joycelyn@rocketmail.com";
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const displayName = user ? `${user.namaDepan} ${user.namaBelakang}` : "Joycelyn Dhealiva";
+  const email = user ? user.email : "joycelyn@rocketmail.com";
   const [notifs, setNotifs] = useState(notifikasi);
 
   const unreadCount = notifs.filter(n => n.unread).length;

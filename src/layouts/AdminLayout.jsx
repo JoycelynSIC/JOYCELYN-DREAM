@@ -1,8 +1,15 @@
-import { Outlet } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 
 export default function AdminLayout() {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = user.role === "admin";
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
     <div className="flex h-screen bg-surface-neutral overflow-hidden font-poppins">
       <div className="flex-none">

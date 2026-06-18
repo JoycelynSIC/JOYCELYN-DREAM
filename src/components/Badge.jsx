@@ -9,8 +9,8 @@
  */
 import { FaCheckCircle, FaSpinner, FaTimesCircle, FaStar, FaExclamationTriangle } from 'react-icons/fa';
 
-export default function Badge({ status }) {
-  const configs = {
+export default function Badge({ status, variant = "pastel" }) {
+  const configsPastel = {
     /* ── Status Pesanan ── */
     Selesai:  { bg: "bg-[#00B5AD]/10",  text: "text-[#00B5AD]",  border: "border-[#00B5AD]/20",  icon: <FaCheckCircle className="text-[10px]" /> },
     Proses:   { bg: "bg-[#F4F4F5]",     text: "text-[#71717A]",  border: "border-[#E4E4E7]",     icon: <FaSpinner className="text-[10px] animate-spin" /> },
@@ -26,9 +26,38 @@ export default function Badge({ status }) {
     Platinum: { bg: "bg-[#9E4BDC]/10",  text: "text-[#9E4BDC]",  border: "border-[#9E4BDC]/20",  icon: <FaStar className="text-[10px]" /> },
   };
 
-  const config = configs[status] ?? {
-    bg: "bg-[#F4F4F5]", text: "text-[#71717A]", border: "border-[#E4E4E7]", icon: null,
+  const configsSolid = {
+    /* ── Status Pesanan ── */
+    Selesai:  { bg: "bg-[#00B5AD]",     text: "text-white",      border: "border-transparent",   icon: null },
+    Proses:   { bg: "bg-[#71717A]",     text: "text-white",      border: "border-transparent",   icon: null },
+    Batal:    { bg: "bg-[#F24E1E]",     text: "text-white",      border: "border-transparent",   icon: null },
+    /* ── Status Stok Inventaris ── */
+    Aman:          { bg: "bg-[#9E4BDC]",     text: "text-white",      border: "border-transparent",   icon: null },
+    'Hampir Habis':{ bg: "bg-amber-500",    text: "text-white",      border: "border-transparent",   icon: null },
+    Habis:         { bg: "bg-[#F24E1E]",     text: "text-white",      border: "border-transparent",   icon: null },
+    /* ── Level Member ── */
+    Reguler:  { bg: "bg-[#F4F4F5]",     text: "text-[#71717A]",  border: "border-[#E4E4E7]",     icon: null },
+    Silver:   { bg: "bg-[#E4E4E7]/40",  text: "text-[#52525B]",  border: "border-[#A1A1AA]/30",  icon: null },
+    Gold:     { bg: "bg-yellow-400",    text: "text-[#22285E]",  border: "border-transparent",   icon: null },
+    Platinum: { bg: "bg-[#9E4BDC]",     text: "text-white",      border: "border-transparent",   icon: null },
   };
+
+  const configs = variant === "solid" ? configsSolid : configsPastel;
+
+  let config = configs[status];
+  if (!config) {
+    if (typeof status === "string" && status.startsWith("Stok:")) {
+      config = configs["Aman"];
+    } else if (typeof status === "string" && status.startsWith("Sisa")) {
+      config = configs["Hampir Habis"];
+    } else if (typeof status === "string" && (status.startsWith("Habis") || status === "Stok Habis")) {
+      config = configs["Habis"];
+    } else {
+      config = {
+        bg: "bg-[#F4F4F5]", text: "text-[#71717A]", border: "border-[#E4E4E7]", icon: null,
+      };
+    }
+  }
 
   return (
     <div className={`

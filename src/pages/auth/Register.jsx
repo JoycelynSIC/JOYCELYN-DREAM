@@ -1,24 +1,78 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { FaSpinner, FaCheckCircle, FaGem } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaSpinner, FaCheckCircle } from 'react-icons/fa';
 import logoNastore from "../../assets/gambarproduk/logonastore.png";
+import { userAPI } from '../../services/userAPI';
+import { useToast, ToastContainer } from '../../components/Toast';
 
 export default function Register() {
+  const navigate = useNavigate();
+  const { toasts, showToast, removeToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [done,    setDone]    = useState(false);
+  const [error,   setError]   = useState('');
   const [dataForm, setDataForm] = useState({
-    namaDepan: '', namaBelakang: '', password: '', konfirmasiPassword: '',
+    namaDepan: '', namaBelakang: '', email: '', password: '', konfirmasiPassword: '',
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setDataForm({ ...dataForm, [name]: value });
+    if (error) setError('');
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
+    setError('');
+
+    // Validasi input
+    if (!dataForm.namaDepan || !dataForm.namaBelakang || !dataForm.email || !dataForm.password || !dataForm.konfirmasiPassword) {
+      setError('Semua kolom wajib diisi!');
+      return;
+    }
+
+    if (dataForm.password !== dataForm.konfirmasiPassword) {
+      setError('Konfirmasi password tidak cocok!');
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => { setLoading(false); setDone(true); }, 1500);
+
+    try {
+      // Panggil userAPI untuk POST data pendaftaran ke Supabase
+      await userAPI.createUser({
+        namaDepan: dataForm.namaDepan,
+        namaBelakang: dataForm.namaBelakang,
+        email: dataForm.email,
+        password: dataForm.password,
+        role: 'user', // role default murni customer
+      });
+
+      showToast({
+        type: 'success',
+        title: 'Pendaftaran Berhasil!',
+        message: 'Akun Anda berhasil dibuat. Silakan login.',
+        duration: 2000
+      });
+
+      setDone(true);
+      
+      // Redirect ke login setelah 2 detik
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+      } else if (err.response && err.response.status === 409) {
+        setError('Email sudah terdaftar!');
+      } else {
+        setError('Terjadi kesalahan saat pendaftaran. Pastikan API Key benar.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputClass =
@@ -27,6 +81,7 @@ export default function Register() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-white p-6 font-poppins">
       <div className="w-full max-w-[400px] flex flex-col items-center">
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
 
         {/* ── Sukses ── */}
         {done ? (
@@ -36,17 +91,11 @@ export default function Register() {
             </div>
             <h2 className="text-[#22285E] text-2xl font-black">Akun Berhasil Dibuat!</h2>
             <p className="text-gray-400 text-sm mt-2 mb-3 leading-relaxed">
-              Selamat bergabung di <span className="font-bold text-[#9E4BDC]">Na_store.id</span> 🎉
+              Selamat bergabung di <span className="font-bold text-[#9E4BDC]">Na_store.id</span>
             </p>
             <p className="text-gray-400 text-xs mb-10 leading-relaxed">
-              Masuk sekarang untuk mulai mengelola toko aksesoris kamu — gelang, kalung, anting, dan lebih banyak lagi.
+              Mengarahkan Anda ke halaman login...
             </p>
-            <Link
-              to="/login"
-              className="w-full bg-[#9E4BDC] text-white py-4 rounded-2xl font-bold text-sm hover:bg-[#8e3ec7] transition-all shadow-lg shadow-purple-500/20 text-center"
-            >
-              Masuk Sekarang
-            </Link>
           </div>
         ) : (
           /* ── Form Daftar ── */
@@ -55,8 +104,14 @@ export default function Register() {
             <p className="text-[11px] text-[#A1A1AA] font-medium mb-1 tracking-wide">TOKO AKSESORIS</p>
             <h2 className="text-[#9E4BDC] text-[28px] font-black mb-1">Daftar Akun</h2>
             <p className="text-gray-400 text-xs mb-8 text-center">
-              Buat akun admin Na_store.id kamu
+              Buat akun customer Na_store.id kamu
             </p>
+
+            {error && (
+              <div className="w-full text-center py-3 px-4 rounded-xl mb-4 text-xs font-medium bg-red-50 text-red-500">
+                {error}
+              </div>
+            )}
 
             <form onSubmit={handleRegister} className="w-full space-y-4" noValidate>
               <div className="grid grid-cols-2 gap-3">
@@ -71,6 +126,12 @@ export default function Register() {
                   className={inputClass}
                 />
               </div>
+
+              <input
+                type="email" name="email" placeholder="Email"
+                value={dataForm.email} onChange={handleChange}
+                className={inputClass}
+              />
 
               <input
                 type="password" name="password" placeholder="Password"
@@ -123,3 +184,4 @@ export default function Register() {
     </div>
   );
 }
+

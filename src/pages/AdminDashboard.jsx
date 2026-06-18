@@ -1,7 +1,3 @@
-/**
- * Dashboard — Na_store.id CRM
- * Layout mengikuti referensi: Stat Cards → Banner + Grafik → Daily Task + 2 Pie Charts → Recent Orders
- */
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -11,7 +7,7 @@ import {
 import {
   FaBell, FaUsers, FaShoppingBag, FaPlusCircle,
   FaStar, FaBoxOpen, FaClock, FaBoxes, FaCheckDouble,
-  FaArchive, FaCamera, FaHeadset, FaCoins,
+  FaArchive, FaCamera, FaHeadset, FaCoins
 } from "react-icons/fa";
 
 import PageHeader   from "../components/PageHeader";
@@ -80,6 +76,7 @@ const gambarMap = {
   "maskerlucu.png": imgMasker,                 "stiker.png": imgStiker,
   "gancisanrio.png": imgGanci,                 "ikapinggang.png": imgIkatPinggang,
 };
+
 const getImg = (path) => {
   if (!path) return null;
   if (path.startsWith("data:") || path.startsWith("blob:")) return path;
@@ -118,7 +115,6 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-/* ─── Jadwal harian dari schedule.json (hardcoded sesuai data) ─── */
 const JADWAL = [
   {
     jam: "09:00",
@@ -170,7 +166,6 @@ const JADWAL_COLOR_MAP = {
   orange: { bg: "bg-[#F24E1E]",        text: "text-white",        dot: "bg-[#F24E1E]"  },
 };
 
-/* ─── Pelanggan Top ─── */
 const pelangganBaru = [
   { id: 7,  nama: "Fatimah Novitasari", status: "Gold", poin: 3760, belanja: 4259000 },
   { id: 15, nama: "Olivia Felicia",     status: "Gold", poin: 3121, belanja: 4013000 },
@@ -181,7 +176,6 @@ const pelangganBaru = [
 
 const pesananTerbaru = ordersData.slice(0, 4);
 
-/* ─── Hitung total omzet dari pesanan Selesai ─── */
 const totalOmzet = ordersData
   .filter((o) => o.status === "Selesai")
   .reduce((sum, o) => sum + o.total, 0);
@@ -190,24 +184,12 @@ const omzetLabel =
     ? `${(totalOmzet / 1_000_000).toFixed(1)} jt`
     : `${(totalOmzet / 1_000).toFixed(0)} rb`;
 
-/* ════════════════════════════════════════════════════════ */
-export default function Dashboard() {
+export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("Bulanan");
 
   return (
-    <div className="space-y-6 font-poppins animate-in fade-in duration-500">
-
-      {/* ── Page Header ── */}
-      <PageHeader title="Dashboard" breadcrumb={["Dashboard"]}>
-        <Link
-          to="/customers"
-          className="flex items-center gap-2 bg-[#9E4BDC] text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[#B16FE3] transition-all active:scale-95 shadow-md shadow-[#9E4BDC]/20"
-        >
-          <FaPlusCircle className="text-sm" />
-          Tambah Pelanggan
-        </Link>
-      </PageHeader>
-
+    <div className="space-y-6 font-poppins">
+      
       {/* ══ ROW 1 — Stat Cards ══ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard

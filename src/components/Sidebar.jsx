@@ -4,12 +4,16 @@ import logoNastore from "../assets/gambarproduk/logonastore.png";
 import {
   FaThLarge, FaChartBar, FaCalendarAlt,
   FaBox, FaUsers, FaSignOutAlt, FaShoppingBag,
-  FaStar
+  FaStar, FaUserFriends
 } from "react-icons/fa";
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
+
+  // Ambil role user dari localStorage
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = user.role === "admin";
 
   const activeLink = ({ isActive }) =>
     `flex items-center rounded-full text-sm transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden my-1 ${
@@ -20,21 +24,26 @@ export default function Sidebar() {
         : "text-white/70 hover:bg-white/10 hover:text-white font-medium"
     }`;
 
-  const menuItems = [
-    { to: "/", icon: <FaThLarge />, label: "Dashboard" },
-    { to: "/analytics", icon: <FaChartBar />, label: "Laporan" },
-    { to: "/orders", icon: <FaShoppingBag />, label: "Pesanan" },
-    { to: "/schedule", icon: <FaCalendarAlt />, label: "Jadwal" },
-    { to: "/inventory", icon: <FaBox />, label: "Persediaan" },
-    { to: "/customers", icon: <FaUsers />, label: "Pelanggan" },
-    { to: "/reviews", icon: <FaStar />, label: "Ulasan" },
-  ];
+  // Tentukan item menu berdasarkan role
+  const menuItems = isAdmin
+    ? [
+        { to: "/", icon: <FaThLarge />, label: "Dashboard" },
+        { to: "/analytics", icon: <FaChartBar />, label: "Laporan" },
+        { to: "/orders", icon: <FaShoppingBag />, label: "Pesanan" },
+        { to: "/schedule", icon: <FaCalendarAlt />, label: "Jadwal" },
+        { to: "/inventory", icon: <FaBox />, label: "Persediaan" },
+        { to: "/customers", icon: <FaUsers />, label: "Pelanggan" },
+        { to: "/reviews", icon: <FaStar />, label: "Ulasan" },
+        { to: "/users", icon: <FaUserFriends />, label: "User" },
+      ]
+    : [
+        { to: "/", icon: <FaThLarge />, label: "Dashboard" },
+      ];
 
   return (
     <aside
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      // Gunakan min-w dan max-w untuk kunci lebar
       className={`bg-[#A65EEA] flex flex-col h-screen transition-all duration-300 ease-in-out z-50 shadow-xl shrink-0 overflow-hidden ${
         isHovered 
           ? "w-44 min-w-[176px] max-w-[176px]" 
@@ -51,7 +60,9 @@ export default function Sidebar() {
         />
         <div className={`mt-3 text-center transition-all duration-300 ${isHovered ? "opacity-100 h-auto visible" : "opacity-0 h-0 invisible"}`}>
           <p className="text-white font-bold text-xs tracking-wide">Na_store.id</p>
-          <p className="text-white/60 text-[9px] uppercase tracking-widest font-medium">Admin Panel</p>
+          <p className="text-white/60 text-[9px] uppercase tracking-widest font-medium">
+            {isAdmin ? "Admin Panel" : "Customer Portal"}
+          </p>
         </div>
       </div>
 

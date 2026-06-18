@@ -185,3 +185,61 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* ── Premium E-Commerce Micro-Animations ── */
+@keyframes floatUp {
+  0%, 100% { transform: translateY(0px) rotate(-12deg) scale(0.9); }
+  50% { transform: translateY(-8px) rotate(-11deg) scale(0.9); }
+}
+
+@keyframes floatRight {
+  0%, 100% { transform: translateY(0px) rotate(12deg) scale(0.9); }
+  50% { transform: translateY(8px) rotate(13deg) scale(0.9); }
+}
+
+@keyframes floatCenter {
+  0%, 100% { transform: translateY(-8px) rotate(0deg); }
+  50% { transform: translateY(-16px) rotate(1deg); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-float-left {
+  animation: floatUp 5s ease-in-out infinite;
+}
+
+.animate-float-right {
+  animation: floatRight 5.5s ease-in-out infinite;
+}
+
+.animate-float-center {
+  animation: floatCenter 4.5s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in-right {
+  animation: fadeInRight 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

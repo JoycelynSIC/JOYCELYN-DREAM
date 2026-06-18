@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom'; // navigate dihapus karena pakai window.location
-import axios from 'axios';
+import { Link } from 'react-router-dom';
 import logoNastore from "../../assets/gambarproduk/logonastore.png";
 import { FaSpinner } from 'react-icons/fa';
+import { userAPI } from '../../services/userAPI';
 
 export default function Login() {
   /* ── State ── */
@@ -10,7 +10,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [dataForm, setDataForm] = useState({
-    username: '',
+    email: '',
     password: '',
   });
 
@@ -25,23 +25,28 @@ export default function Login() {
     setError('');
     setSuccess('');
 
-    if (!dataForm.username || !dataForm.password) {
-      setError('Username dan password wajib diisi!');
+    if (!dataForm.email || !dataForm.password) {
+      setError('Email dan password wajib diisi!');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await axios.post('https://dummyjson.com/auth/login', {
-        username: dataForm.username,
-        password: dataForm.password,
-      });
+      const users = await userAPI.login(dataForm.email, dataForm.password);
 
-      // 1. Simpan token ke localStorage
-      localStorage.setItem('token', response.data.token);
+      if (users.length === 0) {
+        setError('Email atau password salah!');
+        return;
+      }
+
+      const loggedInUser = users[0];
+
+      // 1. Simpan token dan data user ke localStorage
+      localStorage.setItem('token', loggedInUser.id);
+      localStorage.setItem('user', JSON.stringify(loggedInUser));
       
-      setSuccess(`Selamat datang, ${response.data.firstName}!`);
+      setSuccess(`Selamat datang, ${loggedInUser.namaDepan}!`);
       
       // 2. Redirect menggunakan window.location agar App.jsx mengecek ulang token
       setTimeout(() => {
@@ -49,10 +54,10 @@ export default function Login() {
       }, 1000);
       
     } catch (err) {
-      if (err.response) {
-        setError(err.response.data.message || 'Login gagal.');
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
       } else {
-        setError('Koneksi bermasalah.');
+        setError('Koneksi bermasalah atau API Key tidak valid.');
       }
     } finally {
       setLoading(false);
@@ -74,10 +79,10 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="w-full space-y-5" noValidate>
           <input
-            type="text"
-            name="username"
-            placeholder="Username"
-            value={dataForm.username}
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={dataForm.email}
             onChange={handleChange}
             className="w-full px-6 py-4 bg-[#F0F2F5] border-none rounded-2xl text-gray-700 outline-none focus:ring-2 focus:ring-[#9E4BDC]/30 text-sm shadow-sm"
           />

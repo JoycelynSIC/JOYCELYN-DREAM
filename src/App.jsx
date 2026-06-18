@@ -5,10 +5,12 @@ import NotFound from "./pages/NotFound";
 
 // ── Layouts ──────────────────────────────────────────
 const AdminLayout = lazy(() => import("./layouts/AdminLayout"));
+const UserLayout  = lazy(() => import("./layouts/UserLayout"));
 const AuthLayout  = lazy(() => import("./layouts/AuthLayout"));
 
-// ── Halaman Admin ─────────────────────────────────────
-const Dashboard       = lazy(() => import("./pages/Dashboard"));
+// ── Halaman Admin / User ──────────────────────────────
+const AdminDashboard  = lazy(() => import("./pages/AdminDashboard"));
+const UserDashboard   = lazy(() => import("./pages/UserDashboard"));
 const Inventory       = lazy(() => import("./pages/Inventory"));
 const InventoryDetail = lazy(() => import("./pages/InventoryDetail"));
 const Customers       = lazy(() => import("./pages/Customers"));
@@ -17,15 +19,25 @@ const Schedule        = lazy(() => import("./pages/Schedule"));
 const Orders          = lazy(() => import("./pages/Orders"));
 const Reviews         = lazy(() => import("./pages/Reviews"));
 const ErrorPage       = lazy(() => import("./pages/ErrorPage"));
+const Users           = lazy(() => import("./pages/Users"));
 
 // ── Halaman Auth ──────────────────────────────────────
 const Login    = lazy(() => import("./pages/auth/Login"));
 const Register = lazy(() => import("./pages/auth/Register"));
 const Forgot   = lazy(() => import("./pages/auth/Forgot"));
 
+// Komponen Helper untuk memproteksi halaman Admin (hanya bisa diakses role admin)
+const AdminRoute = ({ children, isAdmin }) => {
+  return isAdmin ? children : <Navigate to="/" replace />;
+};
+
 export default function App() {
   // Cek apakah ada token di localStorage
   const isAuthenticated = !!localStorage.getItem("token");
+
+  // Cek role user
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = isAuthenticated && user.role === "admin";
 
   return (
     <Suspense fallback={<Loading />}>
@@ -39,17 +51,21 @@ export default function App() {
           <Route path="/forgot"   element={<Forgot />}   />
         </Route>
 
-        {/* ── Grup Admin (PROTECTED) ── */}
+        {/* ── Grup Admin / User (PROTECTED) ── */}
         {/* Jika BELUM login, lempar paksa ke /login */}
-        <Route element={isAuthenticated ? <AdminLayout /> : <Navigate to="/login" replace />}>
-          <Route path="/"              element={<Dashboard />}       />
-          <Route path="/orders"        element={<Orders />}          />
-          <Route path="/inventory"     element={<Inventory />}       />
-          <Route path="/inventory/:id" element={<InventoryDetail />} />
-          <Route path="/customers"     element={<Customers />}       />
-          <Route path="/analytics"     element={<Analytics />}       />
-          <Route path="/schedule"      element={<Schedule />}        />
-          <Route path="/reviews"       element={<Reviews />}         />
+        <Route element={isAuthenticated ? (isAdmin ? <AdminLayout /> : <UserLayout />) : <Navigate to="/login" replace />}>
+          <Route path="/"              element={isAdmin ? <AdminDashboard /> : <UserDashboard />}       />
+          
+          {/* Halaman-halaman khusus Admin */}
+          <Route path="/orders"        element={<AdminRoute isAdmin={isAdmin}><Orders /></AdminRoute>}          />
+          <Route path="/inventory"     element={<AdminRoute isAdmin={isAdmin}><Inventory /></AdminRoute>}       />
+          <Route path="/inventory/:id" element={<AdminRoute isAdmin={isAdmin}><InventoryDetail /></AdminRoute>} />
+          <Route path="/customers"     element={<AdminRoute isAdmin={isAdmin}><Customers /></AdminRoute>}       />
+          <Route path="/analytics"     element={<AdminRoute isAdmin={isAdmin}><Analytics /></AdminRoute>}       />
+          <Route path="/schedule"      element={<AdminRoute isAdmin={isAdmin}><Schedule /></AdminRoute>}        />
+          <Route path="/reviews"       element={<AdminRoute isAdmin={isAdmin}><Reviews /></AdminRoute>}         />
+          <Route path="/karyawan"      element={<AdminRoute isAdmin={isAdmin}><Users /></AdminRoute>}           />
+          <Route path="/users"         element={<AdminRoute isAdmin={isAdmin}><Users /></AdminRoute>}           />
 
           {/* ── Halaman Error ── */}
           <Route path="/error/400" element={
