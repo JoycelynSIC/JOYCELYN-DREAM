@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useOutletContext } from "react-router-dom";
 import {
   FaShoppingBag, FaStar, FaBoxOpen, FaGift, FaTruck, FaGem, FaHeadset,
   FaCheckCircle, FaArrowRight, FaQuoteLeft, FaInfoCircle, FaChevronRight, FaTimes
@@ -7,6 +8,7 @@ import {
 import Card         from "../components/Card";
 import Badge        from "../components/Badge";
 import inventoryData from "../data/inventory.json";
+import HeroSection  from "../components/sections/HeroSection";
 import {
   Pagination,
   PaginationContent,
@@ -79,6 +81,7 @@ const getImg = (path) => {
 };
 
 export default function UserDashboard() {
+  const { isLoggedIn, userProfile, onLoginClick, setUserProfile } = useOutletContext();
   const [kategoriFilter, setKategoriFilter] = useState("Semua");
   const [pointsModalOpen, setPointsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -91,14 +94,55 @@ export default function UserDashboard() {
   );
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const displayName = user ? `${user.namaDepan} ${user.namaBelakang}` : "Pelanggan";
+  const displayName = isLoggedIn && userProfile ? `${userProfile.namaDepan} ${userProfile.namaBelakang}` : "Tamu";
+  const points = isLoggedIn && userProfile ? userProfile.points : 0;
+
+  // Calculate tier parameters
+  let tierName = "Regular Member";
+  let milestoneText = "Sisa 500 Poin ke Silver";
+  let progressPercent = 0;
+
+  if (points >= 5000) {
+    tierName = "Platinum VIP Member";
+    milestoneText = "Milestone Maksimal Tercapai!";
+    progressPercent = 100;
+  } else if (points >= 2000) {
+    tierName = "Gold VIP Member";
+    const needed = 5000 - points;
+    milestoneText = `Sisa ${needed.toLocaleString()} Poin ke Platinum`;
+    progressPercent = Math.round(((points - 2000) / 3000) * 100);
+  } else if (points >= 500) {
+    tierName = "Silver VIP Member";
+    const needed = 2000 - points;
+    milestoneText = `Sisa ${needed.toLocaleString()} Poin ke Gold`;
+    progressPercent = Math.round(((points - 500) / 1500) * 100);
+  } else {
+    tierName = "Regular VIP Member";
+    const needed = 500 - points;
+    milestoneText = `Sisa ${needed.toLocaleString()} Poin ke Silver`;
+    progressPercent = Math.round((points / 500) * 100);
+  }
 
   const handleAddToCart = (productName) => {
     setCartMessage(`"${productName}" berhasil ditambahkan ke keranjang belanja.`);
     setTimeout(() => {
       setCartMessage("");
     }, 3000);
+  };
+
+  const handleRedeemReward = (item) => {
+    if (points < item.poin) {
+      alert(`Poin Anda tidak cukup untuk menukarkan "${item.nama}". Butuh ${item.poin} Poin.`);
+      return;
+    }
+    const newPoints = points - item.poin;
+    const updatedUser = { ...userProfile, points: newPoints };
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    if (setUserProfile) {
+      setUserProfile(updatedUser);
+    }
+    alert(`Selamat! Anda berhasil menukarkan ${item.poin} poin untuk "${item.nama}". Hadiah akan dikirimkan bersama pesanan Anda berikutnya. Sisa poin Anda: ${newPoints.toLocaleString()} Poin.`);
+    setPointsModalOpen(false);
   };
 
   useEffect(() => {
@@ -142,7 +186,7 @@ export default function UserDashboard() {
               <FaGift className="text-[#9E4BDC]" /> Tukar Poin Loyalitas
             </h3>
             <p className="text-xs text-[#71717A] mt-1.5 leading-relaxed font-medium">
-              Pilih hadiah eksklusif berikut sesuai jumlah poin Anda. Poin Anda saat ini: <span className="font-extrabold text-[#9E4BDC]">3.250 Poin</span>.
+              Pilih hadiah eksklusif berikut sesuai jumlah poin Anda. Poin Anda saat ini: <span className="font-extrabold text-[#9E4BDC]">{points.toLocaleString()} Poin</span>.
             </p>
             
             <div className="mt-6 space-y-4">
@@ -162,10 +206,7 @@ export default function UserDashboard() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      alert(`Selamat! Anda berhasil menukarkan ${item.poin} poin untuk "${item.nama}". Hadiah akan dikirimkan bersama pesanan Anda berikutnya.`);
-                      setPointsModalOpen(false);
-                    }}
+                    onClick={() => handleRedeemReward(item)}
                     className="bg-[#9E4BDC] hover:bg-[#8e3ec7] text-white text-[10px] font-bold px-3.5 py-2 rounded-xl transition-colors cursor-pointer shrink-0 shadow-md shadow-[#9E4BDC]/10"
                   >
                     Tukarkan
@@ -279,98 +320,7 @@ export default function UserDashboard() {
       )}
 
       {/* ─── HERO SECTION ─── */}
-      <section className="relative w-full bg-gradient-to-r from-[#1B1A45] via-[#2F1F5E] to-[#45277E] text-white overflow-hidden text-left pt-16 pb-32 md:pt-20 md:pb-36 lg:py-24 lg:min-h-[calc(100vh-4rem)] lg:flex lg:items-center">
-        {/* Glow behind hero */}
-        <div className="absolute top-1/2 left-1/2 w-4/5 h-4/5 bg-gradient-to-r from-[#9E4BDC]/10 to-[#22285E]/5 rounded-full blur-[100px] transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
-        
-        {/* Inner ambient blurs */}
-        <div className="absolute top-[-30%] right-[-10%] w-[500px] h-[500px] bg-[#9E4BDC]/20 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-[-30%] left-[-10%] w-[400px] h-[400px] bg-[#00B5AD]/15 rounded-full blur-[90px] pointer-events-none" />
-        
-        <div className="max-w-7xl mx-auto px-6 w-full relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Left Col: Headings */}
-          <div className="lg:col-span-7 space-y-5 animate-fade-in-up">
-            <div className="inline-flex items-center gap-2 bg-white/10 text-white text-[10px] font-black tracking-widest uppercase px-4 py-2 rounded-full backdrop-blur-lg border border-white/10">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00B5AD] animate-pulse"></span>
-              Koleksi Aksesoris Premium 2026
-            </div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-white">
-              Sempurnakan Gaya Anda dengan <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-200 via-pink-200 to-yellow-200">Sentuhan Estetik</span>
-            </h1>
-            <p className="text-white/80 text-xs md:text-sm font-medium leading-relaxed max-w-xl">
-              Temukan keindahan aksesoris buatan tangan terbaik mulai dari cincin couple perak murni, gelang kristal berkilau, kalung titanium rosegold, hingga press-on nail art custom yang memukau. Didesain khusus untuk mengekspresikan karakter unik Anda.
-            </p>
-            <div className="pt-4 flex flex-wrap gap-4">
-              <button
-                onClick={() => document.getElementById("catalog").scrollIntoView({ behavior: "smooth" })}
-                className="bg-white hover:bg-yellow-400 text-[#22285E] transition-all duration-300 px-8 py-4 rounded-xl text-xs font-black shadow-lg hover:shadow-yellow-400/10 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-              >
-                Belanja Sekarang
-              </button>
-              <button
-                onClick={() => document.getElementById("loyalty").scrollIntoView({ behavior: "smooth" })}
-                className="bg-white/10 hover:bg-white/25 border border-white/15 text-white transition-all duration-300 px-8 py-4 rounded-xl text-xs font-black hover:scale-[1.02] active:scale-[0.98] cursor-pointer backdrop-blur-sm"
-              >
-                Cek Keuntungan Member
-              </button>
-            </div>
-          </div>
-
-          {/* Right Col: Overlapping Floating Cards Showcase */}
-          <div className="lg:col-span-5 relative h-[380px] hidden lg:flex items-center justify-center animate-fade-in-right">
-            {/* Back Card (Left) */}
-            <div className="absolute left-[5%] bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-4 w-[200px] shadow-2xl opacity-60 pointer-events-none animate-float-left">
-              <div className="aspect-square bg-white/5 rounded-2xl overflow-hidden mb-3">
-                <img src={gambarMap["gelangcrystal.png"]} alt="Gelang Crystal" className="w-full h-full object-cover" />
-              </div>
-              <p className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Gelang</p>
-              <p className="text-xs font-bold text-white truncate">Gelang Crystal Aesthetic</p>
-            </div>
-
-            {/* Back Card (Right) */}
-            <div className="absolute right-[5%] bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-4 w-[200px] shadow-2xl opacity-60 pointer-events-none animate-float-right">
-              <div className="aspect-square bg-white/5 rounded-2xl overflow-hidden mb-3">
-                <img src={gambarMap["cincingold.png"]} alt="Cincin Gold" className="w-full h-full object-cover" />
-              </div>
-              <p className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Cincin</p>
-              <p className="text-xs font-bold text-white truncate">Cincin Adjustable Gold</p>
-            </div>
-
-            {/* Front Card (Center) */}
-            <div className="absolute z-20 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-5 w-[240px] shadow-2xl group hover:-translate-y-4 hover:rotate-1 transition-all duration-500 cursor-pointer animate-float-center" onClick={() => document.getElementById("catalog").scrollIntoView({ behavior: "smooth" })}>
-              <div className="absolute top-4 right-4 bg-[#00B5AD] text-white text-[8px] font-black px-2 py-0.5 rounded-md">
-                BEST SELLER
-              </div>
-              <div className="aspect-square bg-white/10 rounded-2xl border border-white/5 overflow-hidden flex items-center justify-center mb-4">
-                <img
-                  src={gambarMap["kalungrosegold.png"]}
-                  alt="Featured Kalung"
-                  className="w-4/5 h-4/5 object-cover drop-shadow-2xl group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] text-purple-200 font-bold uppercase tracking-wider">Aksesoris Kalung</p>
-                <p className="text-xs font-bold text-white">Kalung Titanium Rosegold</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <div className="flex gap-0.5">
-                    {[...Array(5)].map((_, i) => (
-                      <FaStar key={i} className="text-yellow-400 text-[9px]" />
-                    ))}
-                  </div>
-                  <span className="text-[9px] text-white/70 font-semibold">(58 Ulasan)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Curved Wave Divider */}
-        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10 translate-y-px pointer-events-none">
-          <svg className="relative block w-full h-[40px] md:h-[60px] lg:h-[80px]" viewBox="0 0 1200 120" preserveAspectRatio="none" fill="currentColor">
-            <path d="M0,0 C150,90 350,120 600,100 C850,80 1050,90 1200,60 L1200,120 L0,120 Z" className="text-[#F8F9FB]"></path>
-          </svg>
-        </div>
-      </section>
+      <HeroSection />
 
       {/* ─── BENEFITS SECTION ─── */}
       <section className="max-w-7xl mx-auto px-6">
@@ -429,55 +379,81 @@ export default function UserDashboard() {
             </div>
 
             {/* Virtual Membership Card & Progress */}
-            <div className="w-full lg:w-[460px] space-y-6 shrink-0">
-              {/* Card Container */}
-              <div className="bg-gradient-to-br from-[#1E1B4B] via-[#2F1F5E] to-[#141235] rounded-3xl p-6 text-white shadow-xl relative overflow-hidden flex flex-col justify-between h-48 border border-white/5">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[8px] uppercase tracking-widest text-white/50 font-extrabold">Na_store.id</p>
-                    <p className="text-xs font-black tracking-wide text-yellow-300">Gold VIP Member</p>
+            <div className="w-full lg:w-[460px] relative shrink-0">
+              {!isLoggedIn && (
+                <div className="absolute inset-0 bg-white/70 backdrop-blur-sm rounded-[2.5rem] z-20 flex flex-col items-center justify-center p-6 text-center border border-gray-100/50">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center mb-3">
+                    <FaGift className="text-[#9E4BDC] text-xl" />
                   </div>
-                  <FaGem className="text-yellow-400 text-lg" />
-                </div>
-                
-                {/* Simulated Card Code & Name */}
-                <div className="space-y-4">
-                  <p className="text-sm font-semibold tracking-[0.25em] text-white/80 font-mono">•••• •••• •••• 3250</p>
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <p className="text-[8px] text-white/40 font-bold uppercase tracking-wider">Nama Anggota</p>
-                      <p className="text-xs font-black truncate max-w-[200px]">{displayName}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[8px] text-white/40 font-bold uppercase tracking-wider">Sisa Poin</p>
-                      <p className="text-sm font-black text-yellow-300">3.250 PTS</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Progress bar and trigger */}
-              <div className="space-y-4 bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400 font-bold">Progress Milestone</span>
-                  <span className="text-[#9E4BDC] font-extrabold">Sisa 1.750 Poin ke Platinum</span>
-                </div>
-                <div className="w-full h-2.5 bg-gray-200/60 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-[#9E4BDC] to-[#22285E] rounded-full" style={{ width: '65%' }} />
-                </div>
-                <div className="flex justify-between items-center">
-                  <p className="text-[10px] text-gray-400 font-semibold">Tingkat Penukaran Poin: 65%</p>
-                  <button 
+                  <h4 className="text-sm font-black text-[#22285E]">Kartu Member Terkunci</h4>
+                  <p className="text-[10px] text-gray-400 max-w-[280px] mt-1.5 leading-relaxed font-semibold">
+                    Masuk atau Daftar sekarang untuk mengaktifkan kartu keanggotaan digital Anda dan mulai menukarkan poin reward aksesoris.
+                  </p>
+                  <button
                     type="button"
-                    onClick={() => setPointsModalOpen(true)}
-                    className="bg-[#9E4BDC] hover:bg-[#8e3ec7] text-white transition-all duration-300 py-2.5 px-5 rounded-xl text-xs font-black shadow-md shadow-[#9E4BDC]/10 flex items-center gap-1.5 cursor-pointer"
+                    onClick={onLoginClick}
+                    className="mt-4 bg-[#9E4BDC] hover:bg-[#8e3ec7] text-white text-xs font-black px-6 py-2.5 rounded-xl transition-all cursor-pointer shadow-md shadow-[#9E4BDC]/15"
                   >
-                    <FaGift /> Tukar Rewards
+                    Masuk / Daftar Sekarang
                   </button>
                 </div>
-              </div>
+              )}
 
+              <div className={`space-y-6 ${!isLoggedIn ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
+                {/* Card Container */}
+                <div className="bg-gradient-to-br from-[#1E1B4B] via-[#2F1F5E] to-[#141235] rounded-3xl p-6 text-white shadow-xl relative overflow-hidden flex flex-col justify-between h-48 border border-white/5">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[8px] uppercase tracking-widest text-white/50 font-extrabold">Na_store.id</p>
+                      <p className="text-xs font-black tracking-wide text-yellow-300">{isLoggedIn ? tierName : "Regular VIP Member"}</p>
+                    </div>
+                    <FaGem className="text-yellow-400 text-lg" />
+                  </div>
+                  
+                  {/* Simulated Card Code & Name */}
+                  <div className="space-y-4">
+                    <p className="text-sm font-semibold tracking-[0.25em] text-white/80 font-mono">
+                      •••• •••• •••• {isLoggedIn ? "2236" : "0000"}
+                    </p>
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-[8px] text-white/40 font-bold uppercase tracking-wider">Nama Anggota</p>
+                        <p className="text-xs font-black truncate max-w-[200px]">{isLoggedIn ? displayName : "Tamu"}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[8px] text-white/40 font-bold uppercase tracking-wider">Sisa Poin</p>
+                        <p className="text-sm font-black text-yellow-300">
+                          {isLoggedIn ? points.toLocaleString() : 0} PTS
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress bar and trigger */}
+                <div className="space-y-4 bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                  <div className="flex justify-between items-center text-xs font-semibold">
+                    <span className="text-gray-400">Progress Milestone</span>
+                    <span className="text-[#9E4BDC] font-extrabold">
+                      {isLoggedIn ? milestoneText : "Gabung member untuk kumpulkan poin"}
+                    </span>
+                  </div>
+                  <div className="w-full h-2.5 bg-gray-200/60 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-[#9E4BDC] to-[#22285E] rounded-full" style={{ width: `${isLoggedIn ? progressPercent : 0}%` }} />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className="text-[10px] text-gray-400 font-semibold">Tingkat Milestone: {isLoggedIn ? progressPercent : 0}%</p>
+                    <button 
+                      type="button"
+                      onClick={() => setPointsModalOpen(true)}
+                      className="bg-[#9E4BDC] hover:bg-[#8e3ec7] text-white transition-all duration-300 py-2.5 px-5 rounded-xl text-xs font-black shadow-md shadow-[#9E4BDC]/10 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <FaGift /> Tukar Rewards
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

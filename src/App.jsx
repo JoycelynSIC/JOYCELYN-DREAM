@@ -51,23 +51,28 @@ export default function App() {
           <Route path="/forgot"   element={<Forgot />}   />
         </Route>
 
-        {/* ── Grup Admin / User (PROTECTED) ── */}
-        {/* Jika BELUM login, lempar paksa ke /login */}
-        <Route element={isAuthenticated ? (isAdmin ? <AdminLayout /> : <UserLayout />) : <Navigate to="/login" replace />}>
-          <Route path="/"              element={isAdmin ? <AdminDashboard /> : <UserDashboard />}       />
-          
-          {/* Halaman-halaman khusus Admin */}
-          <Route path="/orders"        element={<AdminRoute isAdmin={isAdmin}><Orders /></AdminRoute>}          />
-          <Route path="/inventory"     element={<AdminRoute isAdmin={isAdmin}><Inventory /></AdminRoute>}       />
-          <Route path="/inventory/:id" element={<AdminRoute isAdmin={isAdmin}><InventoryDetail /></AdminRoute>} />
-          <Route path="/customers"     element={<AdminRoute isAdmin={isAdmin}><Customers /></AdminRoute>}       />
-          <Route path="/analytics"     element={<AdminRoute isAdmin={isAdmin}><Analytics /></AdminRoute>}       />
-          <Route path="/schedule"      element={<AdminRoute isAdmin={isAdmin}><Schedule /></AdminRoute>}        />
-          <Route path="/reviews"       element={<AdminRoute isAdmin={isAdmin}><Reviews /></AdminRoute>}         />
-          <Route path="/karyawan"      element={<AdminRoute isAdmin={isAdmin}><Users /></AdminRoute>}           />
-          <Route path="/users"         element={<AdminRoute isAdmin={isAdmin}><Users /></AdminRoute>}           />
+        {/* ── Halaman Utama (Public / Customer) ── */}
+        {/* Jika Admin, tampilkan AdminLayout & AdminDashboard. Jika Customer/Guest, tampilkan UserLayout & UserDashboard */}
+        <Route path="/" element={isAdmin ? <AdminLayout /> : <UserLayout />}>
+          <Route index element={isAdmin ? <AdminDashboard /> : <UserDashboard />} />
+        </Route>
 
-          {/* ── Halaman Error ── */}
+        {/* ── Halaman Khusus Admin (PROTECTED) ── */}
+        {/* Hanya bisa diakses jika user login dan role-nya admin */}
+        <Route element={isAdmin ? <AdminLayout /> : <Navigate to="/login" replace />}>
+          <Route path="/orders"        element={<Orders />}          />
+          <Route path="/inventory"     element={<Inventory />}       />
+          <Route path="/inventory/:id" element={<InventoryDetail />} />
+          <Route path="/customers"     element={<Customers />}       />
+          <Route path="/analytics"     element={<Analytics />}       />
+          <Route path="/schedule"      element={<Schedule />}        />
+          <Route path="/reviews"       element={<Reviews />}         />
+          <Route path="/karyawan"      element={<Users />}           />
+          <Route path="/users"         element={<Users />}           />
+        </Route>
+
+        {/* ── Halaman Error ── */}
+        <Route element={isAdmin ? <AdminLayout /> : <UserLayout />}>
           <Route path="/error/400" element={
             <ErrorPage kode={400} deskripsi="Permintaan tidak valid. Data yang dikirim tidak sesuai format yang diharapkan oleh sistem Na_store.id." />
           } />

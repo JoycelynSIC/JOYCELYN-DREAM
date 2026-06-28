@@ -1,9 +1,43 @@
-import { Outlet } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import { useState, useEffect } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+import Header from "../components/layout/Header";
 import logoNastore from "../assets/gambarproduk/logonastore.png";
 import { FaGift, FaShoppingBag, FaShieldAlt } from "react-icons/fa";
 
 export default function UserLayout() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const navigate = useNavigate();
+
+  // Sync state with localStorage on mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    if (token && storedUser) {
+      setIsLoggedIn(true);
+      const parsedUser = JSON.parse(storedUser);
+      // Default to 2236 points if the user object doesn't have a points field yet
+      if (parsedUser.points === undefined) {
+        parsedUser.points = 2236;
+      }
+      setUserProfile(parsedUser);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    // Logout: Clear localStorage and states
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setUserProfile(null);
+    navigate("/");
+  };
+
+  const handleLoginClick = () => {
+    // Redirect to the real login page
+    navigate("/login");
+  };
+
   // Smooth scroll handler for footer links
   const handleScroll = (id) => {
     const element = document.getElementById(id);
@@ -14,12 +48,17 @@ export default function UserLayout() {
 
   return (
     <div className="min-h-screen bg-[#F4F4F5] font-poppins flex flex-col">
-      {/* Premium Decoupled Navbar */}
-      <Navbar />
+      {/* Premium Decoupled Header */}
+      <Header 
+        isLoggedIn={isLoggedIn} 
+        onLoginClick={handleLoginClick} 
+        onLogout={handleLogout} 
+        userProfile={userProfile} 
+      />
 
       {/* Main Content Area for Customers */}
       <main className="flex-grow">
-        <Outlet />
+        <Outlet context={{ isLoggedIn, userProfile, onLoginClick: handleLoginClick, onLogout: handleLogout, setUserProfile }} />
       </main>
       
       {/* Premium E-Commerce Footer */}
