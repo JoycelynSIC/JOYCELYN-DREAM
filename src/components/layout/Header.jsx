@@ -24,7 +24,7 @@ import {
   Award
 } from "lucide-react";
 
-export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile }) {
+export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile, cartCount = 0, onCartClick }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // 'about' | 'contact' | 'tier' | 'faq' | null
   const [showNotifications, setShowNotifications] = useState(false);
@@ -177,6 +177,21 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
                   </span>
                 </div>
 
+                {/* Cart Badge */}
+                <div className="relative" id="cart-icon-target">
+                  <button
+                    onClick={() => onCartClick?.()}
+                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 border border-gray-150 hover:bg-[#9E4BDC]/5 hover:border-[#9E4BDC]/20 transition-all text-[#22285E] cursor-pointer"
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#9E4BDC] rounded-full border-2 border-white flex items-center justify-center text-[9px] font-black text-white leading-none px-0.5 animate-bounce">
+                        {cartCount > 99 ? "99+" : cartCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
                 {/* Notification Bell */}
                 <div className="relative">
                   <button
@@ -227,20 +242,19 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
                     className="flex items-center gap-2 cursor-pointer outline-none select-none hover:opacity-95 bg-transparent border-none"
                   >
                     <div className="relative">
-                      <img
-                        src={profileImg}
-                        alt="Profil Pelanggan"
-                        className="w-9 h-9 rounded-xl object-cover shrink-0 border border-gray-200"
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                          e.target.nextSibling.style.display = "flex";
-                        }}
-                      />
-                      {/* Fallback Initials */}
-                      <div className="w-9 h-9 rounded-xl bg-[#9E4BDC]/10 text-[#9E4BDC] items-center justify-center text-xs font-black shrink-0 hidden">
-                        {userProfile?.namaDepan ? userProfile.namaDepan.charAt(0) : "C"}
+                      {/* Avatar — inisial by default, gambar jika tersedia */}
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#9E4BDC]/20 to-[#4F46E5]/20 border border-[#9E4BDC]/20 flex items-center justify-center text-xs font-black text-[#9E4BDC] shrink-0 select-none overflow-hidden relative">
+                        <span className="absolute inset-0 flex items-center justify-center z-0">
+                          {userProfile?.namaDepan ? userProfile.namaDepan.charAt(0).toUpperCase() : "U"}
+                        </span>
+                        <img
+                          src={profileImg}
+                          alt="Profil"
+                          className="absolute inset-0 w-full h-full object-cover z-10"
+                          onError={(e) => { e.target.style.display = "none"; }}
+                        />
                       </div>
-                      <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#00B5AD] border-2 border-white rounded-full"></span>
+                      <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#00B5AD] border-2 border-white rounded-full z-20"></span>
                     </div>
                     <div className="hidden sm:block text-left max-w-[100px]">
                       <p className="text-xs font-bold leading-tight text-[#22285E] truncate">{displayName}</p>

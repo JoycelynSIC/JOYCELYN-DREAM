@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   FaShoppingBag, FaStar, FaBoxOpen, FaGift, FaTruck, FaGem, FaHeadset,
   FaCheckCircle, FaArrowRight, FaQuoteLeft, FaInfoCircle, FaChevronRight, FaTimes
@@ -8,7 +9,9 @@ import {
 import Card         from "../components/Card";
 import Badge        from "../components/Badge";
 import inventoryData from "../data/inventory.json";
-import HeroSection  from "../components/sections/HeroSection";
+import HeroSection      from "../components/sections/HeroSection";
+import ProductCatalog   from "../components/sections/ProductCatalog";
+import RewardShowcase   from "../components/sections/RewardShowcase";
 import {
   Pagination,
   PaginationContent,
@@ -81,7 +84,7 @@ const getImg = (path) => {
 };
 
 export default function UserDashboard() {
-  const { isLoggedIn, userProfile, onLoginClick, setUserProfile } = useOutletContext();
+  const { isLoggedIn, userProfile, onLoginClick, setUserProfile, setCartCount } = useOutletContext();
   const [kategoriFilter, setKategoriFilter] = useState("Semua");
   const [pointsModalOpen, setPointsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -348,7 +351,7 @@ export default function UserDashboard() {
       </section>
 
       {/* ─── LOYALTY CARD SECTION ─── */}
-      <section id="loyalty" className="max-w-7xl mx-auto px-6 scroll-mt-24">
+      <section id="loyalty-card" className="max-w-7xl mx-auto px-6 scroll-mt-24">
         <div className="relative bg-white border border-gray-100 rounded-[2.5rem] p-8 md:p-12 shadow-sm text-left overflow-hidden">
           {/* Subtle background graphics */}
           <div className="absolute bottom-[-20%] right-[-10%] w-[300px] h-[300px] bg-purple-100/50 rounded-full blur-[80px] pointer-events-none" />
@@ -485,190 +488,41 @@ export default function UserDashboard() {
         </div>
       </section>
 
-      {/* ─── PRODUCTS CATALOG SECTION ─── */}
-      <section id="catalog" className="max-w-7xl mx-auto px-6 scroll-mt-24">
-        <div className="space-y-8 text-left">
-          
-          <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-gray-100 pb-6 gap-4">
-            <div>
-              <span className="bg-[#00B5AD]/10 text-[#00B5AD] text-[9px] font-extrabold tracking-widest uppercase px-3 py-1.5 rounded-full border border-[#00B5AD]/10">
-                Katalog Produk
-              </span>
-              <h2 className="text-2xl md:text-3xl font-black text-[#22285E] tracking-tight mt-2">
-                Koleksi Aksesoris Terlaris
-              </h2>
-              <p className="text-xs text-gray-400 font-medium mt-1">Sempurnakan penampilan Anda dengan aksesoris perhiasan berkualitas terbaik</p>
-            </div>
-          </div>
+      {/* ─── PRODUCT CATALOG (Komponen Baru PRD V2) ─── */}
+      <ProductCatalog
+        isLoggedIn={isLoggedIn}
+        onLoginClick={onLoginClick}
+        onAddToCart={(product) => {
+          // setCartCount sekarang = handleAddToCart dari UserLayout (menambah ke cartItems + counter)
+          if (setCartCount) setCartCount(product);
+          // Accumulate points if user is logged in
+          if (isLoggedIn && userProfile && setUserProfile) {
+            const earned = Math.floor(product.priceValue / 1000);
+            const updated = { ...userProfile, points: (userProfile.points || 0) + earned };
+            setUserProfile(updated);
+            localStorage.setItem("user", JSON.stringify(updated));
+          }
+        }}
+      />
 
-          {/* Filter Categories Pill Grid */}
-          <div className="flex items-center gap-2.5 overflow-x-auto pb-3 scrollbar-hide">
-            {["Semua", "Kalung", "Gelang", "Cincin", "Anting", "Nail Art"].map((kat) => (
-              <button
-                key={kat}
-                type="button"
-                onClick={() => { setKategoriFilter(kat); setCurrentPage(1); }}
-                className={`px-5 py-2.5 rounded-full text-xs font-black transition-all shrink-0 cursor-pointer border ${
-                  kategoriFilter === kat
-                    ? "bg-[#9E4BDC] text-white border-[#9E4BDC] shadow-lg shadow-[#9E4BDC]/20"
-                    : "bg-white text-gray-400 hover:text-[#22285E] border-gray-200/60 hover:bg-gray-50"
-                }`}
-              >
-                {kat}
-              </button>
-            ))}
-          </div>
+      {/* ─── REWARD SHOWCASE (Komponen Baru PRD V2) ─── */}
+      <RewardShowcase
+        isLoggedIn={isLoggedIn}
+        currentPoints={isLoggedIn && userProfile ? (userProfile.points || 0) : 0}
+        onLoginClick={onLoginClick}
+        onRedeem={(reward) => {
+          if (!isLoggedIn || !userProfile) return;
+          const newPoints = (userProfile.points || 0) - reward.points;
+          const updated = { ...userProfile, points: newPoints };
+          setUserProfile(updated);
+          localStorage.setItem("user", JSON.stringify(updated));
+        }}
+      />
 
-          {/* Catalog Cards Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-            {filteredProducts
-              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-              .map((product) => {
-                const imgSrc = getImg(product.gambar);
-                const isLowStock = (product.stock ?? product.stok) > 0 && (product.stock ?? product.stok) < 10;
-                const isOutOfStock = (product.stock ?? product.stok) === 0;
-
-                return (
-                  <div 
-                    key={product.id} 
-                    className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-500 flex flex-col overflow-hidden relative text-left"
-                  >
-                    {/* Badge Overlay */}
-                    <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
-                      <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider bg-white/95 text-[#22285E] px-2.5 py-1 rounded-md shadow-sm border border-gray-100/60">
-                        {product.kategori}
-                      </span>
-                      <Badge 
-                        variant="solid"
-                        status={
-                          isOutOfStock 
-                            ? "Stok Habis" 
-                            : isLowStock 
-                              ? `Sisa ${product.stock ?? product.stok}` 
-                              : `Stok: ${product.stock ?? product.stok}`
-                        } 
-                      />
-                    </div>
-
-                    {/* Image Area with Zoom & Quick View */}
-                    <div 
-                      onClick={() => setSelectedProduct(product)}
-                      className="aspect-square bg-gray-50/50 border-b border-gray-50 overflow-hidden relative cursor-pointer group"
-                    >
-                      {imgSrc ? (
-                        <img 
-                          src={imgSrc} 
-                          alt={product.name} 
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-300">
-                          <FaBoxOpen className="text-3xl" />
-                        </div>
-                      )}
-                      
-                      {/* Interactive View Details Overlay */}
-                      <div className="absolute inset-0 bg-[#22285E]/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                        <span className="bg-white text-[#22285E] text-[10px] font-black px-4 py-2 rounded-xl shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                          Lihat Detail
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Product Card Details */}
-                    <div className="p-5 flex-grow flex flex-col justify-between">
-                      <div className="space-y-1">
-                        <h4 
-                          onClick={() => setSelectedProduct(product)}
-                          className="text-xs font-bold text-[#22285E] line-clamp-2 leading-snug min-h-[2.5rem] hover:text-[#9E4BDC] transition-colors cursor-pointer"
-                        >
-                          {product.name}
-                        </h4>
-                        
-                        {/* Rating Stars */}
-                        <div className="flex items-center gap-0.5">
-                          {[...Array(5)].map((_, i) => (
-                            <FaStar key={i} className={`text-[9px] ${i < 4 ? 'text-yellow-400' : 'text-gray-200'}`} />
-                          ))}
-                          <span className="text-[9px] text-gray-400 ml-1.5 font-bold">(18 Ulasan)</span>
-                        </div>
-                      </div>
-
-                      {/* Price Grid & Add to Cart button */}
-                      <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
-                        <div>
-                          <p className="text-[10px] text-gray-400 line-through leading-none">Rp {(product.harga * 1.25).toLocaleString('id')}</p>
-                          <p className="text-sm font-extrabold text-[#9E4BDC] mt-1">Rp {product.harga.toLocaleString('id')}</p>
-                        </div>
-                        <button 
-                          type="button"
-                          disabled={isOutOfStock}
-                          onClick={() => handleAddToCart(product.name)}
-                          className="w-9 h-9 bg-[#9E4BDC] hover:bg-[#8e3ec7] disabled:bg-gray-100 text-white rounded-full flex items-center justify-center shadow-md shadow-[#9E4BDC]/10 active:scale-90 hover:scale-105 transition-all cursor-pointer font-bold disabled:cursor-not-allowed shrink-0"
-                          title="Beli"
-                        >
-                          <FaShoppingBag className="text-xs" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center mt-10">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (currentPage > 1) setCurrentPage(currentPage - 1);
-                      }}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                  {Array.from({ length: totalPages }).map((_, i) => {
-                    const page = i + 1;
-                    return (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          href="#"
-                          isActive={page === currentPage}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setCurrentPage(page);
-                          }}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  })}
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-                      }}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
-
-        </div>
-      </section>
-
-      {/* ─── TESTIMONIALS SECTION ─── */}
-      <section className="max-w-7xl mx-auto px-6 text-left space-y-8">
-        <div className="text-center space-y-2">
+      {/* ─── TESTIMONIALS MARQUEE ─── */}
+      <section className="space-y-8">
+        {/* Header */}
+        <div className="max-w-7xl mx-auto px-6 text-center space-y-2">
           <span className="bg-[#00B5AD]/10 text-[#00B5AD] text-[9px] font-extrabold tracking-widest uppercase px-3 py-1.5 rounded-full border border-[#00B5AD]/10">
             Ulasan Pelanggan
           </span>
@@ -678,38 +532,64 @@ export default function UserDashboard() {
           <p className="text-xs text-gray-400 font-medium">Testimoni nyata dari pelanggan setia produk aksesoris Na_store.id</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            { nama: "Vina Anggraini", barang: "Cincin Couple Silver", teks: "Cincin couple peraknya sangat bagus dan pas sekali di jari saya dan pasangan! Detail pengerjaan rapi dan tidak pudar warnanya walaupun sering terkena air saat cuci tangan.", rating: 5 },
-            { nama: "Fatimah Novitasari", barang: "Kalung Titanium Rosegold", teks: "Kemarin saya menukarkan poin loyalitas saya dengan ikat rambut satin premium. Pengiriman bonusnya cepat digabung dengan orderan kalung rosegold saya. Kalungnya cantik sekali berkilau.", rating: 5 },
-            { nama: "Olivia Felicia", barang: "Gelang Bead Crystal", teks: "Aksesoris gelang bead-nya sangat estetik! Pelayanan chat admin ramah, membantu merekomendasikan ukuran pergelangan tangan yang pas. Sangat puas belanja di sini.", rating: 5 }
-          ].map((testi, i) => (
-            <div key={i} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between text-left relative overflow-hidden">
-              <div className="absolute top-6 right-6 text-gray-100">
-                <FaQuoteLeft className="text-4xl" />
-              </div>
-              <div className="space-y-4 relative z-10">
-                <div className="flex gap-0.5">
-                  {[...Array(testi.rating)].map((_, idx) => (
-                    <FaStar key={idx} className="text-yellow-400 text-xs" />
-                  ))}
-                </div>
-                <p className="text-xs text-[#71717A] leading-relaxed font-medium">
-                  {testi.teks}
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-gray-50 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#9E4BDC]/10 flex items-center justify-center text-xs font-black text-[#9E4BDC]">
-                  {testi.nama.charAt(0)}
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-[#22285E]">{testi.nama}</p>
-                  <p className="text-[10px] text-gray-400 font-semibold">Membeli {testi.barang}</p>
-                </div>
-              </div>
+        {/* Marquee via framer-motion — infinite scroll */}
+        {(() => {
+          const REVIEWS = [
+            { nama: "Vina Anggraini",     inisial: "V", barang: "Cincin Couple Silver",     teks: "Cincin couple peraknya sangat bagus dan pas di jari saya dan pasangan! Detail pengerjaan rapi, tidak pudar walaupun sering terkena air.", rating: 5 },
+            { nama: "Fatimah Novitasari", inisial: "F", barang: "Kalung Titanium Rosegold", teks: "Saya tukarkan poin loyalitas dengan ikat rambut satin premium. Pengirimannya cepat digabung orderan kalung rosegold. Cantik sekali berkilau!", rating: 5 },
+            { nama: "Olivia Felicia",     inisial: "O", barang: "Gelang Bead Crystal",      teks: "Gelang bead-nya sangat estetik! Pelayanan CS ramah, membantu merekomendasikan ukuran yang pas. Sangat puas belanja di sini!", rating: 5 },
+            { nama: "Sherly Aulia",       inisial: "S", barang: "Anting Tassel Bohemian",   teks: "Anting tasselnya ringan banget meski terlihat besar dan statement. Banyak compliment dari teman-teman. Packagingnya juga cantik!", rating: 5 },
+            { nama: "Dewi Lestari",       inisial: "D", barang: "Gelang Crystal Aesthetic", teks: "Kilap kristalnya cantik banget di cahaya matahari. Sudah beli 3 warna dan berencana koleksi semua. Harga sangat terjangkau!", rating: 5 },
+            { nama: "Anisa Rahmawati",    inisial: "A", barang: "Kalung Bintang Perak",     teks: "Detail kalungnya bagus banget. Datang dalam kotak kado cantik, langsung saya hadiahkan ke adik untuk ultahnya. Dia suka sekali!", rating: 5 },
+            { nama: "Putri Maharani",     inisial: "P", barang: "Cincin Resin Bunga",       teks: "Cincin resin bunganya unik! Setiap cincin beda karena handmade. Pengrajinnya sangat teliti dan hasilnya halus. Suka banget!", rating: 5 },
+          ];
+          const track = [...REVIEWS, ...REVIEWS];
+          const cardW = 300;
+          const gap   = 20;
+          const totalW = REVIEWS.length * (cardW + gap);
+
+          return (
+            <div className="relative overflow-hidden">
+              {/* Fade edges */}
+              <div className="absolute left-0 top-0 h-full w-24 bg-gradient-to-r from-[#F8F9FB] to-transparent z-10 pointer-events-none" />
+              <div className="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-[#F8F9FB] to-transparent z-10 pointer-events-none" />
+
+              <motion.div
+                className="flex"
+                style={{ gap: `${gap}px`, width: "max-content" }}
+                animate={{ x: [`0px`, `-${totalW}px`] }}
+                transition={{ duration: 38, ease: "linear", repeat: Infinity }}
+              >
+                {track.map((testi, i) => (
+                  <div
+                    key={i}
+                    style={{ width: `${cardW}px` }}
+                    className="shrink-0 bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between text-left relative overflow-hidden"
+                  >
+                    <FaQuoteLeft className="absolute top-5 right-5 text-3xl text-gray-100" />
+                    <div className="space-y-3 relative z-10">
+                      <div className="flex gap-0.5">
+                        {[...Array(testi.rating)].map((_, idx) => (
+                          <FaStar key={idx} className="text-yellow-400 text-xs" />
+                        ))}
+                      </div>
+                      <p className="text-xs text-[#71717A] leading-relaxed font-medium line-clamp-4">{testi.teks}</p>
+                    </div>
+                    <div className="mt-5 pt-4 border-t border-gray-50 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#9E4BDC]/10 flex items-center justify-center text-xs font-black text-[#9E4BDC] shrink-0">
+                        {testi.inisial}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-[#22285E]">{testi.nama}</p>
+                        <p className="text-[10px] text-gray-400 font-semibold">Membeli {testi.barang}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
             </div>
-          ))}
-        </div>
+          );
+        })()}
       </section>
 
       {/* ─── ORDERS & NEWSLETTER SECTION ─── */}
