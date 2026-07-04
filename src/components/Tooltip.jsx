@@ -29,17 +29,17 @@ export default function Tooltip({
     let top = 0, left = 0;
 
     if (position === 'top') {
-      top  = rect.top + window.scrollY - gap;
-      left = rect.left + window.scrollX + rect.width / 2;
+      top  = rect.top - gap;
+      left = rect.left + rect.width / 2;
     } else if (position === 'bottom') {
-      top  = rect.bottom + window.scrollY + gap;
-      left = rect.left + window.scrollX + rect.width / 2;
+      top  = rect.bottom + gap;
+      left = rect.left + rect.width / 2;
     } else if (position === 'left') {
-      top  = rect.top + window.scrollY + rect.height / 2;
-      left = rect.left + window.scrollX - gap;
+      top  = rect.top + rect.height / 2;
+      left = rect.left - gap;
     } else if (position === 'right') {
-      top  = rect.top + window.scrollY + rect.height / 2;
-      left = rect.right + window.scrollX + gap;
+      top  = rect.top + rect.height / 2;
+      left = rect.right + gap;
     }
     setCoords({ top, left });
   };
@@ -66,7 +66,7 @@ export default function Tooltip({
   const bubble = visible ? createPortal(
     <div
       style={{
-        position: 'absolute',
+        position: 'fixed',
         top: coords.top,
         left: coords.left,
         transform: transformMap[position],

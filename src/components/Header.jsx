@@ -5,7 +5,6 @@
  */
 import { useState, useEffect, useCallback } from "react";
 import { FaBell, FaSearch, FaBoxOpen, FaShoppingBag, FaStar, FaExclamationCircle, FaTimesCircle, FaCheckCircle } from "react-icons/fa";
-import profileImg from "../assets/profile.jpg";
 import { CreditCardIcon, LogOutIcon, SettingsIcon, UserIcon } from "lucide-react";
 import {
   DropdownMenu,
@@ -259,17 +258,9 @@ export default function Header({ pageTitle = "Dashboard" }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-3 cursor-pointer outline-none select-none hover:opacity-80 transition-opacity">
-              <img
-                src={profileImg}
-                alt="Profil"
-                className="w-9 h-9 rounded-xl object-cover shrink-0 border-2 border-[#9E4BDC]/20"
-                onError={(e) => {
-                  e.target.style.display = "none";
-                  e.target.nextSibling.style.display = "flex";
-                }}
-              />
-              <div className="w-9 h-9 rounded-xl bg-[#9E4BDC] items-center justify-center text-white text-xs font-black shrink-0 hidden">
-                JD
+              {/* Avatar — inisial dari nama, tanpa foto */}
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#9E4BDC] to-[#6D28D9] flex items-center justify-center text-white text-sm font-black shrink-0 shadow-md shadow-[#9E4BDC]/25">
+                {displayName.charAt(0).toUpperCase()}
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-bold text-[#22285E] leading-tight">{displayName}</p>

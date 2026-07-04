@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logoNastore from "../../assets/gambarproduk/logonastore.png";
-import profileImg from "../../assets/profile.jpg";
 import {
   Home,
   ShoppingBag,
@@ -253,17 +252,9 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
                     className="flex items-center gap-2 cursor-pointer outline-none select-none hover:opacity-95 bg-transparent border-none"
                   >
                     <div className="relative">
-                      {/* Avatar — inisial by default, gambar jika tersedia */}
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#9E4BDC]/20 to-[#4F46E5]/20 border border-[#9E4BDC]/20 flex items-center justify-center text-xs font-black text-[#9E4BDC] shrink-0 select-none overflow-hidden relative">
-                        <span className="absolute inset-0 flex items-center justify-center z-0">
-                          {userProfile?.namaDepan ? userProfile.namaDepan.charAt(0).toUpperCase() : "U"}
-                        </span>
-                        <img
-                          src={profileImg}
-                          alt="Profil"
-                          className="absolute inset-0 w-full h-full object-cover z-10"
-                          onError={(e) => { e.target.style.display = "none"; }}
-                        />
+                      {/* Avatar — inisial huruf pertama nama, tanpa foto */}
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#9E4BDC] to-[#6D28D9] flex items-center justify-center text-white text-sm font-black shrink-0 shadow-md shadow-[#9E4BDC]/25">
+                        {userProfile?.namaDepan ? userProfile.namaDepan.charAt(0).toUpperCase() : "U"}
                       </div>
                       <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#00B5AD] border-2 border-white rounded-full z-20"></span>
                     </div>
