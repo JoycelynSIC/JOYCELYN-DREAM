@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import inventoryData from '../data/inventory.json';
+import { produkAPI, getProdukImageUrl } from '../services/produkAPI';
 import PageHeader  from '../components/PageHeader';
 import Badge       from '../components/Badge';
 import Button      from '../components/Button';
@@ -15,66 +15,11 @@ import {
   FaImage, FaUpload,
 } from 'react-icons/fa';
 
-/* ── Gambar produk ── */
-import imgKalungRosegold  from '../assets/gambarproduk/kalungrosegold.png';
-import imgKalungChoker    from '../assets/gambarproduk/kalungchoker.png';
-import imgKalungBintang   from '../assets/gambarproduk/kalungbintang.png';
-import imgKalungPearl     from '../assets/gambarproduk/kalungpearl.png';
-import imgGelangCrystal   from '../assets/gambarproduk/gelangcrystal.png';
-import imgGelangPerak     from '../assets/gambarproduk/gelangperak.png';
-import imgGelangBead      from '../assets/gambarproduk/gelangbead.png';
-import imgGelangTali      from '../assets/gambarproduk/gelangtali.png';
-import imgCincinCouple    from '../assets/gambarproduk/cincincouple.png';
-import imgCincinGold      from '../assets/gambarproduk/cincingold.png';
-import imgCincinResin     from '../assets/gambarproduk/cincinresin.png';
-import imgAntingHoop      from '../assets/gambarproduk/antinghoop.png';
-import imgAntingTassel    from '../assets/gambarproduk/antingtassel.png';
-import imgAntingPearl     from '../assets/gambarproduk/antingpearl.png';
-import imgAntingBintang   from '../assets/gambarproduk/antingbintang.png';
-import imgNailFlower      from '../assets/gambarproduk/pressonnailflower.png';
-import imgNailGlitter     from '../assets/gambarproduk/pressonnailglitter.png';
-import imgNailFrench      from '../assets/gambarproduk/pressonnailfrenchtip.png';
-import imgNailOmbre       from '../assets/gambarproduk/pressonnailombre.png';
-import imgTumblrPastel    from '../assets/gambarproduk/tmblrpastel.png';
-import imgTumblrFlower    from '../assets/gambarproduk/tumblrflower.png';
-import imgTumblrGlass     from '../assets/gambarproduk/tumblrglass.png';
-import imgClawClip        from '../assets/gambarproduk/clawclip.png';
-import imgJepitButterfly  from '../assets/gambarproduk/jepitrambutbutterfly.png';
-import imgBandoPearl      from '../assets/gambarproduk/bandopearl.png';
-import imgScrunchie       from '../assets/gambarproduk/scrunchie.png';
-import imgTasMini         from '../assets/gambarproduk/tasminiselempang.png';
-import imgTasRajut        from '../assets/gambarproduk/tasrajut.png';
-import imgTasKoin         from '../assets/gambarproduk/taskoin.png';
-import imgKacamata        from '../assets/gambarproduk/framekacamata.png';
-import imgMasker          from '../assets/gambarproduk/maskerlucu.png';
-import imgStiker          from '../assets/gambarproduk/stiker.png';
-import imgGanci           from '../assets/gambarproduk/gancisanrio.png';
-import imgIkatPinggang    from '../assets/gambarproduk/ikapinggang.png';
-
-const gambarMap = {
-  'kalungrosegold.png': imgKalungRosegold,   'kalungchoker.png': imgKalungChoker,
-  'kalungbintang.png': imgKalungBintang,     'kalungpearl.png': imgKalungPearl,
-  'gelangcrystal.png': imgGelangCrystal,     'gelangperak.png': imgGelangPerak,
-  'gelangbead.png': imgGelangBead,           'gelangtali.png': imgGelangTali,
-  'cincincouple.png': imgCincinCouple,       'cincingold.png': imgCincinGold,
-  'cincinresin.png': imgCincinResin,         'antinghoop.png': imgAntingHoop,
-  'antingtassel.png': imgAntingTassel,       'antingpearl.png': imgAntingPearl,
-  'antingbintang.png': imgAntingBintang,     'pressonnailflower.png': imgNailFlower,
-  'pressonnailglitter.png': imgNailGlitter,  'pressonnailfrenchtip.png': imgNailFrench,
-  'pressonnailombre.png': imgNailOmbre,      'tmblrpastel.png': imgTumblrPastel,
-  'tumblrflower.png': imgTumblrFlower,       'tumblrglass.png': imgTumblrGlass,
-  'clawclip.png': imgClawClip,               'jepitrambutbutterfly.png': imgJepitButterfly,
-  'bandopearl.png': imgBandoPearl,           'scrunchie.png': imgScrunchie,
-  'tasminiselempang.png': imgTasMini,        'tasrajut.png': imgTasRajut,
-  'taskoin.png': imgTasKoin,                 'framekacamata.png': imgKacamata,
-  'maskerlucu.png': imgMasker,               'stiker.png': imgStiker,
-  'gancisanrio.png': imgGanci,               'ikapinggang.png': imgIkatPinggang,
-};
-
+// Helper gambar: pakai Supabase Storage URL
 const getImg = (path) => {
   if (!path) return null;
-  if (path.startsWith('data:') || path.startsWith('blob:')) return path;
-  return gambarMap[path.split('/').pop()] ?? null;
+  if (path.startsWith('data:') || path.startsWith('blob:') || path.startsWith('http')) return path;
+  return getProdukImageUrl(path);
 };
 
 const progressVariant = { 'Aman': 'success', 'Hampir Habis': 'warning', 'Habis': 'warning' };
@@ -266,37 +211,53 @@ export default function InventoryDetail() {
   const { id }   = useParams();
   const navigate = useNavigate();
 
-  // Baca dari localStorage (sama dengan Inventory.jsx) supaya data sinkron
-  const [allItems, setAllItems] = useState(() => {
-    const saved = localStorage.getItem('joy_dream_inventory');
-    return saved ? JSON.parse(saved) : inventoryData;
-  });
+  const [item,       setItem]       = useState(null);
+  const [allItems,   setAllItems]   = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState(null);
+  const [showEdit,   setShowEdit]   = useState(false);
+  const [showHapus,  setShowHapus]  = useState(false);
 
-  const [showEdit,  setShowEdit]  = useState(false);
-  const [showHapus, setShowHapus] = useState(false);
-
-  const item = allItems.find(i => i.id === Number(id));
-
-  const persistAndUpdate = (updatedList) => {
-    localStorage.setItem('joy_dream_inventory', JSON.stringify(updatedList));
-    setAllItems(updatedList);
-  };
+  // Ambil produk detail + semua produk (untuk "Produk Terkait") sekaligus
+  useEffect(() => {
+    Promise.all([
+      produkAPI.fetchProdukById(id),
+      produkAPI.fetchAllProduk(),
+    ])
+      .then(([produk, allProduk]) => {
+        if (!produk) { setError('not_found'); return; }
+        setItem(produk);       // fetchProdukById sudah return normaliseProduk
+        setAllItems(allProduk); // fetchAllProduk sudah return array normaliseProduk
+      })
+      .catch(err => {
+        console.error('Gagal memuat detail produk:', err);
+        setError('Gagal memuat data produk dari server.');
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
 
   const handleSaveEdit = (data) => {
-    const updated = allItems.map(it =>
-      it.id === item.id ? { ...it, ...data } : it
-    );
-    persistAndUpdate(updated);
+    // Update lokal saja (write-back ke Supabase bisa ditambahkan nanti)
+    setItem(prev => ({ ...prev, ...data }));
+    setAllItems(prev => prev.map(it => it.id === item.id ? { ...it, ...data } : it));
     setShowEdit(false);
   };
 
   const handleHapus = () => {
-    const updated = allItems.filter(it => it.id !== item.id);
-    persistAndUpdate(updated);
+    // Navigasi kembali setelah hapus (delete ke Supabase bisa ditambahkan nanti)
     navigate('/inventory');
   };
 
-  if (!item) {
+  // ── Loading state ──
+  if (loading) return (
+    <div className="flex items-center justify-center py-24 font-poppins">
+      <div className="w-8 h-8 border-4 border-[#9E4BDC] border-t-transparent rounded-full animate-spin" />
+      <span className="ml-3 text-sm text-[#71717A] font-medium">Memuat detail produk...</span>
+    </div>
+  );
+
+  // ── Error / tidak ditemukan ──
+  if (error === 'not_found' || !item) {
     return (
       <div className="flex flex-col items-center justify-center py-24 space-y-4 font-poppins">
         <div className="w-16 h-16 bg-[#F4F4F5] border border-[#E4E4E7] rounded-2xl flex items-center justify-center">
@@ -310,6 +271,11 @@ export default function InventoryDetail() {
       </div>
     );
   }
+  if (error) return (
+    <div className="bg-[#F24E1E]/10 border border-[#F24E1E]/30 text-[#F24E1E] rounded-xl px-5 py-4 text-sm font-medium m-5">
+      {error}
+    </div>
+  );
 
   const img          = getImg(item.gambar);
   const totalRevenue = item.harga * item.terjual;
@@ -318,8 +284,8 @@ export default function InventoryDetail() {
   const poinTotal    = poinPerItem * item.terjual;
 
   const sameCat      = allItems.filter(i => i.kategori === item.kategori);
-  const avgTerjual   = sameCat.reduce((s, i) => s + i.terjual, 0) / sameCat.length;
-  const isBestSeller = item.terjual >= avgTerjual * 1.3;
+  const avgTerjual   = sameCat.length > 0 ? sameCat.reduce((s, i) => s + i.terjual, 0) / sameCat.length : 0;
+  const isBestSeller = avgTerjual > 0 && item.terjual >= avgTerjual * 1.3;
 
   const produkTerkait = allItems
     .filter(i => i.kategori === item.kategori && i.id !== item.id)
@@ -360,7 +326,7 @@ export default function InventoryDetail() {
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">
-                  #PRD-{String(item.id).padStart(3, '0')} · {item.kategori}
+                  {item.id} · {item.kategori}
                 </p>
                 <h2 className="text-xl font-black text-[#22285E] leading-snug">{item.name}</h2>
                 <p className="text-xs text-[#9E4BDC] font-bold">
@@ -447,16 +413,31 @@ export default function InventoryDetail() {
 
         <div className="bg-white border border-[#E4E4E7] rounded-2xl p-5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] mb-3">Informasi Produk</p>
-          <InfoRow label="ID Produk">#PRD-{String(item.id).padStart(3, '0')}</InfoRow>
+          <InfoRow label="ID / SKU">{item.id}</InfoRow>
           <InfoRow label="Nama Produk">{item.name}</InfoRow>
           <InfoRow label="Kategori">
             <span className="inline-flex items-center gap-1">
               <FaLayerGroup className="text-[9px] text-[#A1A1AA]" />{item.kategori}
             </span>
           </InfoRow>
+          {item.material && <InfoRow label="Material">{item.material}</InfoRow>}
+          {item.warna && <InfoRow label="Warna">{item.warna}</InfoRow>}
+          {item.berat && <InfoRow label="Berat">{item.berat}</InfoRow>}
+          {item.dimensi && <InfoRow label="Dimensi">{item.dimensi}</InfoRow>}
           <InfoRow label="Harga Jual">Rp {item.harga.toLocaleString('id')}</InfoRow>
           <InfoRow label="Poin per Pembelian">{poinPerItem} poin</InfoRow>
+          {item.tanggalMasuk && (
+            <InfoRow label="Tanggal Masuk">
+              {new Date(item.tanggalMasuk).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </InfoRow>
+          )}
           <InfoRow label="Status Stok"><Badge status={item.status} /></InfoRow>
+          {item.deskripsi && (
+            <div className="mt-3 pt-3 border-t border-[#F4F4F5]">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] mb-1.5">Deskripsi</p>
+              <p className="text-xs text-[#71717A] leading-relaxed">{item.deskripsi}</p>
+            </div>
+          )}
         </div>
 
         <div className="bg-white border border-[#E4E4E7] rounded-2xl p-5">

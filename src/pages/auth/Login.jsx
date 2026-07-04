@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import logoNastore from "../../assets/gambarproduk/logonastore.png";
 import { FaSpinner } from 'react-icons/fa';
 import { userAPI } from '../../services/userAPI';
@@ -13,6 +13,7 @@ export default function Login() {
     email: '',
     password: '',
   });
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,12 +46,15 @@ export default function Login() {
       // 1. Simpan token dan data user ke localStorage
       localStorage.setItem('token', loggedInUser.id);
       localStorage.setItem('user', JSON.stringify(loggedInUser));
-      
+
+      // 2. Notify App.jsx agar re-read auth state tanpa full reload
+      window.dispatchEvent(new Event("auth-change"));
+
       setSuccess(`Selamat datang, ${loggedInUser.namaDepan}!`);
-      
-      // 2. Redirect menggunakan window.location agar App.jsx mengecek ulang token
+
+      // 3. Redirect pakai React Router (tidak reload halaman)
       setTimeout(() => {
-        window.location.href = "/";
+        navigate("/");
       }, 1000);
       
     } catch (err) {

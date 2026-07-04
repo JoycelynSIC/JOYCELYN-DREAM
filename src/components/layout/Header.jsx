@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import logoNastore from "../../assets/gambarproduk/logonastore.png";
 import profileImg from "../../assets/profile.jpg";
 import {
@@ -25,6 +26,7 @@ import {
 } from "lucide-react";
 
 export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile, cartCount = 0, onCartClick }) {
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // 'about' | 'contact' | 'tier' | 'faq' | null
   const [showNotifications, setShowNotifications] = useState(false);
@@ -64,18 +66,27 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
   };
 
   const displayName = isLoggedIn && userProfile ? `${userProfile.namaDepan} ${userProfile.namaBelakang}` : "Tamu";
-  const email = isLoggedIn && userProfile ? userProfile.email : "guest@na_store.id";
-  const points = isLoggedIn && userProfile ? userProfile.points : 0;
+  const email  = isLoggedIn && userProfile ? userProfile.email : "guest@na_store.id";
+  const points = isLoggedIn && userProfile ? (userProfile.points ?? 0) : 0;
 
-  // Determine tier based on points
-  const getTierInfo = (pts) => {
-    if (pts >= 5000) return { name: "Platinum Member", color: "from-blue-600 to-indigo-700 bg-clip-text text-transparent font-black" };
-    if (pts >= 2000) return { name: "Gold Member", color: "from-amber-500 to-yellow-600 bg-clip-text text-transparent font-black" };
-    if (pts >= 500) return { name: "Silver Member", color: "from-slate-400 to-slate-600 bg-clip-text text-transparent font-black" };
-    return { name: "Regular Member", color: "from-zinc-500 to-zinc-700 bg-clip-text text-transparent font-black" };
+  // Gunakan statusMember dari Supabase kalau tersedia, fallback hitung dari poin
+  const getTierInfo = (pts, statusMember) => {
+    // Prioritaskan data dari tabel customer (Supabase)
+    const tier = statusMember ?? (
+      pts >= 5000 ? "Platinum" :
+      pts >= 2000 ? "Gold"     :
+      pts >= 500  ? "Silver"   : "Regular"
+    );
+    const map = {
+      Platinum: { name: "Platinum Member", color: "from-blue-600 to-indigo-700 bg-clip-text text-transparent font-black" },
+      Gold:     { name: "Gold Member",     color: "from-amber-500 to-yellow-600 bg-clip-text text-transparent font-black" },
+      Silver:   { name: "Silver Member",   color: "from-slate-400 to-slate-600 bg-clip-text text-transparent font-black" },
+      Regular:  { name: "Regular Member",  color: "from-zinc-500 to-zinc-700 bg-clip-text text-transparent font-black" },
+    };
+    return map[tier] ?? map.Regular;
   };
 
-  const tierInfo = getTierInfo(points);
+  const tierInfo = getTierInfo(points, userProfile?.statusMember);
 
   return (
     <>
@@ -115,7 +126,7 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
             </button>
 
             <button
-              onClick={() => setActiveModal("about")}
+              onClick={() => handleScroll("about")}
               className="flex items-center gap-1.5 hover:text-[#9E4BDC] transition-colors cursor-pointer bg-transparent border-none py-1.5 whitespace-nowrap"
             >
               <Info className="w-3.5 h-3.5" />
@@ -123,7 +134,7 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
             </button>
 
             <button
-              onClick={() => setActiveModal("contact")}
+              onClick={() => handleScroll("lokasi")}
               className="flex items-center gap-1.5 hover:text-[#9E4BDC] transition-colors cursor-pointer bg-transparent border-none py-1.5 whitespace-nowrap"
             >
               <PhoneCall className="w-3.5 h-3.5" />
@@ -131,7 +142,7 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
             </button>
 
             <button
-              onClick={() => setActiveModal("tier")}
+              onClick={() => handleScroll("loyalty")}
               className="flex items-center gap-1.5 hover:text-[#9E4BDC] transition-colors cursor-pointer bg-transparent border-none py-1.5 whitespace-nowrap"
             >
               <Crown className="w-3.5 h-3.5 text-yellow-500" />
@@ -143,7 +154,7 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
                 if (isLoggedIn) {
                   handleScroll("loyalty");
                 } else {
-                  alert("Silakan Masuk / Daftar terlebih dahulu untuk menukarkan poin reward!");
+                  navigate("/login");
                 }
               }}
               className="flex items-center gap-1.5 hover:text-[#9E4BDC] transition-colors cursor-pointer bg-transparent border-none py-1.5 whitespace-nowrap"
@@ -153,7 +164,7 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
             </button>
 
             <button
-              onClick={() => setActiveModal("faq")}
+              onClick={() => handleScroll("faq")}
               className="flex items-center gap-1.5 hover:text-[#9E4BDC] transition-colors cursor-pointer bg-transparent border-none py-1.5 whitespace-nowrap"
             >
               <HelpCircle className="w-3.5 h-3.5" />
@@ -298,7 +309,7 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
             ) : (
               /* GUEST NOT LOGGED IN */
               <button
-                onClick={onLoginClick}
+                onClick={() => navigate("/login")}
                 className="bg-gradient-to-r from-[#9E4BDC] to-[#8e3ec7] hover:opacity-95 text-white text-xs font-black px-5 py-2.5 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-[#9E4BDC]/20 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
               >
                 <LogIn className="w-3.5 h-3.5" />
@@ -341,7 +352,7 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                setActiveModal("about");
+                handleScroll("about");
               }}
               className="flex items-center gap-2 w-full py-2.5 text-xs font-bold text-[#71717A] hover:text-[#9E4BDC] bg-transparent border-none"
             >
@@ -352,7 +363,7 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                setActiveModal("contact");
+                handleScroll("lokasi");
               }}
               className="flex items-center gap-2 w-full py-2.5 text-xs font-bold text-[#71717A] hover:text-[#9E4BDC] bg-transparent border-none"
             >
@@ -363,7 +374,7 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                setActiveModal("tier");
+                handleScroll("loyalty");
               }}
               className="flex items-center gap-2 w-full py-2.5 text-xs font-bold text-[#71717A] hover:text-[#9E4BDC] bg-transparent border-none"
             >
@@ -377,7 +388,7 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
                 if (isLoggedIn) {
                   handleScroll("loyalty");
                 } else {
-                  alert("Silakan Masuk / Daftar terlebih dahulu untuk menukarkan poin reward!");
+                  navigate("/login");
                 }
               }}
               className="flex items-center gap-2 w-full py-2.5 text-xs font-bold text-[#71717A] hover:text-[#9E4BDC] bg-transparent border-none"
@@ -389,7 +400,7 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                setActiveModal("faq");
+                handleScroll("faq");
               }}
               className="flex items-center gap-2 w-full py-2.5 text-xs font-bold text-[#71717A] hover:text-[#9E4BDC] bg-transparent border-none"
             >
@@ -632,10 +643,6 @@ export default function Header({ isLoggedIn, onLoginClick, onLogout, userProfile
                 {
                   q: "Apakah poin belanja saya bisa berkurang?",
                   a: "Ya. Poin Anda akan langsung berkurang (deducted) saat Anda menukarkannya dengan rewards pilihan, seperti produk aksesoris gratis (scrunchie, gantungan kunci) atau voucher potongan diskon belanja."
-                },
-                {
-                  q: "Mengapa saya tidak melihat pelacakan (tracking) kurir pengiriman?",
-                  a: "Na_store.id berfokus pada digitalisasi CRM, loyalitas poin, dan transparansi pemantauan stok produk secara real-time. Untuk menjaga sistem tetap ringkas dan efisien, kami tidak menyediakan fitur pelacakan perjalanan kurir pengiriman barang."
                 },
                 {
                   q: "Bagaimana cara menaikkan tingkatan member keanggotaan?",

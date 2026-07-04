@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import customerData from '../data/customer.json';
 import PageHeader    from '../components/PageHeader';
+import { customerAPI, normaliseCustomer } from '../services/customerAPI';
 import StatCard      from '../components/StatCard';
 import Card          from '../components/Card';
 import Button        from '../components/Button';
@@ -89,25 +89,36 @@ const AVATAR_COLORS = [
 
 /* Helper: hitung persen progress ke level berikutnya */
 function poinProgress(poin, member) {
+  const p = Math.max(0, Number(poin) || 0);
   const cfg = MEMBER_CONFIG[member];
   if (!cfg || !cfg.next) return 100;
   const prev = member === 'Reguler' ? 0 : member === 'Silver' ? 500 : member === 'Gold' ? 2000 : 5000;
-  return Math.min(((poin - prev) / (cfg.next - prev)) * 100, 100);
+  return Math.min(Math.max(((p - prev) / (cfg.next - prev)) * 100, 0), 100);
 }
 
 export default function Customers() {
   const { toasts, showToast, removeToast } = useToast();
 
-  const [customers, setCustomers] = useState(() => {
-    const saved = localStorage.getItem('joy_dream_customers');
-    return saved ? JSON.parse(saved) : customerData;
-  });
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState(null);
   const [dataForm, setDataForm]   = useState({ search: '', filterMember: 'Semua' });
-  const [selected, setSelected]   = useState(() => {
-    const saved = localStorage.getItem('joy_dream_customers');
-    const parsed = saved ? JSON.parse(saved) : customerData;
-    return parsed[0] || null;
-  });
+  const [selected, setSelected]   = useState(null);
+
+  // Muat data customer dari Supabase saat komponen pertama kali ditampilkan
+  useEffect(() => {
+    customerAPI.fetchAllCustomers()
+      .then(data => {
+        const normalized = data.map(normaliseCustomer);
+        setCustomers(normalized);
+        if (normalized.length > 0) setSelected(normalized[0]);
+      })
+      .catch(err => {
+        console.error('Gagal memuat customer:', err);
+        setError('Gagal memuat data pelanggan dari server.');
+      })
+      .finally(() => setLoading(false));
+  }, []);
   const [viewMode, setViewMode]   = useState('table');
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm]   = useState(false);
@@ -131,12 +142,6 @@ export default function Customers() {
       searchInputRef.current.focus();
     }
   }, []);
-
-  // Efek untuk menyimpan data ke localStorage
-  useEffect(() => {
-    localStorage.setItem('joy_dream_customers', JSON.stringify(customers));
-    prevCustomersCountRef.current = customers.length;
-  }, [customers]);
 
   // Efek untuk keyboard Escape dan fokus input modal ketika terbuka
   useEffect(() => {
@@ -177,47 +182,50 @@ export default function Customers() {
     setEditForm({ name: c.name, email: c.email, phone: c.phone, member: c.member, status: c.status });
   };
 
-  const handleSaveEdit = (e) => {
+  const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!editForm.name || !editForm.email) return;
-    setCustomers(prev => prev.map(c =>
-      c.id === editTarget.id ? { ...c, ...editForm } : c
-    ));
-    // Update selected jika yang diedit adalah yang sedang dipilih
-    if (selected?.id === editTarget.id) {
-      setSelected(p => ({ ...p, ...editForm }));
+    try {
+      await customerAPI.updateCustomer(editTarget.id, editForm);
+      setCustomers(prev => prev.map(c =>
+        c.id === editTarget.id ? { ...c, ...editForm } : c
+      ));
+      if (selected?.id === editTarget.id) {
+        setSelected(p => ({ ...p, ...editForm }));
+      }
+      showToast({ type: 'update', title: 'Pelanggan diperbarui!', message: `Data "${editForm.name}" berhasil diupdate.` });
+    } catch (err) {
+      showToast({ type: 'error', title: 'Gagal update', message: err?.message ?? 'Coba lagi.' });
     }
-    showToast({ type: 'update', title: 'Pelanggan diperbarui!', message: `Data "${editForm.name}" berhasil diupdate.` });
     setEditTarget(null);
   };
 
-  const handleHapus = () => {
+  const handleHapus = async () => {
     const nama = hapusTarget.name;
-    setCustomers(prev => prev.filter(c => c.id !== hapusTarget.id));
-    if (selected?.id === hapusTarget.id) setSelected(null);
+    const id   = hapusTarget.id;
     setHapusTarget(null);
-    showToast({ type: 'delete', title: 'Pelanggan dihapus!', message: `"${nama}" telah dihapus permanen.` });
+    try {
+      await customerAPI.deleteCustomer(id);
+      setCustomers(prev => prev.filter(c => c.id !== id));
+      if (selected?.id === id) setSelected(null);
+      showToast({ type: 'delete', title: 'Pelanggan dihapus!', message: `"${nama}" telah dihapus permanen.` });
+    } catch (err) {
+      showToast({ type: 'error', title: 'Gagal menghapus', message: err?.message ?? 'Coba lagi.' });
+    }
   };
 
-  const handleTambahPelanggan = (e) => {
+  const handleTambahPelanggan = async (e) => {
     e.preventDefault();
     if (!formPelanggan.name || !formPelanggan.email) return;
-    const newCustomer = {
-      id: customers.length + 1,
-      name: formPelanggan.name,
-      email: formPelanggan.email,
-      phone: formPelanggan.phone,
-      member: formPelanggan.member,
-      status: formPelanggan.status,
-      poin: 0,
-      transaksi: 0,
-      totalBelanja: 0,
-      bergabung: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-    };
-    setCustomers(prev => [newCustomer, ...prev]);
-    setFormPelanggan({ name: '', email: '', phone: '', member: 'Reguler', status: 'Aktif' });
-    setShowForm(false);
-    showToast({ type: 'success', title: 'Pelanggan ditambahkan!', message: `"${formPelanggan.name}" berhasil disimpan.` });
+    try {
+      const newCustomer = await customerAPI.createCustomer(formPelanggan);
+      setCustomers(prev => [newCustomer, ...prev]);
+      setFormPelanggan({ name: '', email: '', phone: '', member: 'Reguler', status: 'Aktif' });
+      setShowForm(false);
+      showToast({ type: 'success', title: 'Pelanggan ditambahkan!', message: `"${formPelanggan.name}" berhasil disimpan ke database.` });
+    } catch (err) {
+      showToast({ type: 'error', title: 'Gagal menyimpan', message: err?.message ?? 'Coba lagi.' });
+    }
   };
 
   const _search  = dataForm.search.toLowerCase();
@@ -230,8 +238,21 @@ export default function Customers() {
   const totalPages    = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginatedData = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  const totalPoin      = customers.reduce((a, c) => a + c.poin, 0);
+  const totalPoin      = customers.reduce((a, c) => a + (c.poin ?? 0), 0);
   const countByMember  = (m) => customers.filter(c => c.member === m).length;
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="w-8 h-8 border-4 border-[#9E4BDC] border-t-transparent rounded-full animate-spin" />
+      <span className="ml-3 text-sm text-[#71717A] font-medium">Memuat data pelanggan...</span>
+    </div>
+  );
+
+  if (error) return (
+    <div className="bg-[#F24E1E]/10 border border-[#F24E1E]/30 text-[#F24E1E] rounded-xl px-5 py-4 text-sm font-medium m-5">
+      {error}
+    </div>
+  );
 
   return (
     <div className="space-y-5 animate-in fade-in duration-500 font-poppins">
@@ -432,7 +453,7 @@ export default function Customers() {
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-1">
                           <FaStar className="text-yellow-400 text-[10px]" />
-                          <span className="text-sm font-black text-[#22285E]">{c.poin.toLocaleString('id')}</span>
+                          <span className="text-sm font-black text-[#22285E]">{(c.poin ?? 0).toLocaleString('id')}</span>
                         </div>
                         <div className="w-16 h-1 bg-[#E4E4E7] rounded-full mt-1 overflow-hidden">
                           <div
@@ -494,37 +515,42 @@ export default function Customers() {
                   <PaginationItem>
                     <PaginationPrevious
                       href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (currentPage > 1) setCurrentPage(currentPage - 1);
-                      }}
+                      onClick={(e) => { e.preventDefault(); if (currentPage > 1) setCurrentPage(currentPage - 1); }}
                       className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
                     />
                   </PaginationItem>
-                  {Array.from({ length: totalPages }).map((_, i) => {
-                    const page = i + 1;
-                    return (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          href="#"
-                          isActive={page === currentPage}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setCurrentPage(page);
-                          }}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
+                  {(() => {
+                    const delta = 1;
+                    const pages = [];
+                    for (let i = 1; i <= totalPages; i++) {
+                      if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+                        pages.push(i);
+                      }
+                    }
+                    const result = [];
+                    let prev = null;
+                    for (const page of pages) {
+                      if (prev !== null && page - prev > 1) result.push('ellipsis-' + page);
+                      result.push(page);
+                      prev = page;
+                    }
+                    return result.map(item =>
+                      typeof item === 'string' ? (
+                        <PaginationItem key={item}><PaginationEllipsis /></PaginationItem>
+                      ) : (
+                        <PaginationItem key={item}>
+                          <PaginationLink href="#" isActive={item === currentPage}
+                            onClick={(e) => { e.preventDefault(); setCurrentPage(item); }}>
+                            {item}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
                     );
-                  })}
+                  })()}
                   <PaginationItem>
                     <PaginationNext
                       href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-                      }}
+                      onClick={(e) => { e.preventDefault(); if (currentPage < totalPages) setCurrentPage(currentPage + 1); }}
                       className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
                     />
                   </PaginationItem>
@@ -540,7 +566,7 @@ export default function Customers() {
           const Icon   = cfg.icon;
           const idx    = customers.findIndex(c => c.id === selected.id);
           const pct    = poinProgress(selected.poin, selected.member);
-          const sisaPoin = cfg.next ? cfg.next - selected.poin : 0;
+          const sisaPoin = cfg.next ? Math.max(0, cfg.next - (selected.poin ?? 0)) : 0;
 
           return (
             <Card className="sticky top-4 max-h-[calc(100vh-6rem)] overflow-hidden">
@@ -589,7 +615,7 @@ export default function Customers() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5">
                       <FaStar className="text-yellow-400 text-sm" />
-                      <span className="text-2xl font-black text-[#22285E]">{selected.poin.toLocaleString('id')}</span>
+                      <span className="text-2xl font-black text-[#22285E]">{(selected.poin ?? 0).toLocaleString('id')}</span>
                       <span className="text-xs text-[#A1A1AA]">poin</span>
                     </div>
                     <span className={`text-xs font-black flex items-center gap-1 ${cfg.text}`}>
@@ -620,10 +646,12 @@ export default function Customers() {
               <div className="mt-4">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] mb-2">Statistik Belanja</p>
                 {[
-                  { label: 'Total Belanja',       val: `Rp ${selected.totalBelanja?.toLocaleString('id')}`,                                                icon: FaShoppingBag },
-                  { label: 'Jumlah Transaksi',    val: `${selected.transaksi}x`,                                                                           icon: FaPhone       },
-                  { label: 'Rata-rata/Transaksi', val: `Rp ${Math.round((selected.totalBelanja || 0) / (selected.transaksi || 1)).toLocaleString('id')}`,  icon: FaStar        },
-                  { label: 'Status Akun',         val: selected.status,                                                                                    icon: FaUsers       },
+                  { label: 'Total Belanja',       val: `Rp ${(selected.totalBelanja ?? 0).toLocaleString('id')}`,                                                                     icon: FaShoppingBag },
+                  { label: 'Jumlah Transaksi',    val: `${selected.transaksi ?? 0}x`,                                                                                                         icon: FaPhone       },
+                  { label: 'Rata-rata/Transaksi', val: `Rp ${Math.round((selected.totalBelanja || 0) / (selected.transaksi || 1)).toLocaleString('id')}`,                                     icon: FaStar        },
+                  { label: 'Poin Aktif',          val: `${(selected.poin ?? 0).toLocaleString('id')} poin`,                                                                                   icon: FaStar        },
+                  { label: 'Poin Ditukar',        val: `${(selected.poinDitukar ?? 0).toLocaleString('id')} poin`,                                                                            icon: FaStar        },
+                  { label: 'Status Akun',         val: selected.status,                                                                                                                       icon: FaUsers       },
                 ].map((row, i) => {
                   const RowIcon = row.icon;
                   return (

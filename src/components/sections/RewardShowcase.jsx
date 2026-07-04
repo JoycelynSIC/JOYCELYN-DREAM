@@ -323,6 +323,7 @@ function RewardCard({ reward, isLoggedIn, currentPoints, onRedeem, onGuestBlock,
 export default function RewardShowcase({ isLoggedIn, currentPoints = 0, onRedeem, onLoginClick }) {
   const [guestDialogOpen, setGuestDialogOpen] = useState(false);
   const [successToast, setSuccessToast]       = useState(null);
+  const [errorToast, setErrorToast]           = useState(null);
 
   const getActiveTier = (pts) => {
     if (pts >= 5000) return "Platinum";
@@ -332,10 +333,19 @@ export default function RewardShowcase({ isLoggedIn, currentPoints = 0, onRedeem
   };
   const activeTier = getActiveTier(currentPoints);
 
-  const handleRedeem = (reward) => {
-    onRedeem?.(reward);
-    setSuccessToast(`Berhasil menukar "${reward.name}"! −${reward.points.toLocaleString("id")} Poin`);
-    setTimeout(() => setSuccessToast(null), 3500);
+  const handleRedeem = async (reward) => {
+    try {
+      if (onRedeem) {
+        await onRedeem(reward);
+      }
+      setSuccessToast(`Berhasil menukar "${reward.name}"! −${reward.points.toLocaleString("id")} Poin`);
+      setTimeout(() => setSuccessToast(null), 3500);
+    } catch (err) {
+      const msg = err?.message || "Penukaran gagal. Coba lagi.";
+      setErrorToast(msg);
+      setTimeout(() => setErrorToast(null), 4000);
+      console.warn("[RewardShowcase] Gagal menukar reward:", msg);
+    }
   };
 
   return (
@@ -357,6 +367,30 @@ export default function RewardShowcase({ isLoggedIn, currentPoints = 0, onRedeem
             <span className="flex-1">{successToast}</span>
             <button
               onClick={() => setSuccessToast(null)}
+              className="opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── ERROR TOAST ── */}
+      <AnimatePresence>
+        {errorToast && (
+          <motion.div
+            className="fixed bottom-6 right-6 z-[9999] bg-gradient-to-r from-red-500 to-rose-600 text-white text-xs font-bold px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 border border-white/15"
+            initial={{ opacity: 0, y: 24, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+              <X className="w-3.5 h-3.5" />
+            </div>
+            <span className="flex-1">{errorToast}</span>
+            <button
+              onClick={() => setErrorToast(null)}
               className="opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />

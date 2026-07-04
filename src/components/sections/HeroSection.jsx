@@ -1,93 +1,87 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowRight, Gift, ShoppingBag, Star } from "lucide-react";
+import { ArrowRight, Gift, ShoppingBag, Star, Package } from "lucide-react";
+import { produkAPI, getProdukImageUrl } from "../../services/produkAPI";
 
-import imgKalungRosegold from "../../assets/gambarproduk/kalungrosegold.png";
-import imgGelangCrystal  from "../../assets/gambarproduk/gelangcrystal.png";
-import imgCincinGold      from "../../assets/gambarproduk/cincingold.png";
-import imgAntingPearl    from "../../assets/gambarproduk/antingpearl.png";
-import imgKalungBintang  from "../../assets/gambarproduk/kalungbintang.png";
-import imgScrunchie      from "../../assets/gambarproduk/scrunchie.png";
+const SLOT   = 255;
+const CARD_W = 240;
 
-const PRODUCTS = [
-  { id:0, name:"Kalung Titanium Rosegold", cat:"Kalung", img:imgKalungRosegold, price:"Rp 89.000", tag:"Best Seller",  rating:4.9, sold:312 },
-  { id:1, name:"Gelang Crystal Aesthetic", cat:"Gelang", img:imgGelangCrystal,  price:"Rp 55.000", tag:"Trending",     rating:4.8, sold:198 },
-  { id:2, name:"Cincin Adjustable Gold",   cat:"Cincin", img:imgCincinGold,     price:"Rp 45.000", tag:"New Arrival",  rating:4.7, sold:145 },
-  { id:3, name:"Anting Pearl Elegan",      cat:"Anting", img:imgAntingPearl,    price:"Rp 38.000", tag:"Favorit",      rating:4.9, sold:267 },
-  { id:4, name:"Kalung Bintang Perak",     cat:"Kalung", img:imgKalungBintang,  price:"Rp 72.000", tag:"Top Rated",    rating:5.0, sold:89  },
-  { id:5, name:"Scrunchie Satin Premium",  cat:"Rambut", img:imgScrunchie,      price:"Rp 29.000", tag:"Reward Item",  rating:4.8, sold:176 },
-];
+const wrap = (i, n) => ((i % n) + n) % n;
 
-const N     = PRODUCTS.length;
-const SLOT  = 255; // px between each card-center slot
-const CARD_W = 240; // px — matches w-60
-
-const wrap = (i) => ((i % N) + N) % N;
-
-/** Returns the shortest circular offset from idx to i */
-const getOffset = (i, idx) => {
+const getOffset = (i, idx, n) => {
   let d = i - idx;
-  if (d > N / 2)  d -= N;
-  if (d < -N / 2) d += N;
+  if (d > n / 2)  d -= n;
+  if (d < -n / 2) d += n;
   return d;
 };
 
-/** Inline style for each card based on its offset from center */
 const slotStyle = (offset) => {
-  const TRANSITION = "all 0.55s cubic-bezier(0.22,1,0.36,1)";
-  // cards beyond ±1 → invisible, shifted further out
+  const T = "all 0.55s cubic-bezier(0.22,1,0.36,1)";
   if (Math.abs(offset) > 1) {
-    return {
-      position: "absolute",
-      left: "50%",
-      top: 0,
-      width: CARD_W,
-      transform: `translateX(calc(-50% + ${offset * SLOT}px)) scale(0.78)`,
-      opacity: 0,
-      pointerEvents: "none",
-      zIndex: 0,
-      transition: TRANSITION,
-    };
+    return { position:"absolute", left:"50%", top:0, width:CARD_W,
+      transform:`translateX(calc(-50% + ${offset * SLOT}px)) scale(0.78)`,
+      opacity:0, pointerEvents:"none", zIndex:0, transition:T };
   }
-  // center card
   if (offset === 0) {
-    return {
-      position: "absolute",
-      left: "50%",
-      top: 0,
-      width: CARD_W,
-      transform: "translateX(-50%) scale(1)",
-      opacity: 1,
-      zIndex: 20,
-      cursor: "pointer",
-      transition: TRANSITION,
-    };
+    return { position:"absolute", left:"50%", top:0, width:CARD_W,
+      transform:"translateX(-50%) scale(1)", opacity:1, zIndex:20, cursor:"pointer", transition:T };
   }
-  // side ghost cards (±1)
-  return {
-    position: "absolute",
-    left: "50%",
-    top: 0,
-    width: CARD_W,
-    transform: `translateX(calc(-50% + ${offset * SLOT}px)) scale(0.88)`,
-    opacity: 0.32,
-    filter: "blur(1.5px)",
-    pointerEvents: "none",
-    zIndex: 5,
-    transition: TRANSITION,
-  };
+  return { position:"absolute", left:"50%", top:0, width:CARD_W,
+    transform:`translateX(calc(-50% + ${offset * SLOT}px)) scale(0.88)`,
+    opacity:0.32, filter:"blur(1.5px)", pointerEvents:"none", zIndex:5, transition:T };
 };
 
-export default function HeroSection() {
-  const [idx, setIdx] = useState(0);
+// Skeleton card untuk loading state carousel
+function CarouselSkeleton() {
+  return (
+    <div className="bg-white/[0.05] border border-white/[0.07] rounded-[1.75rem] p-5 w-60 animate-pulse">
+      <div className="h-5 w-20 bg-white/10 rounded-full mb-4" />
+      <div className="w-full h-40 rounded-xl bg-white/10 mb-4" />
+      <div className="h-2.5 w-16 bg-white/10 rounded-full mb-2" />
+      <div className="h-4 w-36 bg-white/10 rounded-full mb-2" />
+      <div className="h-5 w-24 bg-white/10 rounded-full mb-4" />
+      <div className="h-px bg-white/10 mb-3" />
+      <div className="flex justify-between">
+        <div className="h-2.5 w-20 bg-white/10 rounded-full" />
+        <div className="h-2.5 w-14 bg-white/10 rounded-full" />
+      </div>
+    </div>
+  );
+}
 
-  const go   = useCallback((n) => setIdx(wrap(n)), []);
+export default function HeroSection() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [idx, setIdx]           = useState(0);
+
+  // Fetch 6 produk terlaris dari Supabase
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const all = await produkAPI.fetchAllProduk();
+        // Ambil 6 produk pertama yang ada stok; fallback ke 6 pertama
+        const withStock = all.filter((p) => p.stock > 0);
+        const pick = (withStock.length >= 6 ? withStock : all).slice(0, 6);
+        if (!cancelled) { setProducts(pick); setLoading(false); }
+      } catch {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const N    = products.length || 1;
+  const go   = useCallback((n) => setIdx(wrap(n, N)), [N]);
   const next = useCallback(() => go(idx + 1), [idx, go]);
   const scroll = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
   useEffect(() => {
+    if (products.length === 0) return;
     const t = setInterval(next, 3800);
     return () => clearInterval(t);
-  }, [next]);
+  }, [next, products.length]);
+
+  const rupiahFmt = (n) => "Rp " + (n ?? 0).toLocaleString("id-ID");
 
   return (
     <section className="relative bg-[#0D0B2A] text-white overflow-hidden">
@@ -98,7 +92,6 @@ export default function HeroSection() {
       <div className="absolute -top-32 -left-32 w-[480px] h-[480px] rounded-full bg-[#7C3AED]/20 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-[380px] h-[380px] rounded-full bg-[#4F46E5]/10 blur-[100px] pointer-events-none" />
 
-      {/* ── GRID ── */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center pt-32 pb-24 lg:pt-36 lg:pb-28">
 
         {/* LEFT: copy */}
@@ -118,7 +111,7 @@ export default function HeroSection() {
 
           <p className="text-white/60 text-sm leading-relaxed max-w-md">
             Setiap pembelian menghasilkan poin yang bisa ditukar hadiah gratis.
-            Pantau stok real-time & nikmati benefit VIP eksklusif.
+            Pantau stok real-time &amp; nikmati benefit VIP eksklusif.
           </p>
 
           <div className="flex flex-wrap gap-3 pt-1">
@@ -132,7 +125,7 @@ export default function HeroSection() {
               <ArrowRight className="w-4 h-4 shrink-0" />
             </button>
             <button
-              onClick={() => scroll("loyalty")}
+              onClick={() => scroll("loyalty-card")}
               className="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-white/25 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all duration-300 cursor-pointer backdrop-blur-md"
             >
               <Gift className="w-4 h-4 text-[#C084FC] shrink-0" />
@@ -150,62 +143,64 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* RIGHT: slot-based carousel — all 6 cards always rendered */}
+        {/* RIGHT: carousel */}
         <div className="hidden lg:flex flex-col items-center gap-6">
-
-          {/* Carousel stage — fixed height, no overflow-hidden so side cards show fully */}
           <div className="relative w-full" style={{ height: 420 }}>
-            {/* Ambient glow under active card */}
-            <div
-              className="absolute rounded-full bg-[#9E4BDC]/15 blur-[70px] pointer-events-none"
-              style={{ width: 220, height: 220, left: "50%", top: "50%", transform: "translate(-50%,-50%)" }}
-            />
+            {/* Ambient glow */}
+            <div className="absolute rounded-full bg-[#9E4BDC]/15 blur-[70px] pointer-events-none"
+              style={{ width:220, height:220, left:"50%", top:"50%", transform:"translate(-50%,-50%)" }} />
 
-            {PRODUCTS.map((p, i) => {
-              const offset = getOffset(i, idx);
+            {/* Loading skeleton */}
+            {loading && (
+              <div className="absolute left-1/2 -translate-x-1/2 top-0">
+                <CarouselSkeleton />
+              </div>
+            )}
+
+            {/* Produk dari Supabase */}
+            {!loading && products.map((p, i) => {
+              const offset   = getOffset(i, idx, N);
               const isActive = offset === 0;
+              const imgUrl   = getProdukImageUrl(p.gambar);
+
               return (
-                <div
-                  key={p.id}
-                  style={slotStyle(offset)}
-                  onClick={isActive ? () => scroll("catalog") : undefined}
-                >
-                  {/* Card shell */}
-                  <div
-                    className={`bg-white/[0.05] backdrop-blur-xl border rounded-[1.75rem] p-5 w-full h-full transition-[border-color,box-shadow] duration-500 ${
-                      isActive
-                        ? "border-[#9E4BDC]/30 shadow-[0_24px_60px_rgba(158,75,220,0.22)] hover:border-[#9E4BDC]/55 hover:-translate-y-1 hover:shadow-[0_32px_70px_rgba(158,75,220,0.3)] group"
-                        : "border-white/[0.07] shadow-none"
-                    }`}
-                  >
-                    {/* Tag */}
-                    <span className="inline-block bg-[#9E4BDC] text-white text-[9px] font-black px-2.5 py-1 rounded-full mb-4 tracking-widest uppercase">
-                      {p.tag}
+                <div key={p.id} style={slotStyle(offset)} onClick={isActive ? () => scroll("catalog") : undefined}>
+                  <div className={`bg-white/[0.05] backdrop-blur-xl border rounded-[1.75rem] p-5 w-full h-full transition-[border-color,box-shadow] duration-500 ${
+                    isActive
+                      ? "border-[#9E4BDC]/30 shadow-[0_24px_60px_rgba(158,75,220,0.22)] hover:border-[#9E4BDC]/55 hover:-translate-y-1 hover:shadow-[0_32px_70px_rgba(158,75,220,0.3)] group"
+                      : "border-white/[0.07] shadow-none"
+                  }`}>
+                    {/* Stock badge */}
+                    <span className={`inline-block text-white text-[9px] font-black px-2.5 py-1 rounded-full mb-4 tracking-widest uppercase ${
+                      p.stock === 0 ? "bg-red-500" : p.stock <= 8 ? "bg-amber-500" : "bg-[#9E4BDC]"
+                    }`}>
+                      {p.stock === 0 ? "Habis" : p.stock <= 8 ? `Sisa ${p.stock}` : "Ready Stock"}
                     </span>
 
                     {/* Image */}
                     <div className="w-full h-40 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mb-4 overflow-hidden relative">
                       <div className="absolute inset-0 bg-gradient-to-br from-[#9E4BDC]/10 to-transparent" />
-                      <img
-                        src={p.img}
-                        alt={p.name}
-                        className={`h-[85%] w-auto object-contain drop-shadow-2xl relative z-10 transition-transform duration-500 ${isActive ? "group-hover:scale-105" : ""}`}
-                      />
+                      {imgUrl ? (
+                        <img src={imgUrl} alt={p.name}
+                          className={`h-[85%] w-auto object-contain drop-shadow-2xl relative z-10 transition-transform duration-500 ${isActive ? "group-hover:scale-105" : ""}`}
+                        />
+                      ) : (
+                        <Package className="w-16 h-16 text-white/20 relative z-10" />
+                      )}
                     </div>
 
                     {/* Info */}
-                    <p className="text-[10px] font-bold text-purple-300 uppercase tracking-widest mb-0.5">{p.cat}</p>
-                    <p className="text-sm font-black text-white leading-snug mb-1">{p.name}</p>
-                    <p className="text-base font-black text-[#C084FC] mb-3">{p.price}</p>
+                    <p className="text-[10px] font-bold text-purple-300 uppercase tracking-widest mb-0.5">{p.kategori}</p>
+                    <p className="text-sm font-black text-white leading-snug mb-1 line-clamp-1">{p.name}</p>
+                    <p className="text-base font-black text-[#C084FC] mb-3">{rupiahFmt(p.harga)}</p>
 
                     <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
                       <div className="flex items-center gap-1">
                         {[...Array(5)].map((_,si) => (
-                          <Star key={si} className={`w-2.5 h-2.5 ${si < Math.floor(p.rating) ? "text-yellow-400 fill-yellow-400" : "text-white/15"}`} />
+                          <Star key={si} className={`w-2.5 h-2.5 ${si < 4 ? "text-yellow-400 fill-yellow-400" : "text-white/15"}`} />
                         ))}
-                        <span className="text-[10px] text-white/50 font-semibold ml-1">{p.rating}</span>
                       </div>
-                      <span className="text-[10px] text-white/35 font-semibold">{p.sold} terjual</span>
+                      <span className="text-[10px] text-white/35 font-semibold">{p.stock} stok</span>
                     </div>
                   </div>
                 </div>
@@ -214,15 +209,15 @@ export default function HeroSection() {
           </div>
 
           {/* Dot indicators */}
-          <div className="flex gap-2">
-            {PRODUCTS.map((_,i) => (
-              <button
-                key={i}
-                onClick={() => go(i)}
-                className={`rounded-full transition-all duration-300 cursor-pointer ${i===idx ? "bg-[#A855F7] w-5 h-1.5" : "bg-white/20 hover:bg-white/40 w-1.5 h-1.5"}`}
-              />
-            ))}
-          </div>
+          {!loading && (
+            <div className="flex gap-2">
+              {products.map((_,i) => (
+                <button key={i} onClick={() => go(i)}
+                  className={`rounded-full transition-all duration-300 cursor-pointer ${i===idx ? "bg-[#A855F7] w-5 h-1.5" : "bg-white/20 hover:bg-white/40 w-1.5 h-1.5"}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

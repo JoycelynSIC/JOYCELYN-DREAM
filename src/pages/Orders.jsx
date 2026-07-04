@@ -1,44 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import ordersData from '../data/orders.json';
-import inventoryData from '../data/inventory.json';
+import { Link } from 'react-router-dom';
+import { transaksiAPI, normaliseTransaksi } from '../services/transaksiAPI';
+import { produkAPI, getProdukImageUrl, normaliseProduk } from '../services/produkAPI';
+import { userAPI } from '../services/userAPI';
 import PageHeader from '../components/PageHeader';
-
-/* ─── Import gambar produk (agar Vite bundle dengan benar di production) ─── */
-import imgKalungRosegold  from '../assets/gambarproduk/kalungrosegold.png';
-import imgKalungChoker    from '../assets/gambarproduk/kalungchoker.png';
-import imgKalungBintang   from '../assets/gambarproduk/kalungbintang.png';
-import imgKalungPearl     from '../assets/gambarproduk/kalungpearl.png';
-import imgGelangCrystal   from '../assets/gambarproduk/gelangcrystal.png';
-import imgGelangPerak     from '../assets/gambarproduk/gelangperak.png';
-import imgGelangBead      from '../assets/gambarproduk/gelangbead.png';
-import imgGelangTali      from '../assets/gambarproduk/gelangtali.png';
-import imgCincinCouple    from '../assets/gambarproduk/cincincouple.png';
-import imgCincinGold      from '../assets/gambarproduk/cincingold.png';
-import imgCincinResin     from '../assets/gambarproduk/cincinresin.png';
-import imgAntingHoop      from '../assets/gambarproduk/antinghoop.png';
-import imgAntingTassel    from '../assets/gambarproduk/antingtassel.png';
-import imgAntingPearl     from '../assets/gambarproduk/antingpearl.png';
-import imgAntingBintang   from '../assets/gambarproduk/antingbintang.png';
-import imgNailFlower      from '../assets/gambarproduk/pressonnailflower.png';
-import imgNailGlitter     from '../assets/gambarproduk/pressonnailglitter.png';
-import imgNailFrench      from '../assets/gambarproduk/pressonnailfrenchtip.png';
-import imgNailOmbre       from '../assets/gambarproduk/pressonnailombre.png';
-import imgTumblrPastel    from '../assets/gambarproduk/tmblrpastel.png';
-import imgTumblrFlower    from '../assets/gambarproduk/tumblrflower.png';
-import imgTumblrGlass     from '../assets/gambarproduk/tumblrglass.png';
-import imgClawClip        from '../assets/gambarproduk/clawclip.png';
-import imgJepitButterfly  from '../assets/gambarproduk/jepitrambutbutterfly.png';
-import imgBandoPearl      from '../assets/gambarproduk/bandopearl.png';
-import imgScrunchie       from '../assets/gambarproduk/scrunchie.png';
-import imgTasMini         from '../assets/gambarproduk/tasminiselempang.png';
-import imgTasRajut        from '../assets/gambarproduk/tasrajut.png';
-import imgTasKoin         from '../assets/gambarproduk/taskoin.png';
-import imgKacamata        from '../assets/gambarproduk/framekacamata.png';
-import imgMasker          from '../assets/gambarproduk/maskerlucu.png';
-import imgStiker          from '../assets/gambarproduk/stiker.png';
-import imgGanci           from '../assets/gambarproduk/gancisanrio.png';
-import imgIkatPinggang    from '../assets/gambarproduk/ikapinggang.png';
 
 import Badge     from '../components/Badge';
 import StatCard  from '../components/StatCard';
@@ -64,79 +30,147 @@ import {
 } from 'react-icons/fa';
 import { useToast, ToastContainer } from '../components/Toast';
 
-const gambarMap = {
-  'kalungrosegold.png': imgKalungRosegold,     'kalungchoker.png': imgKalungChoker,
-  'kalungbintang.png': imgKalungBintang,       'kalungpearl.png': imgKalungPearl,
-  'gelangcrystal.png': imgGelangCrystal,       'gelangperak.png': imgGelangPerak,
-  'gelangbead.png': imgGelangBead,             'gelangtali.png': imgGelangTali,
-  'cincincouple.png': imgCincinCouple,         'cincingold.png': imgCincinGold,
-  'cincinresin.png': imgCincinResin,           'antinghoop.png': imgAntingHoop,
-  'antingtassel.png': imgAntingTassel,         'antingpearl.png': imgAntingPearl,
-  'antingbintang.png': imgAntingBintang,       'pressonnailflower.png': imgNailFlower,
-  'pressonnailglitter.png': imgNailGlitter,    'pressonnailfrenchtip.png': imgNailFrench,
-  'pressonnailombre.png': imgNailOmbre,        'tmblrpastel.png': imgTumblrPastel,
-  'tumblrflower.png': imgTumblrFlower,         'tumblrglass.png': imgTumblrGlass,
-  'clawclip.png': imgClawClip,                 'jepitrambutbutterfly.png': imgJepitButterfly,
-  'bandopearl.png': imgBandoPearl,             'scrunchie.png': imgScrunchie,
-  'tasminiselempang.png': imgTasMini,          'tasrajut.png': imgTasRajut,
-  'taskoin.png': imgTasKoin,                   'framekacamata.png': imgKacamata,
-  'maskerlucu.png': imgMasker,                 'stiker.png': imgStiker,
-  'gancisanrio.png': imgGanci,                 'ikapinggang.png': imgIkatPinggang,
+// ── Constants ─────────────────────────────────────────────────────────────────
+const ITEMS_PER_PAGE = 10;
+const NOTIF_KEY = 'joy_dream_order_notif';
+
+const statusConfig = {
+  Selesai:    { style: 'bg-status-success/10 text-status-success border border-status-success/20', icon: FaCheckCircle },
+  Proses:     { style: 'bg-surface-neutral text-text-light border border-surface-border',          icon: FaSpinner     },
+  Batal:      { style: 'bg-status-warning/10 text-status-warning border border-status-warning/20', icon: FaTimesCircle },
+  Dibatalkan: { style: 'bg-status-warning/10 text-status-warning border border-status-warning/20', icon: FaTimesCircle },
 };
+
+const isBatalStatus = (status) =>
+  status === 'Batal' || status === 'Dibatalkan';
 
 const getImg = (path) => {
   if (!path) return null;
-  // Base64 / blob URL langsung (produk yang ditambah via form)
-  if (path.startsWith('data:') || path.startsWith('blob:')) return path;
-  return gambarMap[path.split('/').pop()] ?? null;
+  if (path.startsWith('data:') || path.startsWith('blob:') || path.startsWith('http')) return path;
+  return getProdukImageUrl(path);
 };
 
-const statusConfig = {
-  Selesai: { style: 'bg-status-success/10 text-status-success border border-status-success/20', icon: FaCheckCircle },
-  Proses:  { style: 'bg-surface-neutral text-text-light border border-surface-border',          icon: FaSpinner     },
-  Batal:   { style: 'bg-status-warning/10 text-status-warning border border-status-warning/20', icon: FaTimesCircle },
+const saveOrderNotif = (orders) => {
+  try {
+    const ids = orders.map(o => o.id);
+    localStorage.setItem(NOTIF_KEY, JSON.stringify(ids));
+  } catch { /* ignore */ }
 };
+
 
 export default function Orders() {
   const { toasts, showToast, removeToast } = useToast();
-  const [orders, setOrders]     = useState(ordersData);
-  const [selected, setSelected] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [editTarget, setEditTarget]   = useState(null);
+
+  // ── showToast ref proxy (avoid dep loop in useCallback) ──────────────────────
+  const showToastRef = useRef(showToast);
+  useEffect(() => { showToastRef.current = showToast; }, [showToast]);
+
+  // ── Core state ────────────────────────────────────────────────────────────────
+  const [orders, setOrders]         = useState([]);
+  const [totalRows, setTotalRows]   = useState(0);
+  const [inventoryItems, setInventoryItems] = useState([]);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState(null);
+
+  // ── Stat counts (langsung dari DB, bukan dari halaman aktif) ─────────────────
+  const [statCounts, setStatCounts] = useState({ total: 0, selesai: 0, proses: 0 });
+
+  const [selected, setSelected]     = useState(null);
+  const [showForm, setShowForm]     = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
   const [hapusTarget, setHapusTarget] = useState(null);
-  const [editForm, setEditForm] = useState({ status: 'Proses', metode: 'Transfer Bank' });
+  const [editForm, setEditForm]     = useState({ status: 'Proses', metode: 'Transfer Bank' });
 
-  const [dataForm, setDataForm] = useState({ search: '', filterStatus: 'Semua' });
+  // ── Pagination / Search / Filter ──────────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch]           = useState('');
+  const [filterStatus, setFilterStatus] = useState('Semua');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
+  // ── Debounce search 400ms ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // ── Reset page on search/filter change ───────────────────────────────────────
+  useEffect(() => { setCurrentPage(1); }, [debouncedSearch, filterStatus]);
+
+
+  // ── Add form state ────────────────────────────────────────────────────────────
   const [formPesanan, setFormPesanan] = useState({
     customer: '', produk: '', qty: 1, total: '', status: 'Proses',
     tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-    metode: 'Transfer Bank',
+    metode: 'Transfer BCA',
   });
 
-  /* ── State untuk product autocomplete ── */
-  const [produkQuery, setProdukQuery]           = useState('');
-  const [produkDropdown, setProdukDropdown]     = useState(false);
-  const [selectedProduk, setSelectedProduk]     = useState(null);
-  const produkInputRef                          = useRef(null);
-  const produkDropdownRef                       = useRef(null);
+  // ── Product autocomplete state ────────────────────────────────────────────────
+  const [produkQuery, setProdukQuery]       = useState('');
+  const [produkDropdown, setProdukDropdown] = useState(false);
+  const [selectedProduk, setSelectedProduk] = useState(null);
+  const produkInputRef    = useRef(null);
+  const produkDropdownRef = useRef(null);
 
-  // Ambil inventory dari localStorage jika ada (supaya sinkron dengan halaman Inventory)
-  const inventoryItems = (() => {
+  // ── Fetch orders (server-side pagination) ────────────────────────────────────
+  const fetchOrders = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    setError(null);
     try {
-      const saved = localStorage.getItem('joy_dream_inventory');
-      return saved ? JSON.parse(saved) : inventoryData;
-    } catch { return inventoryData; }
-  })();
+      const { data, total } = await transaksiAPI.fetchTransaksiPaged({
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+        search: debouncedSearch,
+        status: filterStatus,
+      });
+      const normalised = data.map(normaliseTransaksi);
+      setOrders(normalised);
+      setTotalRows(total);
+      if (!silent) saveOrderNotif(normalised);
+    } catch (err) {
+      setError(err?.message ?? 'Gagal memuat pesanan.');
+      if (!silent) showToastRef.current({ type: 'error', title: 'Gagal memuat', message: err?.message ?? 'Coba lagi.' });
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [currentPage, debouncedSearch, filterStatus]);
 
-  const produkSuggestions = produkQuery.trim() === ''
-    ? inventoryItems.slice(0, 6)
-    : inventoryItems.filter(p =>
-        p.name.toLowerCase().includes(produkQuery.toLowerCase()) ||
-        p.kategori.toLowerCase().includes(produkQuery.toLowerCase())
-      ).slice(0, 8);
+  useEffect(() => {
+    fetchOrders(false);
+  }, [fetchOrders]);
 
-  // Tutup dropdown ketika klik di luar
+  // ── Polling every 30s (silent, page 1 only) ───────────────────────────────────
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (currentPage === 1) fetchOrders(true);
+    }, 30000);
+    return () => clearInterval(id);
+  }, [currentPage, fetchOrders]);
+
+
+  // ── Load products once on mount (for gambar map & autocomplete) ──────────────
+  useEffect(() => {
+    produkAPI.fetchAllProduk()
+      .then(items => setInventoryItems(items))
+      .catch(() => { /* non-fatal */ });
+  }, []);
+
+  // ── Fetch stat counts dari DB (bukan dari halaman aktif) ─────────────────────
+  const fetchStatCounts = useCallback(async () => {
+    try {
+      const counts = await transaksiAPI.fetchStatCounts();
+      setStatCounts(counts);
+    } catch { /* non-fatal */ }
+  }, []);
+
+  useEffect(() => { fetchStatCounts(); }, [fetchStatCounts]);
+
+  // Refresh stat counts tiap 30s bersamaan dengan polling orders
+  useEffect(() => {
+    const id = setInterval(fetchStatCounts, 30000);
+    return () => clearInterval(id);
+  }, [fetchStatCounts]);
+
+  // ── Close autocomplete dropdown on outside click ──────────────────────────────
   useEffect(() => {
     const handler = (e) => {
       if (
@@ -150,11 +184,22 @@ export default function Orders() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+ const totalPages = Math.ceil(totalRows / ITEMS_PER_PAGE);
+  const totalOmzet  = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+
+  const produkSuggestions = produkQuery.trim() === ''
+    ? inventoryItems.slice(0, 6)
+    : inventoryItems.filter(p =>
+        p.name.toLowerCase().includes(produkQuery.toLowerCase()) ||
+        (p.kategori ?? '').toLowerCase().includes(produkQuery.toLowerCase())
+      ).slice(0, 8);
+
+
+ // ── Handlers ──────────────────────────────────────────────────────────────────
   const handleSelectProduk = (item) => {
     setSelectedProduk(item);
     setProdukQuery(item.name);
     setProdukDropdown(false);
-    // Auto-isi gambar & update total jika qty sudah ada
     const qty = Number(formPesanan.qty) || 1;
     setFormPesanan(p => ({
       ...p,
@@ -176,7 +221,6 @@ export default function Orders() {
     const { name, value } = e.target;
     setFormPesanan(prev => {
       const updated = { ...prev, [name]: value };
-      // Auto-kalkulasi total jika qty berubah dan ada produk terpilih dari inventory
       if (name === 'qty' && selectedProduk) {
         updated.total = String(selectedProduk.harga * (Number(value) || 1));
       }
@@ -184,47 +228,38 @@ export default function Orders() {
     });
   };
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 5;
-
-  const _search = dataForm.search.toLowerCase();
-  const filtered = orders.filter(o => {
-    const matchSearch = o.customer.toLowerCase().includes(_search)
-      || o.id.toLowerCase().includes(_search)
-      || o.produk.toLowerCase().includes(_search);
-    const matchStatus = dataForm.filterStatus === 'Semua' || o.status === dataForm.filterStatus;
-    return matchSearch && matchStatus;
-  });
-
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginatedData = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  const totalOmzet   = orders.filter(o => o.status !== 'Batal').reduce((a, o) => a + o.total, 0);
-  const totalSelesai = orders.filter(o => o.status === 'Selesai').length;
-  const totalProses  = orders.filter(o => o.status === 'Proses').length;
-  const totalBatal   = orders.filter(o => o.status === 'Batal').length;
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formPesanan.customer || !formPesanan.produk || !formPesanan.total) return;
-    const newOrder = {
-      ...formPesanan,
-      id:    `#ORD-${String(orders.length + 1).padStart(3, '0')}`,
-      qty:   Number(formPesanan.qty),
-      total: Number(formPesanan.total),
-      poin:  formPesanan.status === 'Batal' ? 0 : Math.floor(Number(formPesanan.total) / 1000),
-    };
-    setOrders(prev => [newOrder, ...prev]);
     const namaPelanggan = formPesanan.customer;
-    setFormPesanan({
-      customer: '', produk: '', qty: 1, total: '', status: 'Proses',
-      tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-      metode: 'Transfer BCA',
-    });
-    setProdukQuery('');
-    setSelectedProduk(null);
-    setShowForm(false);
-    showToast({ type: 'success', title: 'Pesanan ditambahkan!', message: `Pesanan dari "${namaPelanggan}" berhasil disimpan.` });
+    try {
+      const newOrder = await transaksiAPI.createTransaksiAdmin({
+        namaPelanggan,
+        idPelanggan:    '',   // form admin manual, tidak ada FK
+        produk:         formPesanan.produk,
+        idProduk:       selectedProduk?.id       ?? '',
+        kategoriProduk: selectedProduk?.kategori ?? '',
+        qty:            Number(formPesanan.qty)  || 1,
+        hargaSatuan:    selectedProduk?.harga    ?? Number(formPesanan.total),
+        total:          Number(formPesanan.total),
+        metode:         formPesanan.metode,
+        status:         formPesanan.status,
+      });
+      setFormPesanan({
+        customer: '', produk: '', qty: 1, total: '', status: 'Proses',
+        tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        metode: 'Transfer Bank',
+      });
+      setProdukQuery('');
+      setSelectedProduk(null);
+      setShowForm(false);
+      showToast({ type: 'success', title: 'Pesanan ditambahkan!', message: `Pesanan dari "${namaPelanggan}" berhasil disimpan ke database.` });
+      // Tambahkan ke state lokal agar langsung muncul tanpa refetch
+      if (newOrder) setOrders(prev => [newOrder, ...prev]);
+      fetchStatCounts();
+    } catch (err) {
+      showToast({ type: 'error', title: 'Gagal menyimpan', message: err?.message ?? 'Coba lagi.' });
+    }
   };
 
   const openEdit = (o) => {
@@ -232,21 +267,68 @@ export default function Orders() {
     setEditForm({ status: o.status, metode: o.metode });
   };
 
-  const handleSaveEdit = (e) => {
+  const handleSaveEdit = async (e) => {
     e.preventDefault();
-    const updated = orders.map(o =>
-      o.id === editTarget.id
-        ? { ...o, status: editForm.status, metode: editForm.metode,
-            poin: editForm.status === 'Batal' ? 0 : Math.floor(o.total / 1000) }
-        : o
-    );
-    setOrders(updated);
-    if (selected?.id === editTarget.id) {
-      setSelected(prev => ({ ...prev, status: editForm.status, metode: editForm.metode,
-        poin: editForm.status === 'Batal' ? 0 : Math.floor(prev.total / 1000) }));
+    const oldStatus = editTarget.status;
+    const newStatus = editForm.status;
+    const idProduk  = editTarget.idProduk;
+    const qty       = Number(editTarget.qty) || 1;
+
+    // ── 1. Update status di DB ──────────────────────────────────────────────────
+    try {
+      await transaksiAPI.updateStatus(editTarget.id, newStatus);
+    } catch (err) {
+      showToast({ type: 'error', title: 'Gagal update', message: err?.message ?? 'Coba lagi.' });
+      return;
     }
-    showToast({ type: 'update', title: 'Pesanan diperbarui!', message: `${editTarget.id} berhasil diupdate.` });
+
+    // ── 1.5. Update poin customer dan transaksi jika status berubah ke/dari Selesai ──
+    const poinDihitung = Math.floor((editTarget.total ?? 0) / 1000);
+    if (oldStatus !== 'Selesai' && newStatus === 'Selesai') {
+      try {
+        if (editTarget.idPelanggan) {
+          await userAPI.tambahPoinCustomer(editTarget.idPelanggan, poinDihitung);
+        }
+        await transaksiAPI.updatePoinTransaksi(editTarget.id, poinDihitung);
+      } catch (err) {
+        console.error("Gagal update poin saat Selesai:", err);
+      }
+    } else if (oldStatus === 'Selesai' && newStatus !== 'Selesai') {
+      try {
+        if (editTarget.idPelanggan) {
+          await userAPI.tambahPoinCustomer(editTarget.idPelanggan, -poinDihitung);
+        }
+        await transaksiAPI.updatePoinTransaksi(editTarget.id, 0);
+      } catch (err) {
+        console.error("Gagal update poin saat batal Selesai:", err);
+      }
+    }
+
+    // ── 2. Manajemen stok otomatis (diurus oleh trigger DB, frontend cukup sync cache) ──
+    const prorogToSelesai = oldStatus === 'Proses'  && newStatus === 'Selesai';
+    const refundToCancel  = oldStatus === 'Selesai' && (newStatus === 'Batal' || newStatus === 'Dibatalkan');
+
+    if (prorogToSelesai || refundToCancel) {
+      // Refresh inventoryItems cache agar autocomplete & gambar tetap sinkron dengan perubahan DB trigger
+      setTimeout(() => {
+        produkAPI.fetchAllProduk().then(items => setInventoryItems(items)).catch(() => {});
+      }, 500);
+    }
+
+    // ── 3. Update state lokal ──────────────────────────────────────────────────
+    const poin = newStatus === 'Selesai' ? poinDihitung : 0;
+    setOrders(prev => prev.map(o =>
+      o.id === editTarget.id
+        ? { ...o, status: newStatus, metode: editForm.metode, poin }
+        : o
+    ));
+    if (selected?.id === editTarget.id) {
+      setSelected(prev => ({ ...prev, status: newStatus, metode: editForm.metode, poin }));
+    }
+
+    showToast({ type: 'update', title: 'Pesanan diperbarui!', message: `${editTarget.id} berhasil diupdate ke ${newStatus}.` });
     setEditTarget(null);
+    fetchStatCounts(); // refresh stat cards
   };
 
   const handleHapus = () => {
@@ -272,9 +354,9 @@ export default function Orders() {
 
       {/* ── Stat Cards ── */}
       <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Total Pesanan" value={orders.length}  desc="semua pesanan"   icon={<FaShoppingBag />} iconBgColor="bg-[#F4F4F5]"   iconColor="text-[#9E4BDC]" />
-        <StatCard label="Selesai"       value={totalSelesai}   desc="transaksi lunas" icon={<FaCheckCircle />} iconBgColor="bg-[#00B5AD]/10" iconColor="text-[#00B5AD]" />
-        <StatCard label="Diproses"      value={totalProses}    desc="menunggu proses" icon={<FaSpinner />}     iconBgColor="bg-[#F4F4F5]"   iconColor="text-[#A1A1AA]" />
+        <StatCard label="Total Pesanan" value={statCounts.total}   desc="semua pesanan"   icon={<FaShoppingBag />} iconBgColor="bg-[#F4F4F5]"   iconColor="text-[#9E4BDC]" />
+        <StatCard label="Selesai"       value={statCounts.selesai} desc="transaksi lunas" icon={<FaCheckCircle />} iconBgColor="bg-[#00B5AD]/10" iconColor="text-[#00B5AD]" />
+        <StatCard label="Diproses"      value={statCounts.proses}  desc="menunggu proses" icon={<FaSpinner />}     iconBgColor="bg-[#F4F4F5]"   iconColor="text-[#A1A1AA]" />
       </div>
 
       {/* ── Main 2-col ── */}
@@ -287,9 +369,9 @@ export default function Orders() {
             <Input
               placeholder="Cari ID, nama, atau produk..."
               icon={FaSearch}
-              value={dataForm.search}
+              value={search}
               onChange={(e) => {
-                setDataForm({ ...dataForm, search: e.target.value });
+                setSearch(e.target.value);
                 setCurrentPage(1);
               }}
               className="flex-1 !gap-0"
@@ -300,9 +382,9 @@ export default function Orders() {
                 <Button
                   key={s}
                   size="sm"
-                  variant={dataForm.filterStatus === s ? 'primary' : 'ghost'}
+                  variant={filterStatus === s ? 'primary' : 'ghost'}
                   onClick={() => {
-                    setDataForm({ ...dataForm, filterStatus: s });
+                    setFilterStatus(s);
                     setCurrentPage(1);
                   }}
                 >
@@ -323,7 +405,7 @@ export default function Orders() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedData.map(o => {
+                {orders.map(o => {
                   const sc = statusConfig[o.status] ?? statusConfig.Proses;
                   const isActive = selected?.id === o.id;
                   return (
@@ -339,18 +421,48 @@ export default function Orders() {
                         <p className="text-[10px] text-text-disable">{o.tanggal}</p>
                       </td>
                       <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-9 h-9 bg-secondary/20 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
-                            {getImg(o.gambar)
-                              ? <img src={getImg(o.gambar)} alt={o.produk} className="w-full h-full object-cover" />
-                              : <FaBoxOpen className="text-status-success text-[10px]" />
-                            }
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-text-dark leading-tight">{o.produk}</p>
-                            <p className="text-[10px] text-text-disable">{o.qty} pcs</p>
-                          </div>
-                        </div>
+                        {(() => {
+                          // Lookup gambar dari inventoryItems cache
+                          const cached = inventoryItems.find(p => p.id === o.idProduk);
+                          const imgSrc = getImg(cached?.gambar ?? o.gambar);
+                          const detailPath = o.idProduk ? `/inventory/${o.idProduk}` : null;
+                          return (
+                            <div className="flex items-center gap-2">
+                              {/* Thumbnail — klik ke detail */}
+                              {detailPath ? (
+                                <Link to={detailPath} className="shrink-0 block" title="Lihat detail produk">
+                                  <div className="w-9 h-9 bg-secondary/20 rounded-xl overflow-hidden flex items-center justify-center ring-0 hover:ring-2 hover:ring-[#9E4BDC]/40 transition-all">
+                                    {imgSrc
+                                      ? <img src={imgSrc} alt={o.produk} className="w-full h-full object-cover" />
+                                      : <FaBoxOpen className="text-status-success text-[10px]" />
+                                    }
+                                  </div>
+                                </Link>
+                              ) : (
+                                <div className="w-9 h-9 bg-secondary/20 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
+                                  {imgSrc
+                                    ? <img src={imgSrc} alt={o.produk} className="w-full h-full object-cover" />
+                                    : <FaBoxOpen className="text-status-success text-[10px]" />
+                                  }
+                                </div>
+                              )}
+                              {/* Nama produk — klik ke detail */}
+                              <div>
+                                {detailPath ? (
+                                  <Link to={detailPath}
+                                    className="text-xs font-semibold text-text-dark leading-tight hover:text-[#9E4BDC] hover:underline transition-colors block"
+                                    title="Lihat detail produk"
+                                  >
+                                    {o.produk}
+                                  </Link>
+                                ) : (
+                                  <p className="text-xs font-semibold text-text-dark leading-tight">{o.produk}</p>
+                                )}
+                                <p className="text-[10px] text-text-disable">{o.qty} pcs</p>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-5 py-3.5">
                         <p className="text-sm font-black text-text-dark">Rp {o.total.toLocaleString('id')}</p>
@@ -394,7 +506,7 @@ export default function Orders() {
                 })}
               </tbody>
             </table>
-            {filtered.length === 0 && (
+            {orders.length === 0 && (
               <div className="py-16 text-center">
                 <FaSearch className="text-3xl text-text-disable mx-auto mb-2" />
                 <p className="text-sm font-bold text-text-disable">Pesanan tidak ditemukan</p>
@@ -405,6 +517,7 @@ export default function Orders() {
             <div className="p-4 border-t border-[#E4E4E7] flex justify-center">
               <Pagination>
                 <PaginationContent>
+                  {/* Prev */}
                   <PaginationItem>
                     <PaginationPrevious
                       href="#"
@@ -415,23 +528,46 @@ export default function Orders() {
                       className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
                     />
                   </PaginationItem>
-                  {Array.from({ length: totalPages }).map((_, i) => {
-                    const page = i + 1;
-                    return (
-                      <PaginationItem key={page}>
+
+                  {/* Smart windowed page numbers */}
+                  {(() => {
+                    const WINDOW = 1; // pages shown on each side of current
+                    const pages = [];
+
+                    const addPage = (p) => pages.push(
+                      <PaginationItem key={p}>
                         <PaginationLink
                           href="#"
-                          isActive={page === currentPage}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setCurrentPage(page);
-                          }}
+                          isActive={p === currentPage}
+                          onClick={(e) => { e.preventDefault(); setCurrentPage(p); }}
                         >
-                          {page}
+                          {p}
                         </PaginationLink>
                       </PaginationItem>
                     );
-                  })}
+                    const addEllipsis = (key) => pages.push(
+                      <PaginationItem key={key}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    );
+
+                    // always show page 1
+                    addPage(1);
+
+                    const rangeStart = Math.max(2, currentPage - WINDOW);
+                    const rangeEnd   = Math.min(totalPages - 1, currentPage + WINDOW);
+
+                    if (rangeStart > 2) addEllipsis('start-ellipsis');
+                    for (let p = rangeStart; p <= rangeEnd; p++) addPage(p);
+                    if (rangeEnd < totalPages - 1) addEllipsis('end-ellipsis');
+
+                    // always show last page
+                    if (totalPages > 1) addPage(totalPages);
+
+                    return pages;
+                  })()}
+
+                  {/* Next */}
                   <PaginationItem>
                     <PaginationNext
                       href="#"

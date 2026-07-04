@@ -1,44 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import inventoryData from '../data/inventory.json';
 import PageHeader  from '../components/PageHeader';
-
-/* ─── Import gambar produk (agar Vite bundle dengan benar di production) ─── */
-import imgKalungRosegold  from '../assets/gambarproduk/kalungrosegold.png';
-import imgKalungChoker    from '../assets/gambarproduk/kalungchoker.png';
-import imgKalungBintang   from '../assets/gambarproduk/kalungbintang.png';
-import imgKalungPearl     from '../assets/gambarproduk/kalungpearl.png';
-import imgGelangCrystal   from '../assets/gambarproduk/gelangcrystal.png';
-import imgGelangPerak     from '../assets/gambarproduk/gelangperak.png';
-import imgGelangBead      from '../assets/gambarproduk/gelangbead.png';
-import imgGelangTali      from '../assets/gambarproduk/gelangtali.png';
-import imgCincinCouple    from '../assets/gambarproduk/cincincouple.png';
-import imgCincinGold      from '../assets/gambarproduk/cincingold.png';
-import imgCincinResin     from '../assets/gambarproduk/cincinresin.png';
-import imgAntingHoop      from '../assets/gambarproduk/antinghoop.png';
-import imgAntingTassel    from '../assets/gambarproduk/antingtassel.png';
-import imgAntingPearl     from '../assets/gambarproduk/antingpearl.png';
-import imgAntingBintang   from '../assets/gambarproduk/antingbintang.png';
-import imgNailFlower      from '../assets/gambarproduk/pressonnailflower.png';
-import imgNailGlitter     from '../assets/gambarproduk/pressonnailglitter.png';
-import imgNailFrench      from '../assets/gambarproduk/pressonnailfrenchtip.png';
-import imgNailOmbre       from '../assets/gambarproduk/pressonnailombre.png';
-import imgTumblrPastel    from '../assets/gambarproduk/tmblrpastel.png';
-import imgTumblrFlower    from '../assets/gambarproduk/tumblrflower.png';
-import imgTumblrGlass     from '../assets/gambarproduk/tumblrglass.png';
-import imgClawClip        from '../assets/gambarproduk/clawclip.png';
-import imgJepitButterfly  from '../assets/gambarproduk/jepitrambutbutterfly.png';
-import imgBandoPearl      from '../assets/gambarproduk/bandopearl.png';
-import imgScrunchie       from '../assets/gambarproduk/scrunchie.png';
-import imgTasMini         from '../assets/gambarproduk/tasminiselempang.png';
-import imgTasRajut        from '../assets/gambarproduk/tasrajut.png';
-import imgTasKoin         from '../assets/gambarproduk/taskoin.png';
-import imgKacamata        from '../assets/gambarproduk/framekacamata.png';
-import imgMasker          from '../assets/gambarproduk/maskerlucu.png';
-import imgStiker          from '../assets/gambarproduk/stiker.png';
-import imgGanci           from '../assets/gambarproduk/gancisanrio.png';
-import imgIkatPinggang    from '../assets/gambarproduk/ikapinggang.png';
+import { produkAPI, getProdukImageUrl, normaliseProduk } from '../services/produkAPI';
 
 import StatCard    from '../components/StatCard';
 import Badge       from '../components/Badge';
@@ -75,31 +39,12 @@ import {
   FaImage, FaUpload,
 } from 'react-icons/fa';
 
-const gambarMap = {
-  'kalungrosegold.png': imgKalungRosegold,     'kalungchoker.png': imgKalungChoker,
-  'kalungbintang.png': imgKalungBintang,       'kalungpearl.png': imgKalungPearl,
-  'gelangcrystal.png': imgGelangCrystal,       'gelangperak.png': imgGelangPerak,
-  'gelangbead.png': imgGelangBead,             'gelangtali.png': imgGelangTali,
-  'cincincouple.png': imgCincinCouple,         'cincingold.png': imgCincinGold,
-  'cincinresin.png': imgCincinResin,           'antinghoop.png': imgAntingHoop,
-  'antingtassel.png': imgAntingTassel,         'antingpearl.png': imgAntingPearl,
-  'antingbintang.png': imgAntingBintang,       'pressonnailflower.png': imgNailFlower,
-  'pressonnailglitter.png': imgNailGlitter,    'pressonnailfrenchtip.png': imgNailFrench,
-  'pressonnailombre.png': imgNailOmbre,        'tmblrpastel.png': imgTumblrPastel,
-  'tumblrflower.png': imgTumblrFlower,         'tumblrglass.png': imgTumblrGlass,
-  'clawclip.png': imgClawClip,                 'jepitrambutbutterfly.png': imgJepitButterfly,
-  'bandopearl.png': imgBandoPearl,             'scrunchie.png': imgScrunchie,
-  'tasminiselempang.png': imgTasMini,          'tasrajut.png': imgTasRajut,
-  'taskoin.png': imgTasKoin,                   'framekacamata.png': imgKacamata,
-  'maskerlucu.png': imgMasker,                 'stiker.png': imgStiker,
-  'gancisanrio.png': imgGanci,                 'ikapinggang.png': imgIkatPinggang,
-};
-
+// Gunakan helper dari produkAPI untuk generate URL gambar dari Supabase Storage
 const getImg = (path) => {
   if (!path) return null;
-  // Base64 / blob URL langsung
+  // Base64 / blob URL langsung (upload lokal sementara)
   if (path.startsWith('data:') || path.startsWith('blob:')) return path;
-  return gambarMap[path.split('/').pop()] ?? null;
+  return getProdukImageUrl(path);
 };
 
 const kategoriOptions = [
@@ -119,8 +64,10 @@ function ProdukFormModal({ mode = 'add', initialData = null, onClose, onSave }) 
     if (!initialData?.gambar) return null;
     return getImg(initialData.gambar) ?? null;
   });
-  // Simpan data URL gambar baru (base64) untuk produk baru / edit
-  const [imgData, setImgData] = useState(null);
+  // Simpan File object asli untuk di-upload ke Storage
+  const [imgFile, setImgFile]   = useState(null);
+  // Simpan data URL hanya untuk preview
+  const [imgData, setImgData]   = useState(null);
   const fileInputRef = useRef(null);
   const nameRef = useRef(null);
 
@@ -139,6 +86,7 @@ function ProdukFormModal({ mode = 'add', initialData = null, onClose, onSave }) 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    setImgFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => {
       setImgPreview(ev.target.result);
@@ -151,6 +99,7 @@ function ProdukFormModal({ mode = 'add', initialData = null, onClose, onSave }) 
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (!file || !file.type.startsWith('image/')) return;
+    setImgFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => {
       setImgPreview(ev.target.result);
@@ -165,9 +114,8 @@ function ProdukFormModal({ mode = 'add', initialData = null, onClose, onSave }) 
     const harga  = parseInt(form.harga);
     const stock  = parseInt(form.stock);
     const status = stock === 0 ? 'Habis' : stock <= 8 ? 'Hampir Habis' : 'Aman';
-    // Tentukan nilai gambar: kalau ada upload baru pakai data URL, kalau tidak pakai yang lama
-    const gambar = imgData ?? initialData?.gambar ?? null;
-    onSave({ ...form, harga, stock, status, gambar });
+    // Pass File object (imgFile) + path lama (initialData.gambar) ke parent handler
+    onSave({ ...form, harga, stock, status, imgFile, gambar: imgData ?? initialData?.gambar ?? null });
   };
 
   const previewStatus = form.stock === ''
@@ -359,12 +307,24 @@ function HapusModal({ item, onClose, onConfirm }) {
    HALAMAN UTAMA
 ══════════════════════════════════════════════════════════════════════ */
 export default function Inventory() {
-  const [items, setItems] = useState(() => {
-    const saved = localStorage.getItem('joy_dream_inventory');
-    return saved ? JSON.parse(saved) : inventoryData;
-  });
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(null);
 
   const { toasts, showToast, removeToast } = useToast();
+
+  // Muat data produk dari Supabase saat komponen pertama kali ditampilkan
+  useEffect(() => {
+    produkAPI.fetchAllProduk()
+      .then(data => {
+        setItems(data); // fetchAllProduk sudah return data yang dinormalisasi
+      })
+      .catch(err => {
+        console.error('Gagal memuat produk:', err);
+        setError('Gagal memuat data produk dari server.');
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   // null = tutup, 'add' = tambah, item-object = edit
   const [formMode, setFormMode]       = useState(null);
@@ -382,10 +342,6 @@ export default function Inventory() {
     searchInputRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('joy_dream_inventory', JSON.stringify(items));
-  }, [items]);
-
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
 
@@ -402,31 +358,58 @@ export default function Inventory() {
   const totalPages    = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
   const paginatedData = filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  const handleSave = (data) => {
-    if (formMode === 'add') {
-      const newItem = {
-        id:      items.length + 1,
-        terjual: 0,
-        ...data,
-      };
-      setItems(prev => [newItem, ...prev]);
-      showToast({ type: 'success', title: 'Produk ditambahkan!', message: `"${data.name}" berhasil disimpan.` });
-    } else {
-      // mode edit — formMode berisi object item lama
-      setItems(prev => prev.map(it =>
-        it.id === formMode.id ? { ...it, ...data } : it
-      ));
-      showToast({ type: 'update', title: 'Produk diperbarui!', message: `"${data.name}" berhasil diupdate.` });
+  const handleSave = async (data) => {
+    const { imgFile, ...produkData } = data;
+    try {
+      // Upload gambar jika ada file baru
+      let namaGambar = produkData.gambar;
+      if (imgFile) {
+        namaGambar = await produkAPI.uploadGambarProduk(imgFile);
+      }
+
+      if (formMode === 'add') {
+        const newItem = await produkAPI.createProduk({ ...produkData, gambar: namaGambar });
+        setItems(prev => [newItem, ...prev]);
+        showToast({ type: 'success', title: 'Produk ditambahkan!', message: `"${data.name}" berhasil disimpan ke database.` });
+      } else {
+        // mode edit — formMode berisi object item lama
+        await produkAPI.updateProduk(formMode.id, { ...produkData, gambar: namaGambar });
+        setItems(prev => prev.map(it =>
+          it.id === formMode.id ? { ...it, ...produkData, gambar: namaGambar } : it
+        ));
+        showToast({ type: 'update', title: 'Produk diperbarui!', message: `"${data.name}" berhasil diupdate.` });
+      }
+    } catch (err) {
+      showToast({ type: 'error', title: 'Gagal menyimpan', message: err?.message ?? 'Coba lagi.' });
     }
     setFormMode(null);
   };
 
-  const handleHapus = () => {
+  const handleHapus = async () => {
     const nama = hapusTarget.name;
-    setItems(prev => prev.filter(it => it.id !== hapusTarget.id));
+    const id   = hapusTarget.id;
     setHapusTarget(null);
-    showToast({ type: 'delete', title: 'Produk dihapus!', message: `"${nama}" telah dihapus permanen.` });
+    try {
+      await produkAPI.deleteProduk(id);
+      setItems(prev => prev.filter(it => it.id !== id));
+      showToast({ type: 'delete', title: 'Produk dihapus!', message: `"${nama}" telah dihapus permanen.` });
+    } catch (err) {
+      showToast({ type: 'error', title: 'Gagal menghapus', message: err?.message ?? 'Coba lagi.' });
+    }
   };
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="w-8 h-8 border-4 border-[#9E4BDC] border-t-transparent rounded-full animate-spin" />
+      <span className="ml-3 text-sm text-[#71717A] font-medium">Memuat data produk...</span>
+    </div>
+  );
+
+  if (error) return (
+    <div className="bg-[#F24E1E]/10 border border-[#F24E1E]/30 text-[#F24E1E] rounded-xl px-5 py-4 text-sm font-medium m-5">
+      {error}
+    </div>
+  );
 
   return (
     <div className="space-y-5 animate-in fade-in duration-500 font-poppins">

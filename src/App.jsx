@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Loading from "./components/Loading";
 import NotFound from "./pages/NotFound";
@@ -26,18 +26,30 @@ const Login    = lazy(() => import("./pages/auth/Login"));
 const Register = lazy(() => import("./pages/auth/Register"));
 const Forgot   = lazy(() => import("./pages/auth/Forgot"));
 
-// Komponen Helper untuk memproteksi halaman Admin (hanya bisa diakses role admin)
-const AdminRoute = ({ children, isAdmin }) => {
-  return isAdmin ? children : <Navigate to="/" replace />;
+const readAuth = () => {
+  const token = localStorage.getItem("token");
+  const user  = JSON.parse(localStorage.getItem("user") || "{}");
+  return {
+    isAuthenticated: !!token,
+    isAdmin: !!token && user.role === "admin",
+  };
 };
 
 export default function App() {
-  // Cek apakah ada token di localStorage
-  const isAuthenticated = !!localStorage.getItem("token");
+  const [{ isAuthenticated, isAdmin }, setAuth] = useState(readAuth);
 
-  // Cek role user
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const isAdmin = isAuthenticated && user.role === "admin";
+  // Re-read auth state setiap kali localStorage berubah
+  // (mencakup login, logout, dan perubahan dari tab lain)
+  useEffect(() => {
+    const sync = () => setAuth(readAuth());
+    window.addEventListener("storage", sync);
+    // Custom event yang di-dispatch oleh Login/Logout handler
+    window.addEventListener("auth-change", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("auth-change", sync);
+    };
+  }, []);
 
   return (
     <Suspense fallback={<Loading />}>

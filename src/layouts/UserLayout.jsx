@@ -2,9 +2,16 @@ import { useState, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "../components/layout/Header";
-import logoNastore from "../assets/gambarproduk/logonastore.png";
-import { FaGift, FaShoppingBag, FaShieldAlt } from "react-icons/fa";
-import { X, ShoppingCart, Plus, Minus, Trash2, Tag, ArrowRight, Ticket, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Store, ClipboardCheck, Star } from "lucide-react";
+import Footer from "../components/layout/Footer";
+import { userAPI } from "../services/userAPI";
+import { transaksiAPI } from "../services/transaksiAPI";
+import { produkAPI, getProdukImageUrl } from "../services/produkAPI";
+import {
+  X, ShoppingCart, Plus, Minus, Trash2, Tag, ArrowRight,
+  Ticket, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Crown,
+  CreditCard, Wallet, Building2, Smartphone, Package, ChevronRight,
+  MapPin, Clock, CheckCheck, Loader2,
+} from "lucide-react";
 
 /* ══════════════════════════════════════════════
    VOUCHER DATABASE (simulasi server-side)
@@ -67,43 +74,107 @@ const VOUCHER_DB = [
 export default function UserLayout() {
   const [isLoggedIn, setIsLoggedIn]   = useState(false);
   const [userProfile, setUserProfile] = useState(null);
-  const [cartCount, setCartCount]     = useState(0);
-  const [cartItems, setCartItems]     = useState([]);   // [{ product, qty }]
+  const [tierPersen, setTierPersen]   = useState(0); // % diskon dari crm_tier_config
+
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem("cart");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [cartCount, setCartCount] = useState(() => {
+    try {
+      const saved = localStorage.getItem("cart");
+      const items = saved ? JSON.parse(saved) : [];
+      return items.reduce((s, i) => s + i.qty, 0);
+    } catch { return 0; }
+  });
+
   const [cartOpen, setCartOpen]       = useState(false);
   const [voucherInput, setVoucherInput]   = useState("");
-  const [appliedVoucher, setAppliedVoucher] = useState(null); // voucher object yang aktif
+  const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [voucherError, setVoucherError]   = useState("");
   const [voucherSuccess, setVoucherSuccess] = useState("");
   const [showVoucherList, setShowVoucherList] = useState(false);
-  const [orderConfirmed, setOrderConfirmed]   = useState(null); // { orderId, items, total, discount, points }
+  const [orderConfirmed, setOrderConfirmed]   = useState(null);
+
+  // ── Payment flow state ──────────────────────────────────────────────────────
+  const [paymentStep, setPaymentStep]     = useState(null); // null | 'method' | 'confirm' | 'success'
+  const [selectedMethod, setSelectedMethod] = useState(null);
+  const [isSubmitting, setIsSubmitting]   = useState(false);
+  const [submitError, setSubmitError]     = useState("");
+
   const navigate = useNavigate();
 
-  // Sync state with localStorage on mount
+  // Sync state dengan localStorage + fetch data customer dari Supabase
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-    if (token && storedUser) {
-      setIsLoggedIn(true);
+    const syncUser = async () => {
+      const token      = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
+      if (!token || !storedUser) return;
+
       const parsedUser = JSON.parse(storedUser);
-      // Default to 2236 points if the user object doesn't have a points field yet
-      if (parsedUser.points === undefined) {
-        parsedUser.points = 2236;
+      // Set logged in dulu dengan data dasar agar UI tidak blank
+      setIsLoggedIn(true);
+      setUserProfile({ ...parsedUser, points: parsedUser.points ?? 0 });
+
+      // Fetch data customer (poin real, tier, status) dari Supabase
+      try {
+        const customer = await userAPI.fetchCustomerByProfileId(parsedUser.id);
+        if (customer) {
+          const statusMember = customer["Status Member"] ?? "Regular";
+          const merged = {
+            ...parsedUser,
+            points:            customer["Total Poin Saat Ini"]              ?? 0,
+            statusMember,
+            statusKeanggotaan: customer["Status Keanggotaan"]               ?? "Aktif",
+            totalTransaksi:    customer["Total Transaksi"]                  ?? 0,
+            totalBelanja:      customer["Total Belanja Keseluruhan (Rp)"]   ?? 0,
+            idPelanggan:       customer["ID Pelanggan"]                     ?? null,
+            namaLengkap:       customer["Nama Lengkap"]                     ?? `${parsedUser.namaDepan} ${parsedUser.namaBelakang}`,
+          };
+          setUserProfile(merged);
+          localStorage.setItem("user", JSON.stringify(merged));
+
+          // Fetch persentase diskon dari crm_tier_config
+          const persen = await produkAPI.fetchDiskonByTier(statusMember);
+          console.log(`[UserLayout] tier="${statusMember}" → diskon=${persen}%`);
+          setTierPersen(persen);
+        } else {
+          // User belum punya row di customer (daftar sebelum fitur ini ada)
+          // Reset poin ke 0, jangan pakai nilai stale dari localStorage
+          const safe = {
+            ...parsedUser,
+            points:            0,
+            statusMember:      "Regular",
+            statusKeanggotaan: "Aktif",
+          };
+          setUserProfile(safe);
+          localStorage.setItem("user", JSON.stringify(safe));
+        }
+      } catch (err) {
+        // Fetch gagal (misal offline) — pakai 0 sebagai safe default, bukan nilai stale
+        console.warn("[UserLayout] fetchCustomerByProfileId gagal:", err?.message);
+        setUserProfile((prev) => ({ ...prev, points: prev?.points ?? 0 }));
       }
-      setUserProfile(parsedUser);
-    }
+    };
+
+    syncUser();
   }, []);
 
   const handleLogout = () => {
-    // Logout: Clear localStorage and states
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("cart");
     setIsLoggedIn(false);
     setUserProfile(null);
+    setTierPersen(0);
+    setCartItems([]);
+    window.dispatchEvent(new Event("auth-change"));
     navigate("/");
   };
 
   const handleLoginClick = () => {
-    // Redirect to the real login page
     navigate("/login");
   };
 
@@ -114,6 +185,13 @@ export default function UserLayout() {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
+
+  // Sync cart ke localStorage setiap kali cartItems berubah
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cartItems));
+    const total = cartItems.reduce((s, i) => s + i.qty, 0);
+    setCartCount(total);
+  }, [cartItems]);
 
   // Add product to cart (merge qty jika sudah ada)
   const handleAddToCart = (product) => {
@@ -126,31 +204,30 @@ export default function UserLayout() {
       }
       return [...prev, { product, qty: 1 }];
     });
-    setCartCount((c) => c + 1);
   };
 
   const handleQtyChange = (productId, delta) => {
-    setCartItems((prev) => {
-      const updated = prev.map((i) =>
+    setCartItems((prev) =>
+      prev.map((i) =>
         i.product.id === productId ? { ...i, qty: Math.max(1, i.qty + delta) } : i
-      );
-      const newTotal = updated.reduce((s, i) => s + i.qty, 0);
-      setCartCount(newTotal);
-      return updated;
-    });
+      )
+    );
   };
 
   const handleRemoveFromCart = (productId) => {
-    setCartItems((prev) => {
-      const updated = prev.filter((i) => i.product.id !== productId);
-      const newTotal = updated.reduce((s, i) => s + i.qty, 0);
-      setCartCount(newTotal);
-      return updated;
-    });
+    setCartItems((prev) => prev.filter((i) => i.product.id !== productId));
   };
 
   // ── Voucher helpers ──
-  const subtotal = cartItems.reduce((s, i) => s + i.product.priceValue * i.qty, 0);
+  // Hitung harga setelah diskon tier untuk satu produk
+  const getHargaMember = (hargaAsli) => {
+    if (!tierPersen || tierPersen <= 0) return hargaAsli;
+    return Math.floor(hargaAsli - hargaAsli * (tierPersen / 100));
+  };
+
+  const subtotal = cartItems.reduce((s, i) => s + getHargaMember(i.product.harga ?? 0) * i.qty, 0);
+  const subtotalAsli = cartItems.reduce((s, i) => s + (i.product.harga ?? 0) * i.qty, 0);
+  const tierDiscount = subtotalAsli - subtotal; // selisih dari diskon tier
 
   const calcDiscount = (voucher, total) => {
     if (!voucher) return 0;
@@ -197,35 +274,64 @@ export default function UserLayout() {
     setVoucherSuccess("");
   };
 
-  // ── Konfirmasi pesanan (COD / ambil langsung) ──
-  const handleConfirmOrder = () => {
-    const orderId  = `ORD-${Date.now().toString().slice(-6)}`;
-    const earnedPts = cartItems.reduce((s, i) => s + Math.floor(i.product.priceValue / 1000 * i.qty), 0);
+  // ── Generate ID Transaksi unik ──────────────────────────────────────────────
+  const generateTrxId = () => {
+    const ts   = Date.now().toString().slice(-6);
+    const rand = Math.random().toString(36).slice(2, 5).toUpperCase();
+    return `TRX-${ts}${rand}`;
+  };
 
-    setOrderConfirmed({
-      orderId,
-      items: [...cartItems],
-      subtotal,
-      discount,
-      grandTotal,
-      points: earnedPts,
-      voucher: appliedVoucher,
-    });
+  // ── Submit order ke Supabase ────────────────────────────────────────────────
+  const handleConfirmOrder = async () => {
+    if (!selectedMethod || isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitError("");
 
-    // Reset cart & voucher
-    setCartItems([]);
-    setCartCount(0);
-    setAppliedVoucher(null);
-    setVoucherInput("");
-    setVoucherError("");
-    setVoucherSuccess("");
-    setCartOpen(false);
+    try {
+      // Hitung diskon voucher proporsional per item
+      const totalQty = cartItems.reduce((s, i) => s + i.qty, 0);
 
-    // Tambah poin ke user jika login
-    if (isLoggedIn && userProfile) {
-      const updated = { ...userProfile, points: (userProfile.points || 0) + earnedPts };
-      setUserProfile(updated);
-      localStorage.setItem("user", JSON.stringify(updated));
+      const promises = cartItems.map((item) => {
+        const hargaSatuanMember = getHargaMember(item.product.harga ?? 0);
+        const itemSubtotal      = hargaSatuanMember * item.qty;
+        // Bagi diskon voucher secara proporsional berdasarkan persentase nilai item
+        const itemDiskon = discount > 0
+          ? Math.round((itemSubtotal / subtotal) * discount)
+          : 0;
+        const itemTotal = Math.max(0, itemSubtotal - itemDiskon);
+
+        return transaksiAPI.createTransaksi({
+          customer: {
+            idPelanggan:  userProfile?.idPelanggan  ?? '',
+            namaLengkap:  userProfile?.namaLengkap  ?? `${userProfile?.namaDepan ?? ''} ${userProfile?.namaBelakang ?? ''}`.trim(),
+            statusMember: userProfile?.statusMember ?? 'Regular',
+            kelompokUsia: userProfile?.kelompokUsia ?? '',
+          },
+          item,
+          hargaSatuan:      hargaSatuanMember,
+          diskon:           itemDiskon,
+          totalBayar:       itemTotal,
+          metodePembayaran: selectedMethod.label,
+          idTransaksi:      generateTrxId(),
+        });
+      });
+
+      await Promise.all(promises);
+
+      // Reset cart & voucher
+      setCartItems([]);
+      setAppliedVoucher(null);
+      setVoucherInput("");
+      setVoucherError("");
+      setVoucherSuccess("");
+      setCartOpen(false);
+
+      // Tampilkan success step
+      setPaymentStep('success');
+    } catch (err) {
+      setSubmitError(err?.message ?? "Terjadi kesalahan. Coba lagi.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -302,14 +408,23 @@ export default function UserLayout() {
                     <div key={product.id} className="flex items-center gap-3 bg-gray-50/60 rounded-2xl p-3 border border-gray-100">
                       {/* Thumb */}
                       <div className="w-14 h-14 rounded-xl bg-white border border-gray-100 overflow-hidden shrink-0">
-                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                        <img
+                          src={getProdukImageUrl(product.gambar) ?? product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-[#22285E] line-clamp-1">{product.name}</p>
-                        <p className="text-[10px] text-[#9E4BDC] font-black mt-0.5">{product.price}</p>
-                        <p className="text-[9px] text-[#00B5AD] font-bold mt-0.5">
-                          +{Math.floor(product.priceValue / 1000 * qty)} Poin
+                        <p className="text-[9px] text-gray-400 line-through leading-none mt-0.5">
+                          Rp {(Math.ceil(((product.harga ?? 0) * 1.2) / 1000) * 1000).toLocaleString("id-ID")}
+                        </p>
+                        <p className="text-[10px] text-emerald-600 font-black mt-0.5">
+                          Rp {getHargaMember(product.harga ?? 0).toLocaleString("id-ID")}
+                        </p>
+                        <p className="text-[9px] text-gray-400 font-medium mt-0.5">
+                          Subtotal: Rp {(getHargaMember(product.harga ?? 0) * qty).toLocaleString("id-ID")}
                         </p>
                       </div>
                       {/* Qty controls */}
@@ -457,8 +572,24 @@ export default function UserLayout() {
 
                   {/* ── Price breakdown ── */}
                   <div className="space-y-1.5 pt-1">
+                    {/* Baris subtotal asli — tampilkan hanya jika ada tier diskon */}
+                    {tierDiscount > 0 && (
+                      <div className="flex items-center justify-between text-xs text-gray-400 font-medium">
+                        <span>Harga normal ({cartCount} item)</span>
+                        <span>Rp {subtotalAsli.toLocaleString("id")}</span>
+                      </div>
+                    )}
+                    {/* Diskon tier */}
+                    {tierDiscount > 0 && (
+                      <div className="flex items-center justify-between text-xs font-bold text-emerald-600">
+                        <span className="flex items-center gap-1">
+                          <Crown className="w-3 h-3" /> Diskon {userProfile?.statusMember} {tierPersen}%
+                        </span>
+                        <span>- Rp {tierDiscount.toLocaleString("id")}</span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between text-xs text-gray-400 font-medium">
-                      <span>Subtotal ({cartCount} item)</span>
+                      <span>Subtotal setelah tier ({cartCount} item)</span>
                       <span>Rp {subtotal.toLocaleString("id")}</span>
                     </div>
                     {discount > 0 && (
@@ -475,8 +606,8 @@ export default function UserLayout() {
                     <div className="flex items-center justify-between border-t border-gray-100 pt-2 mt-1">
                       <span className="text-sm font-black text-[#22285E]">Total Bayar</span>
                       <div className="text-right">
-                        {discount > 0 && (
-                          <p className="text-[10px] text-gray-400 line-through leading-none">Rp {subtotal.toLocaleString("id")}</p>
+                        {(discount > 0 || tierDiscount > 0) && (
+                          <p className="text-[10px] text-gray-400 line-through leading-none">Rp {subtotalAsli.toLocaleString("id")}</p>
                         )}
                         <p className="text-base font-black text-[#9E4BDC]">Rp {grandTotal.toLocaleString("id")}</p>
                       </div>
@@ -487,11 +618,19 @@ export default function UserLayout() {
                   <div className="flex items-center gap-2 bg-[#00B5AD]/8 border border-[#00B5AD]/15 px-3 py-2 rounded-xl">
                     <Tag className="w-3.5 h-3.5 text-[#00B5AD] shrink-0" />
                     <span className="text-[10px] font-bold text-[#00B5AD]">
-                      +{cartItems.reduce((s, i) => s + Math.floor(i.product.priceValue / 1000 * i.qty), 0)} Poin dari order ini
+                      Poin akan ditambahkan setelah pesanan selesai dikonfirmasi admin
                     </span>
                   </div>
 
-                  <button className="w-full bg-gradient-to-r from-[#9E4BDC] to-[#8B3EC7] hover:opacity-95 text-white text-sm font-black py-3.5 rounded-2xl transition-opacity cursor-pointer shadow-lg shadow-[#9E4BDC]/20 flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => {
+                      if (!isLoggedIn) { setCartOpen(false); navigate("/login"); return; }
+                      setSelectedMethod(null);
+                      setSubmitError("");
+                      setPaymentStep('method');
+                    }}
+                    className="w-full bg-gradient-to-r from-[#9E4BDC] to-[#8B3EC7] hover:opacity-95 text-white text-sm font-black py-3.5 rounded-2xl transition-opacity cursor-pointer shadow-lg shadow-[#9E4BDC]/20 flex items-center justify-center gap-2"
+                  >
                     Bayar Rp {grandTotal.toLocaleString("id")} <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -501,96 +640,350 @@ export default function UserLayout() {
         )}
       </AnimatePresence>
 
-      {/* Main Content Area for Customers */}
-      <main className="flex-grow">
-        <Outlet context={{ isLoggedIn, userProfile, onLoginClick: handleLoginClick, onLogout: handleLogout, setUserProfile, cartCount, setCartCount: handleAddToCart }} />
-      </main>
-      
-      {/* Premium E-Commerce Footer */}
-      <footer className="bg-white border-t border-gray-100 pt-12 pb-6">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-left">
-          {/* Col 1: Brand details */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <img src={logoNastore} alt="Logo" className="w-8 h-8 object-contain" />
-              <p className="font-black text-sm tracking-wide text-[#22285E]">Na_store.id</p>
-            </div>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Menyediakan aksesoris premium mulai dari cincin couple, kalung rosegold, gelang crystal, hingga nail art custom buatan tangan.
-            </p>
-          </div>
+      {/* ══════════════════════════════════════════
+          PAYMENT FLOW MODALS
+      ══════════════════════════════════════ */}
+      <AnimatePresence>
+        {paymentStep && paymentStep !== 'success' && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              className="fixed inset-0 z-[9992] bg-[#22285E]/50 backdrop-blur-sm"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => { if (!isSubmitting) setPaymentStep(null); }}
+            />
 
-          {/* Col 2: Navigation Links */}
-          <div>
-            <h4 className="text-xs font-bold text-[#22285E] uppercase tracking-wider mb-3">Tautan Cepat</h4>
-            <ul className="space-y-2 text-xs text-gray-400 font-semibold">
-              <li>
-                <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="hover:text-[#9E4BDC] transition-colors cursor-pointer bg-transparent border-none outline-none">
-                  Beranda
-                </button>
-              </li>
-              <li>
-                <button onClick={() => handleScroll("catalog")} className="hover:text-[#9E4BDC] transition-colors cursor-pointer bg-transparent border-none outline-none">
-                  Katalog Aksesoris
-                </button>
-              </li>
-              <li>
-                <button onClick={() => handleScroll("loyalty")} className="hover:text-[#9E4BDC] transition-colors cursor-pointer bg-transparent border-none outline-none">
-                  Poin & Reward
-                </button>
-              </li>
-              <li>
-                <button onClick={() => handleScroll("orders")} className="hover:text-[#9E4BDC] transition-colors cursor-pointer bg-transparent border-none outline-none">
-                  Status Transaksi
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 3: Service benefits */}
-          <div>
-            <h4 className="text-xs font-bold text-[#22285E] uppercase tracking-wider mb-3">Jaminan Belanja</h4>
-            <ul className="space-y-2 text-xs text-gray-400 font-semibold">
-              <li className="flex items-center gap-2">
-                <FaShieldAlt className="text-[#9E4BDC]" /> Transaksi Aman REST API
-              </li>
-              <li className="flex items-center gap-2">
-                <FaGift className="text-[#9E4BDC]" /> Poin Reward Belanja
-              </li>
-              <li className="flex items-center gap-2">
-                <FaShoppingBag className="text-[#9E4BDC]" /> Kualitas Produk Terbaik
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 4: Newsletter */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-[#22285E] uppercase tracking-wider">Info Koleksi Baru</h4>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Masukkan email untuk mendapatkan pembaruan info diskon dan restok produk terlaris kami.
-            </p>
-            <form onSubmit={(e) => { e.preventDefault(); alert("Terima kasih sudah mendaftar!"); }} className="flex gap-2">
-              <input
-                type="email"
-                required
-                placeholder="Alamat Email"
-                className="w-full bg-[#F4F4F5] border border-gray-200 rounded-xl px-3 py-2 text-xs text-[#22285E] placeholder-gray-400 focus:outline-none focus:border-[#9E4BDC] focus:ring-1 focus:ring-[#9E4BDC]"
-              />
-              <button
-                type="submit"
-                className="bg-[#9E4BDC] hover:bg-[#8e3ec7] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer shrink-0"
+            {/* Modal */}
+            <motion.div
+              className="fixed inset-0 z-[9993] flex items-end sm:items-center justify-center p-0 sm:p-4"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
+                initial={{ y: 60, scale: 0.97 }}
+                animate={{ y: 0, scale: 1 }}
+                exit={{ y: 60, scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 320, damping: 30 }}
               >
-                Kirim
-              </button>
-            </form>
-          </div>
-        </div>
+                {/* ── STEP 1: Pilih Metode Pembayaran ── */}
+                {paymentStep === 'method' && (() => {
+                  const METHODS = [
+                    {
+                      id: 'transfer_bca',
+                      label: 'Transfer BCA',
+                      icon: Building2,
+                      iconBg: 'bg-blue-50',
+                      iconColor: 'text-blue-600',
+                      desc: '1234 5678 9012 (a.n. Na_store.id)',
+                      tag: 'Paling Cepat',
+                      tagStyle: 'bg-blue-100 text-blue-700',
+                    },
+                    {
+                      id: 'transfer_mandiri',
+                      label: 'Transfer Mandiri',
+                      icon: Building2,
+                      iconBg: 'bg-yellow-50',
+                      iconColor: 'text-yellow-600',
+                      desc: '1400 0012 3456 (a.n. Na_store.id)',
+                    },
+                    {
+                      id: 'gopay',
+                      label: 'GoPay',
+                      icon: Smartphone,
+                      iconBg: 'bg-green-50',
+                      iconColor: 'text-green-600',
+                      desc: '0812-3456-7890',
+                      tag: 'Populer',
+                      tagStyle: 'bg-green-100 text-green-700',
+                    },
+                    {
+                      id: 'dana',
+                      label: 'DANA',
+                      icon: Wallet,
+                      iconBg: 'bg-sky-50',
+                      iconColor: 'text-sky-600',
+                      desc: '0812-3456-7890',
+                    },
+                    {
+                      id: 'cod',
+                      label: 'COD / Ambil Langsung',
+                      icon: Package,
+                      iconBg: 'bg-orange-50',
+                      iconColor: 'text-orange-500',
+                      desc: 'Bayar saat terima pesanan',
+                    },
+                  ];
 
-        <div className="border-t border-gray-100 pt-6 text-center text-xs text-gray-400">
-          <p>© 2026 Na_store.id. Semua Hak Dilindungi Undang-Undang.</p>
-          <p className="mt-1 font-medium text-[#9E4BDC]">Premium Accessories Portal - Powered by Supabase & Axios</p>
-        </div>
-      </footer>
+                  return (
+                    <>
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                        <div>
+                          <p className="text-sm font-black text-[#22285E]">Pilih Metode Pembayaran</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">Total: <span className="font-black text-[#9E4BDC]">Rp {grandTotal.toLocaleString("id")}</span></p>
+                        </div>
+                        <button
+                          onClick={() => setPaymentStep(null)}
+                          className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <X className="w-4 h-4 text-gray-500" />
+                        </button>
+                      </div>
+
+                      {/* Methods list */}
+                      <div className="px-4 py-3 space-y-2 max-h-[60vh] overflow-y-auto">
+                        {METHODS.map((m) => {
+                          const Icon = m.icon;
+                          const isSelected = selectedMethod?.id === m.id;
+                          return (
+                            <button
+                              key={m.id}
+                              onClick={() => setSelectedMethod(m)}
+                              className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer
+                                ${isSelected
+                                  ? 'border-[#9E4BDC] bg-[#9E4BDC]/4 shadow-sm shadow-[#9E4BDC]/10'
+                                  : 'border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50/60'}`}
+                            >
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${m.iconBg}`}>
+                                <Icon className={`w-5 h-5 ${m.iconColor}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-xs font-black text-[#22285E]">{m.label}</p>
+                                  {m.tag && (
+                                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-full ${m.tagStyle}`}>{m.tag}</span>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-gray-400 font-medium mt-0.5">{m.desc}</p>
+                              </div>
+                              <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors
+                                ${isSelected ? 'border-[#9E4BDC] bg-[#9E4BDC]' : 'border-gray-300'}`}>
+                                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* CTA */}
+                      <div className="px-4 pb-6 pt-2">
+                        <button
+                          disabled={!selectedMethod}
+                          onClick={() => setPaymentStep('confirm')}
+                          className={`w-full text-sm font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-all
+                            ${selectedMethod
+                              ? 'bg-gradient-to-r from-[#9E4BDC] to-[#8B3EC7] text-white shadow-lg shadow-[#9E4BDC]/20 hover:opacity-95 cursor-pointer'
+                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                        >
+                          Lanjut <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
+
+                {/* ── STEP 2: Konfirmasi Pesanan ── */}
+                {paymentStep === 'confirm' && (() => {
+                  const Icon = selectedMethod.icon;
+                  return (
+                    <>
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setPaymentStep('method')}
+                            className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+                          >
+                            <ChevronRight className="w-3.5 h-3.5 text-gray-500 rotate-180" />
+                          </button>
+                          <p className="text-sm font-black text-[#22285E]">Konfirmasi Pesanan</p>
+                        </div>
+                        <button
+                          onClick={() => setPaymentStep(null)}
+                          className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <X className="w-4 h-4 text-gray-500" />
+                        </button>
+                      </div>
+
+                      {/* Order summary */}
+                      <div className="px-5 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+
+                        {/* Items */}
+                        <div className="space-y-2">
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Item Pesanan</p>
+                          {cartItems.map(({ product, qty }) => (
+                            <div key={product.id} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-100">
+                              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 overflow-hidden shrink-0">
+                                <img
+                                  src={getProdukImageUrl(product.gambar) ?? product.image}
+                                  alt={product.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-[#22285E] line-clamp-1">{product.name}</p>
+                                <p className="text-[10px] text-gray-400">{qty} pcs × Rp {getHargaMember(product.harga).toLocaleString("id")}</p>
+                              </div>
+                              <p className="text-xs font-black text-[#22285E] shrink-0">
+                                Rp {(getHargaMember(product.harga) * qty).toLocaleString("id")}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Metode */}
+                        <div className="flex items-center gap-3 bg-[#9E4BDC]/5 border border-[#9E4BDC]/15 rounded-xl p-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${selectedMethod.iconBg}`}>
+                            <Icon className={`w-4 h-4 ${selectedMethod.iconColor}`} />
+                          </div>
+                          <div>
+                            <p className="text-[9px] text-gray-400 font-semibold">Metode Pembayaran</p>
+                            <p className="text-xs font-black text-[#22285E]">{selectedMethod.label}</p>
+                            <p className="text-[9px] text-gray-400">{selectedMethod.desc}</p>
+                          </div>
+                        </div>
+
+                        {/* Price breakdown */}
+                        <div className="space-y-1.5 bg-gray-50 rounded-xl p-3 border border-gray-100">
+                          {tierDiscount > 0 && (
+                            <div className="flex justify-between text-[10px]">
+                              <span className="text-gray-400">Harga normal</span>
+                              <span className="text-gray-400">Rp {subtotalAsli.toLocaleString("id")}</span>
+                            </div>
+                          )}
+                          {tierDiscount > 0 && (
+                            <div className="flex justify-between text-[10px] font-bold text-emerald-600">
+                              <span>Diskon tier {userProfile?.statusMember}</span>
+                              <span>- Rp {tierDiscount.toLocaleString("id")}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-[10px] text-gray-500">
+                            <span>Subtotal ({cartCount} item)</span>
+                            <span>Rp {subtotal.toLocaleString("id")}</span>
+                          </div>
+                          {discount > 0 && (
+                            <div className="flex justify-between text-[10px] font-bold text-emerald-600">
+                              <span className="flex items-center gap-1"><Ticket className="w-2.5 h-2.5" /> Voucher {appliedVoucher?.code}</span>
+                              <span>- Rp {discount.toLocaleString("id")}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between border-t border-gray-200 pt-2 mt-1">
+                            <span className="text-sm font-black text-[#22285E]">Total Bayar</span>
+                            <span className="text-sm font-black text-[#9E4BDC]">Rp {grandTotal.toLocaleString("id")}</span>
+                          </div>
+                        </div>
+
+                        {/* Info poin */}
+                        <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5">
+                          <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <p className="text-[10px] text-amber-700 font-medium leading-snug">
+                            Poin loyalitas akan otomatis masuk setelah pesanan dikonfirmasi selesai oleh admin.
+                          </p>
+                        </div>
+
+                        {/* Error */}
+                        {submitError && (
+                          <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+                            <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                            <p className="text-[10px] text-red-600 font-medium">{submitError}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* CTA */}
+                      <div className="px-4 pb-6 pt-2">
+                        <button
+                          onClick={handleConfirmOrder}
+                          disabled={isSubmitting}
+                          className="w-full bg-gradient-to-r from-[#9E4BDC] to-[#8B3EC7] hover:opacity-95 disabled:opacity-60 text-white text-sm font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#9E4BDC]/20 cursor-pointer"
+                        >
+                          {isSubmitting
+                            ? <><Loader2 className="w-4 h-4 animate-spin" /> Memproses...</>
+                            : <><CheckCheck className="w-4 h-4" /> Konfirmasi Pesanan</>
+                          }
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── SUCCESS MODAL ── */}
+      <AnimatePresence>
+        {paymentStep === 'success' && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-[9992] bg-[#22285E]/50 backdrop-blur-sm"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            />
+            <motion.div
+              className="fixed inset-0 z-[9993] flex items-center justify-center p-4"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center"
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.85, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 340, damping: 28 }}
+              >
+                {/* Checkmark */}
+                <motion.div
+                  className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.15, type: "spring", stiffness: 400, damping: 20 }}
+                >
+                  <CheckCheck className="w-8 h-8 text-emerald-500" />
+                </motion.div>
+
+                <h3 className="text-lg font-black text-[#22285E]">Pesanan Berhasil!</h3>
+                <p className="text-xs text-gray-400 font-medium mt-2 leading-relaxed">
+                  Pesananmu sudah masuk dan sedang diproses oleh admin Na_store.id. Kamu akan mendapatkan poin setelah pesanan selesai.
+                </p>
+
+                {/* Detail singkat */}
+                <div className="mt-5 bg-gray-50 rounded-2xl p-4 text-left space-y-2 border border-gray-100">
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-gray-400 font-medium">Metode</span>
+                    <span className="font-black text-[#22285E]">{selectedMethod?.label}</span>
+                  </div>
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-gray-400 font-medium">Total Bayar</span>
+                    <span className="font-black text-[#9E4BDC]">Rp {grandTotal.toLocaleString("id")}</span>
+                  </div>
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-gray-400 font-medium">Status</span>
+                    <span className="font-black text-amber-600 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> Diproses
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2.5 mt-6">
+                  <button
+                    onClick={() => setPaymentStep(null)}
+                    className="w-full bg-gradient-to-r from-[#9E4BDC] to-[#8B3EC7] text-white text-xs font-black py-3 rounded-xl hover:opacity-95 transition-opacity cursor-pointer"
+                  >
+                    Oke, Mengerti
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Main Content Area for Customers */}
+      <main className="flex-grow">        <Outlet context={{ isLoggedIn, userProfile, onLoginClick: handleLoginClick, onLogout: handleLogout, setUserProfile, cartCount, setCartCount: handleAddToCart, tierPersen }} />
+      </main>
+
+      <Footer />
     </div>
   );
 }

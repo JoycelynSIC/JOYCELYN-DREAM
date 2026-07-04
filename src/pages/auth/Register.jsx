@@ -39,14 +39,26 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // Panggil userAPI untuk POST data pendaftaran ke Supabase
-      await userAPI.createUser({
+      // 1. Buat akun di tabel users_profile
+      const newUsers = await userAPI.createUser({
         namaDepan: dataForm.namaDepan,
         namaBelakang: dataForm.namaBelakang,
         email: dataForm.email,
         password: dataForm.password,
-        role: 'user', // role default murni customer
+        role: 'user',
       });
+
+      // 2. Otomatis buat profil member di tabel customer dengan status Regular
+      //    newUsers bisa berupa array (Supabase return=representation) atau object
+      const newUser = Array.isArray(newUsers) ? newUsers[0] : newUsers;
+      if (newUser?.id) {
+        await userAPI.createCustomerProfile({
+          userProfileId: newUser.id,
+          namaDepan:     dataForm.namaDepan,
+          namaBelakang:  dataForm.namaBelakang,
+          email:         dataForm.email,
+        });
+      }
 
       showToast({
         type: 'success',

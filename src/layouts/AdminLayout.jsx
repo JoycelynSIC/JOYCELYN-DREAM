@@ -11,14 +11,16 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-surface-neutral overflow-hidden font-poppins">
-      <div className="flex-none">
+    <div className="flex min-h-screen bg-surface-neutral font-poppins">
+      <div className="flex-none sticky top-0 h-screen">
         <Sidebar />
       </div>
 
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-7 scrollbar-hide">
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="sticky top-0 z-10">
+          <Header />
+        </div>
+        <main className="flex-1 p-7">
           <div className="max-w-[1600px] mx-auto">
             <Outlet />
           </div>

@@ -7,10 +7,21 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import { useToast, ToastContainer } from '../components/Toast';
 import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
   FaSearch, FaUserPlus, FaUsers, FaUserShield, FaUserGraduate,
   FaEdit, FaTrash, FaTimes, FaUser, FaEnvelope, FaKey, FaArrowLeft
 } from 'react-icons/fa';
 import { userAPI } from '../services/userAPI';
+
+const ITEMS_PER_PAGE = 5;
 
 export default function Users() {
   const { toasts, showToast, removeToast } = useToast();
@@ -36,6 +47,7 @@ export default function Users() {
   const [editUserId, setEditUserId] = useState(null);
   const [deleteUserId, setDeleteUserId] = useState(null);
   const [deleteUserName, setDeleteUserName] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const searchInputRef = useRef(null);
   const nameInputRef = useRef(null);
@@ -218,6 +230,12 @@ export default function Users() {
     return matchSearch && matchRole;
   });
 
+  const totalPages   = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   const totalUsers = users.length;
   const adminCount = users.filter(u => u.role === 'admin').length;
   const customerCount = users.filter(u => u.role === 'user').length;
@@ -276,7 +294,7 @@ export default function Users() {
             placeholder="Cari nama atau email..."
             icon={FaSearch}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             className="flex-1 !gap-0"
           />
           <div className="flex gap-1.5 flex-wrap">
@@ -286,7 +304,7 @@ export default function Users() {
                 id={`btn-filter-${role}`}
                 size="sm"
                 variant={roleFilter === role ? 'primary' : 'ghost'}
-                onClick={() => setRoleFilter(role)}
+                onClick={() => { setRoleFilter(role); setCurrentPage(1); }}
               >
                 {role === 'Semua' ? 'Semua Role' : role === 'admin' ? 'Admin / Staff' : 'Customer'}
               </Button>
@@ -311,7 +329,7 @@ export default function Users() {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((user) => {
+                {paginatedUsers.map((user) => {
                   const isAdmin = user.role === 'admin';
                   return (
                     <tr
@@ -381,6 +399,58 @@ export default function Users() {
             <div className="py-16 text-center">
               <FaSearch className="text-3xl text-[#A1A1AA] mx-auto mb-2" />
               <p className="text-sm font-bold text-[#A1A1AA]">User tidak ditemukan</p>
+            </div>
+          )}
+
+          {/* ── Pagination ── */}
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-[#E4E4E7] flex justify-center">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); if (currentPage > 1) setCurrentPage(currentPage - 1); }}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  {(() => {
+                    const delta = 1;
+                    const pages = [];
+                    for (let i = 1; i <= totalPages; i++) {
+                      if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+                        pages.push(i);
+                      }
+                    }
+                    const result = [];
+                    let prev = null;
+                    for (const page of pages) {
+                      if (prev !== null && page - prev > 1) result.push('ellipsis-' + page);
+                      result.push(page);
+                      prev = page;
+                    }
+                    return result.map(item =>
+                      typeof item === 'string' ? (
+                        <PaginationItem key={item}><PaginationEllipsis /></PaginationItem>
+                      ) : (
+                        <PaginationItem key={item}>
+                          <PaginationLink href="#" isActive={item === currentPage}
+                            onClick={(e) => { e.preventDefault(); setCurrentPage(item); }}>
+                            {item}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    );
+                  })()}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); if (currentPage < totalPages) setCurrentPage(currentPage + 1); }}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           )}
         </div>
