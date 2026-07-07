@@ -101,6 +101,7 @@ export default function UserLayout() {
   // ── Payment flow state ──────────────────────────────────────────────────────
   const [paymentStep, setPaymentStep]     = useState(null); // null | 'method' | 'confirm' | 'success'
   const [selectedMethod, setSelectedMethod] = useState(null);
+  const [submittedGrandTotal, setSubmittedGrandTotal] = useState(0); // simpan total sebelum reset cart
   const [isSubmitting, setIsSubmitting]   = useState(false);
   const [submitError, setSubmitError]     = useState("");
 
@@ -288,21 +289,71 @@ export default function UserLayout() {
     setSubmitError("");
 
     try {
+      // Simpan grandTotal sebelum reset cart
+      setSubmittedGrandTotal(grandTotal);
+
+      // Pastikan user punya row di tabel customer
+      let customerId = userProfile?.idPelanggan;
+      if (!customerId) {
+        console.warn("[UserLayout] idPelanggan tidak ada, buat customer row dulu");
+        const newCustomers = await userAPI.createCustomerProfile({
+          userProfileId: userProfile.id,
+          namaDepan:     userProfile.namaDepan,
+          namaBelakang:  userProfile.namaBelakang,
+          email:         userProfile.email,
+        });
+        customerId = newCustomers[0]?.["ID Pelanggan"];
+        // Update userProfile state
+        setUserProfile(prev => ({ ...prev, idPelanggan: customerId }));
+      }
+
       // Hitung diskon voucher proporsional per item
       const totalQty = cartItems.reduce((s, i) => s + i.qty, 0);
 
       const promises = cartItems.map((item) => {
         const hargaSatuanMember = getHargaMember(item.product.harga ?? 0);
         const itemSubtotal      = hargaSatuanMember * item.qty;
+        
         // Bagi diskon voucher secara proporsional berdasarkan persentase nilai item
         const itemDiskon = discount > 0
           ? Math.round((itemSubtotal / subtotal) * discount)
           : 0;
-        const itemTotal = Math.max(0, itemSubtotal - itemDiskon);
+        
+        // Pastikan itemTotal tidak boleh negatif atau 0 kalau ada subtotal
+        let itemTotal = itemSubtotal - itemDiskon;
+        if (itemTotal < 0) itemTotal = 0;
+        if (itemTotal === 0 && itemSubtotal > 0) {
+          // Bug: itemTotal jadi 0 padahal ada subtotal
+          console.error('[Checkout ERROR] itemTotal = 0 tapi itemSubtotal > 0', {
+            product: item.product.name,
+            hargaAsli: item.product.harga,
+            tierPersen,
+            hargaSatuanMember,
+            itemSubtotal,
+            itemDiskon,
+            subtotal,
+            discount,
+          });
+          // Fallback: pakai itemSubtotal (ignore diskon voucher untuk item ini)
+          itemTotal = itemSubtotal;
+        }
+
+        console.log('[Checkout]', {
+          product: item.product.name,
+          hargaAsli: item.product.harga,
+          tierPersen,
+          hargaSatuanMember,
+          qty: item.qty,
+          itemSubtotal,
+          itemDiskon,
+          itemTotal,
+          subtotal,
+          discount,
+        });
 
         return transaksiAPI.createTransaksi({
           customer: {
-            idPelanggan:  userProfile?.idPelanggan  ?? '',
+            idPelanggan:  customerId,
             namaLengkap:  userProfile?.namaLengkap  ?? `${userProfile?.namaDepan ?? ''} ${userProfile?.namaBelakang ?? ''}`.trim(),
             statusMember: userProfile?.statusMember ?? 'Regular',
             kelompokUsia: userProfile?.kelompokUsia ?? '',
@@ -955,7 +1006,7 @@ export default function UserLayout() {
                   </div>
                   <div className="flex justify-between text-[10px]">
                     <span className="text-gray-400 font-medium">Total Bayar</span>
-                    <span className="font-black text-[#9E4BDC]">Rp {grandTotal.toLocaleString("id")}</span>
+                    <span className="font-black text-[#9E4BDC]">Rp {submittedGrandTotal.toLocaleString("id")}</span>
                   </div>
                   <div className="flex justify-between text-[10px]">
                     <span className="text-gray-400 font-medium">Status</span>

@@ -228,7 +228,6 @@ export const transaksiAPI = {
             "ID Pelanggan":       customer.idPelanggan,
             "Nama Pelanggan":     customer.namaLengkap   ?? '',
             "Kelompok Usia":      customer.kelompokUsia  ?? '',
-            "Status Keanggotaan": customer.statusMember  ?? 'Reguler',
             "Status Member":      customer.statusMember  ?? 'Reguler',
             "Tanggal Transaksi":  tanggal,
             "Bulan":              bulan,
@@ -246,6 +245,8 @@ export const transaksiAPI = {
             "Saluran Pembelian":  "Online",
             "Status Transaksi":   "Diproses",
         }
+
+        console.log('[transaksiAPI.createTransaksi] payload:', payload);
 
         try {
             await axios.post(API_URL, payload, {
