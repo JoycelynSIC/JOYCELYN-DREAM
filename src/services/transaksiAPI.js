@@ -286,7 +286,7 @@ export const transaksiAPI = {
 
         const payload = {
             'ID Transaksi':      this._generateIdTransaksi(),
-            'ID Pelanggan':      idPelanggan   ?? '',
+            'ID Pelanggan':      idPelanggan || null,  // null jika tidak ada, bukan string kosong
             'Nama Pelanggan':    namaPelanggan ?? '',
             'Tanggal Transaksi': tanggal,
             'Bulan':             bulan,

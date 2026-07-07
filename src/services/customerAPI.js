@@ -172,6 +172,21 @@ export const customerAPI = {
     },
 
     /**
+     * Search customer by name (autocomplete).
+     * @param {string} query - nama pelanggan (partial match)
+     * @param {number} limit - max hasil
+     * @returns {Promise<Array>} daftar customer yang match
+     */
+    async searchCustomerByName(query, limit = 10) {
+        if (!query || query.trim().length < 2) return [];
+        const res = await axios.get(
+            `${API_URL}?%22Nama%20Lengkap%22=ilike.*${encodeURIComponent(query)}*&select=*&limit=${limit}`,
+            { headers }
+        );
+        return res.data.map(normaliseCustomer);
+    },
+
+    /**
      * Hapus pelanggan dari tabel customer.
      * @param {string} idPelanggan
      */

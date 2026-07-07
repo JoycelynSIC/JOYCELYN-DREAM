@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { transaksiAPI, normaliseTransaksi } from '../services/transaksiAPI';
 import { produkAPI, getProdukImageUrl, normaliseProduk } from '../services/produkAPI';
+import { customerAPI } from '../services/customerAPI';
 import { userAPI } from '../services/userAPI';
 import PageHeader from '../components/PageHeader';
 
@@ -104,6 +105,12 @@ export default function Orders() {
     metode: 'Transfer BCA',
   });
 
+  // ── Customer autocomplete state ───────────────────────────────────────────────
+  const [customerQuery, setCustomerQuery]       = useState('');
+  const [customerDropdown, setCustomerDropdown] = useState(false);
+  const [customerSuggestions, setCustomerSuggestions] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
   // ── Product autocomplete state ────────────────────────────────────────────────
   const [produkQuery, setProdukQuery]       = useState('');
   const [produkDropdown, setProdukDropdown] = useState(false);
@@ -184,6 +191,24 @@ export default function Orders() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // ── Search customer saat ketik (debounce) ─────────────────────────────────────
+  useEffect(() => {
+    if (!customerQuery || customerQuery.trim().length < 2) {
+      setCustomerSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const results = await customerAPI.searchCustomerByName(customerQuery, 8);
+        setCustomerSuggestions(results);
+      } catch (err) {
+        console.error('Customer search error:', err);
+        setCustomerSuggestions([]);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [customerQuery]);
+
  const totalPages = Math.ceil(totalRows / ITEMS_PER_PAGE);
   const totalOmzet  = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
@@ -196,6 +221,13 @@ export default function Orders() {
 
 
  // ── Handlers ──────────────────────────────────────────────────────────────────
+  const handleSelectCustomer = (cust) => {
+    setSelectedCustomer(cust);
+    setCustomerQuery(cust.name);
+    setCustomerDropdown(false);
+    setFormPesanan(p => ({ ...p, customer: cust.name }));
+  };
+
   const handleSelectProduk = (item) => {
     setSelectedProduk(item);
     setProdukQuery(item.name);
@@ -231,11 +263,21 @@ export default function Orders() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formPesanan.customer || !formPesanan.produk || !formPesanan.total) return;
+    
     const namaPelanggan = formPesanan.customer;
+    // Kalau admin ketik manual (tidak pilih dari dropdown), idPelanggan = null (bukan string kosong)
+    const idPelanggan   = selectedCustomer?.id || null;
+    
+    console.log('[Admin Add Order]', {
+      selectedCustomer,
+      idPelanggan,
+      namaPelanggan,
+    });
+
     try {
       const newOrder = await transaksiAPI.createTransaksiAdmin({
         namaPelanggan,
-        idPelanggan:    '',   // form admin manual, tidak ada FK
+        idPelanggan,  // null jika manual, atau ID valid dari dropdown
         produk:         formPesanan.produk,
         idProduk:       selectedProduk?.id       ?? '',
         kategoriProduk: selectedProduk?.kategori ?? '',
@@ -802,9 +844,68 @@ export default function Orders() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <Input label="Nama Pelanggan" type="text" name="customer"
-                value={formPesanan.customer} onChange={handleFormChange}
-                placeholder="cth: Dewi Lestari" icon={FaUser} />
+              {/* ── Autocomplete Pelanggan ── */}
+              <div className="flex flex-col gap-1.5 relative">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA] ml-1">
+                  Nama Pelanggan
+                </label>
+                <div className="relative">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A1A1AA] pointer-events-none">
+                    <FaUser size={13} />
+                  </div>
+                  <input
+                    type="text"
+                    value={customerQuery}
+                    onChange={(e) => {
+                      setCustomerQuery(e.target.value);
+                      setCustomerDropdown(true);
+                      setSelectedCustomer(null);
+                      setFormPesanan(p => ({ ...p, customer: e.target.value }));
+                    }}
+                    onFocus={() => setCustomerDropdown(true)}
+                    placeholder="Ketik nama pelanggan..."
+                    className="w-full border border-[#E4E4E7] rounded-xl pl-11 pr-10 py-2.5 text-sm text-[#22285E] placeholder:text-[#A1A1AA]/60 focus:outline-none focus:ring-2 focus:ring-[#9E4BDC]/20 focus:border-[#9E4BDC] transition-all"
+                  />
+                  {selectedCustomer && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCustomer(null);
+                        setCustomerQuery('');
+                        setFormPesanan(p => ({ ...p, customer: '' }));
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A1A1AA] hover:text-[#F24E1E] transition-colors"
+                    >
+                      <FaTimes size={12} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Dropdown suggestions */}
+                {customerDropdown && customerSuggestions.length > 0 && (
+                  <div className="absolute top-full mt-1 left-0 right-0 bg-white border border-[#E4E4E7] rounded-xl shadow-xl max-h-64 overflow-y-auto z-50">
+                    {customerSuggestions.map((cust, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleSelectCustomer(cust)}
+                        className="w-full px-4 py-3 hover:bg-[#F4F4F5] transition-colors text-left flex items-center gap-3 border-b border-[#F4F4F5] last:border-0"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#9E4BDC] to-[#8B3EC7] flex items-center justify-center shrink-0">
+                          <span className="text-white text-xs font-bold">{cust.name.charAt(0)}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-[#22285E] truncate">{cust.name}</p>
+                          <p className="text-[10px] text-[#A1A1AA] flex items-center gap-1.5">
+                            <span className="px-1.5 py-0.5 rounded bg-[#9E4BDC]/10 text-[#9E4BDC] font-bold">{cust.member}</span>
+                            {cust.phone && <span>• {cust.phone}</span>}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* ── Autocomplete Produk ── */}
               <div className="flex flex-col gap-1.5 relative">
