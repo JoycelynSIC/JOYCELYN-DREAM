@@ -102,6 +102,7 @@ export default function UserLayout() {
   const [paymentStep, setPaymentStep]     = useState(null); // null | 'method' | 'confirm' | 'success'
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [submittedGrandTotal, setSubmittedGrandTotal] = useState(0); // simpan total sebelum reset cart
+  const [submittedItems, setSubmittedItems] = useState([]); // simpan items sebelum reset
   const [isSubmitting, setIsSubmitting]   = useState(false);
   const [submitError, setSubmitError]     = useState("");
 
@@ -289,8 +290,14 @@ export default function UserLayout() {
     setSubmitError("");
 
     try {
-      // Simpan grandTotal sebelum reset cart
+      // Simpan grandTotal dan items sebelum reset cart
       setSubmittedGrandTotal(grandTotal);
+      setSubmittedItems(cartItems.map(i => ({
+        name:     i.product.name,
+        gambar:   i.product.gambar ?? null,
+        qty:      i.qty,
+        harga:    getHargaMember(i.product.harga ?? 0),
+      })));
 
       // Pastikan user punya row di tabel customer
       let customerId = userProfile?.idPelanggan;
@@ -999,20 +1006,49 @@ export default function UserLayout() {
                 </p>
 
                 {/* Detail singkat */}
-                <div className="mt-5 bg-gray-50 rounded-2xl p-4 text-left space-y-2 border border-gray-100">
-                  <div className="flex justify-between text-[10px]">
-                    <span className="text-gray-400 font-medium">Metode</span>
-                    <span className="font-black text-[#22285E]">{selectedMethod?.label}</span>
+                <div className="mt-5 bg-gray-50 rounded-2xl p-4 text-left border border-gray-100 space-y-3">
+
+                  {/* List item yang dipesan */}
+                  <div className={`space-y-2.5 ${submittedItems.length > 3 ? 'max-h-44 overflow-y-auto pr-1' : ''}`}>
+                    {submittedItems.map((item, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-white border border-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
+                          {item.gambar
+                            ? <img
+                                src={getProdukImageUrl(item.gambar)}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                              />
+                            : <span className="text-[10px] font-black text-[#A1A1AA]">{item.name.charAt(0)}</span>
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-[#22285E] truncate">{item.name}</p>
+                          <p className="text-[10px] text-gray-400">{item.qty} pcs × Rp {item.harga.toLocaleString("id")}</p>
+                        </div>
+                        <p className="text-xs font-black text-[#22285E] shrink-0">
+                          Rp {(item.harga * item.qty).toLocaleString("id")}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between text-[10px]">
-                    <span className="text-gray-400 font-medium">Total Bayar</span>
-                    <span className="font-black text-[#9E4BDC]">Rp {submittedGrandTotal.toLocaleString("id")}</span>
-                  </div>
-                  <div className="flex justify-between text-[10px]">
-                    <span className="text-gray-400 font-medium">Status</span>
-                    <span className="font-black text-amber-600 flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> Diproses
-                    </span>
+
+                  {/* Divider */}
+                  <div className="border-t border-gray-200 pt-2.5 space-y-1.5">
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-gray-400 font-medium">Metode</span>
+                      <span className="font-black text-[#22285E]">{selectedMethod?.label}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-gray-400 font-medium">Status</span>
+                      <span className="font-black text-amber-600 flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> Diproses
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-1 border-t border-gray-100 mt-1">
+                      <span className="text-xs font-bold text-[#22285E]">Total Bayar</span>
+                      <span className="text-sm font-black text-[#9E4BDC]">Rp {submittedGrandTotal.toLocaleString("id")}</span>
+                    </div>
                   </div>
                 </div>
 
